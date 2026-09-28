@@ -1,0 +1,177 @@
+.                                             DNSKEY  n=4   size=1119  signed . alg=[8] 256/8/264B 256/8/264B 257/8/264B 257/8/264B
+chainstack.com                                DS      n=1   size=85    signed com. alg=[13] 
+chainstack.com                                DNSKEY  n=2   size=222   signed chainstack.com. alg=[13] 256/13/68B 257/13/68B
+chainstack.com                                TXT     n=15  size=1489  signed chainstack.com. alg=[13] 
+_dmarc.chainstack.com                         TXT     n=1   size=144   signed chainstack.com. alg=[13] 
+_algorand.chainstack.com                      TXT     -
+publicnode.com                                DS      n=1   size=85    signed com. alg=[13] 
+publicnode.com                                DNSKEY  n=2   size=222   signed publicnode.com. alg=[13] 256/13/68B 257/13/68B
+publicnode.com                                TXT     n=2   size=167   signed publicnode.com. alg=[13] 
+_dmarc.publicnode.com                         TXT     n=1   size=199   signed publicnode.com. alg=[13] 
+_algorand.publicnode.com                      TXT     -
+llamanodes.com                                DS      n=1   size=85    signed com. alg=[13] 
+llamanodes.com                                DNSKEY  n=2   size=486   signed llamanodes.com. alg=[8] 256/8/136B 257/8/264B
+llamanodes.com                                TXT     n=1   size=157   signed llamanodes.com. alg=[8] 
+_dmarc.llamanodes.com                         TXT     -
+_algorand.llamanodes.com                      TXT     -
+consensys.io                                  DS      n=1   size=82    signed io. alg=[8] 
+consensys.io                                  DNSKEY  n=2   size=216   signed consensys.io. alg=[13] 256/13/68B 257/13/68B
+consensys.io                                  TXT     n=32  size=2844  signed consensys.io. alg=[13] 
+_dmarc.consensys.io                           TXT     n=1   size=271   signed consensys.io. alg=[13] 
+_algorand.consensys.io                        TXT     -
+allnodes.com                                  DS      n=1   size=83    signed com. alg=[13] 
+allnodes.com                                  DNSKEY  n=2   size=216   signed allnodes.com. alg=[13] 256/13/68B 257/13/68B
+allnodes.com                                  TXT     n=6   size=621   signed allnodes.com. alg=[13] 
+_dmarc.allnodes.com                           TXT     n=1   size=181   signed allnodes.com. alg=[13] 
+_algorand.allnodes.com                        TXT     -
+flashbots.net                                 DS      n=1   size=84    signed net. alg=[13] 
+flashbots.net                                 DNSKEY  n=2   size=219   signed flashbots.net. alg=[13] 256/13/68B 257/13/68B
+flashbots.net                                 TXT     n=3   size=339   signed flashbots.net. alg=[13] 
+_dmarc.flashbots.net                          TXT     n=1   size=273   signed flashbots.net. alg=[13] 
+_algorand.flashbots.net                       TXT     -
+blastapi.io                                   DS      n=1   size=81    signed io. alg=[8] 
+blastapi.io                                   DNSKEY  n=2   size=213   signed blastapi.io. alg=[13] 256/13/68B 257/13/68B
+blastapi.io                                   TXT     n=5   size=437   signed blastapi.io. alg=[13] 
+_dmarc.blastapi.io                            TXT     n=1   size=139   signed blastapi.io. alg=[13] 
+_algorand.blastapi.io                         TXT     -
+cloudflare-eth.com                            DS      n=1   size=89    signed com. alg=[13] 
+cloudflare-eth.com                            DNSKEY  n=2   size=234   signed cloudflare-eth.com. alg=[13] 256/13/68B 257/13/68B
+cloudflare-eth.com                            TXT     -
+_dmarc.cloudflare-eth.com                     TXT     -
+_algorand.cloudflare-eth.com                  TXT     -
+google._domainkey.consensys.io                TXT     n=1   size=486   signed consensys.io. alg=[13] 
+algorand.co                                   DNSKEY  -
+algorand.co                                   DS      -
+_dmarc.algorand.co                            TXT     n=1   size=97    UNSIGNED  alg= 
+algorand.com                                  DNSKEY  -
+algorand.com                                  DS      -
+_dmarc.algorand.com                           TXT     n=1   size=177   UNSIGNED  alg= 
+algorand.foundation                           DNSKEY  n=2   size=237   signed algorand.foundation. alg=[13] 256/13/68B 257/13/68B
+algorand.foundation                           DS      n=1   size=97    signed foundation. alg=[8] 
+_dmarc.algorand.foundation                    TXT     n=1   size=204   signed algorand.foundation. alg=[13] 
+nf.domains                                    DNSKEY  n=2   size=474   signed nf.domains. alg=[8] 256/8/136B 257/8/264B
+nf.domains                                    DS      n=1   size=85    signed domains. alg=[8] 
+_dmarc.nf.domains                             TXT     n=1   size=83    signed nf.domains. alg=[8] 
+perawallet.app                                DNSKEY  -
+perawallet.app                                DS      -
+_dmarc.perawallet.app                         TXT     n=1   size=104   UNSIGNED  alg= 
+folks.finance                                 DNSKEY  n=3   size=312   signed folks.finance. alg=[13] 256/13/68B 256/13/68B 257/13/68B
+folks.finance                                 DS      n=1   size=88    signed finance. alg=[8] 
+_dmarc.folks.finance                          TXT     n=1   size=160   signed folks.finance. alg=[13] 
+tinyman.org                                   DNSKEY  -
+tinyman.org                                   DS      -
+_dmarc.tinyman.org                            TXT     n=1   size=116   UNSIGNED  alg= 
+vestige.fi                                    DNSKEY  n=2   size=210   signed vestige.fi. alg=[13] 256/13/68B 257/13/68B
+vestige.fi                                    DS      n=1   size=80    signed fi. alg=[13] 
+_dmarc.vestige.fi                             TXT     n=1   size=111   signed vestige.fi. alg=[13] 
+pact.fi                                       DNSKEY  -
+pact.fi                                       DS      -
+_dmarc.pact.fi                                TXT     n=1   size=88    UNSIGNED  alg= 
+nodely.io                                     DNSKEY  n=2   size=207   signed nodely.io. alg=[13] 256/13/68B 257/13/68B
+nodely.io                                     DS      n=1   size=79    signed io. alg=[8] 
+_dmarc.nodely.io                              TXT     n=1   size=220   signed nodely.io. alg=[13] 
+lofty.ai                                      DNSKEY  n=2   size=204   signed lofty.ai. alg=[13] 256/13/68B 257/13/68B
+lofty.ai                                      DS      -
+_dmarc.lofty.ai                               TXT     n=1   size=116   signed lofty.ai. alg=[13] 
+cloudflare.com                                DNSKEY  n=2   size=222   signed cloudflare.com. alg=[13] 256/13/68B 257/13/68B
+cloudflare.com                                DS      n=1   size=85    signed com. alg=[13] 
+_dmarc.cloudflare.com                         TXT     n=1   size=223   signed cloudflare.com. alg=[13] 
+paypal.com                                    DNSKEY  n=3   size=300   signed paypal.com. alg=[13] 256/13/68B 256/13/68B 257/13/68B
+paypal.com                                    DS      n=2   size=139   signed com. alg=[13] 
+_dmarc.paypal.com                             TXT     n=1   size=193   signed paypal.com. alg=[13] 
+ietf.org                                      DNSKEY  n=2   size=204   signed ietf.org. alg=[13] 256/13/68B 257/13/68B
+ietf.org                                      DS      n=1   size=79    signed org. alg=[8] 
+_dmarc.ietf.org                               TXT     n=1   size=134   signed ietf.org. alg=[13] 
+isc.org                                       DNSKEY  n=2   size=201   signed isc.org. alg=[13] 256/13/68B 257/13/68B
+isc.org                                       DS      n=1   size=78    signed org. alg=[8] 
+_dmarc.isc.org                                TXT     n=1   size=222   signed isc.org. alg=[13] 
+icann.org                                     DNSKEY  n=3   size=296   signed icann.org. alg=[13] 256/13/68B 256/13/68B 257/13/68B
+icann.org                                     DS      n=1   size=80    signed org. alg=[8] 
+_dmarc.icann.org                              TXT     n=1   size=119   signed icann.org. alg=[13] 
+debian.org                                    DNSKEY  n=4   size=718   signed debian.org. alg=[8, 13] 256/8/200B 256/13/68B 257/8/264B 257/13/68B
+debian.org                                    DS      n=1   size=81    signed org. alg=[8] 
+_dmarc.debian.org                             TXT     n=1   size=113   signed debian.org. alg=[8, 13] 
+freebsd.org                                   DNSKEY  n=2   size=605   signed freebsd.org. alg=[8] 256/8/264B 257/8/264B
+freebsd.org                                   DS      n=1   size=82    signed org. alg=[8] 
+_dmarc.freebsd.org                            TXT     n=1   size=78    signed freebsd.org. alg=[8] 
+nlnetlabs.nl                                  DNSKEY  n=2   size=480   signed nlnetlabs.nl. alg=[8] 256/8/136B 257/8/264B
+nlnetlabs.nl                                  DS      n=1   size=82    signed nl. alg=[13] 
+_dmarc.nlnetlabs.nl                           TXT     n=1   size=137   signed nlnetlabs.nl. alg=[8] 
+internet.nl                                   DNSKEY  n=1   size=122   signed internet.nl. alg=[13] 257/13/68B
+internet.nl                                   DS      n=1   size=81    signed nl. alg=[13] 
+_dmarc.internet.nl                            TXT     n=1   size=165   signed internet.nl. alg=[13] 
+powerdns.com                                  DNSKEY  n=3   size=640   signed powerdns.com. alg=[8] 256/8/136B 256/8/136B 257/8/264B
+powerdns.com                                  DS      n=1   size=83    signed com. alg=[13] 
+_dmarc.powerdns.com                           TXT     n=1   size=105   signed powerdns.com. alg=[8] 
+fastmail.com                                  DNSKEY  -
+fastmail.com                                  DS      -
+_dmarc.fastmail.com                           TXT     n=1   size=106   UNSIGNED  alg= 
+proton.me                                     DNSKEY  n=2   size=599   signed proton.me. alg=[8] 256/8/264B 257/8/264B
+proton.me                                     DS      n=1   size=79    signed me. alg=[8] 
+_dmarc.proton.me                              TXT     n=1   size=104   signed proton.me. alg=[8] 
+mailbox.org                                   DNSKEY  n=2   size=213   signed mailbox.org. alg=[13] 256/13/68B 257/13/68B
+mailbox.org                                   DS      n=1   size=82    signed org. alg=[8] 
+_dmarc.mailbox.org                            TXT     n=1   size=164   signed mailbox.org. alg=[13] 
+posteo.de                                     DNSKEY  n=2   size=663   signed posteo.de. alg=[8] 256/8/264B 257/8/328B
+posteo.de                                     DS      n=1   size=79    signed de. alg=[8] 
+_dmarc.posteo.de                              TXT     n=1   size=106   signed posteo.de. alg=[8] 
+comcast.net                                   DNSKEY  n=2   size=213   signed comcast.net. alg=[13] 256/13/68B 257/13/68B
+comcast.net                                   DS      n=1   size=82    signed net. alg=[13] 
+_dmarc.comcast.net                            TXT     n=1   size=132   signed comcast.net. alg=[13] 
+verisign.com                                  DNSKEY  n=2   size=480   signed verisign.com. alg=[8] 256/8/136B 257/8/264B
+verisign.com                                  DS      n=1   size=83    signed com. alg=[13] 
+_dmarc.verisign.com                           TXT     n=1   size=257   signed verisign.com. alg=[8] 
+nic.cz                                        DNSKEY  n=2   size=198   signed nic.cz. alg=[13] 256/13/68B 257/13/68B
+nic.cz                                        DS      n=1   size=76    signed cz. alg=[13] 
+_dmarc.nic.cz                                 TXT     n=1   size=198   signed nic.cz. alg=[13] 
+torproject.org                                DNSKEY  n=3   size=776   signed torproject.org. alg=[8] 256/8/200B 256/8/200B 257/8/264B
+torproject.org                                DS      n=1   size=85    signed org. alg=[8] 
+_dmarc.torproject.org                         TXT     n=1   size=131   signed torproject.org. alg=[8] 
+kraken.com                                    DNSKEY  n=2   size=210   signed kraken.com. alg=[13] 256/13/68B 257/13/68B
+kraken.com                                    DS      -
+_dmarc.kraken.com                             TXT     n=1   size=187   signed kraken.com. alg=[13] 
+coinbase.com                                  DNSKEY  -
+coinbase.com                                  DS      -
+_dmarc.coinbase.com                           TXT     n=1   size=167   UNSIGNED  alg= 
+binance.com                                   DNSKEY  -
+binance.com                                   DS      -
+_dmarc.binance.com                            TXT     n=1   size=197   UNSIGNED  alg= 
+ledger.com                                    DNSKEY  n=2   size=210   signed ledger.com. alg=[13] 256/13/68B 257/13/68B
+ledger.com                                    DS      n=1   size=81    signed com. alg=[13] 
+_dmarc.ledger.com                             TXT     n=1   size=107   signed ledger.com. alg=[13] 
+stripe.com                                    DNSKEY  -
+stripe.com                                    DS      -
+_dmarc.stripe.com                             TXT     n=1   size=159   UNSIGNED  alg= 
+europa.eu                                     DNSKEY  n=2   size=855   signed europa.eu. alg=[8] 256/8/264B 257/8/520B
+europa.eu                                     DS      n=2   size=136   signed eu. alg=[8] 
+_dmarc.europa.eu                              TXT     -
+nasa.gov                                      DNSKEY  n=3   size=624   signed nasa.gov. alg=[8] 256/8/136B 256/8/136B 257/8/264B
+nasa.gov                                      DS      n=1   size=79    signed gov. alg=[13] 
+_dmarc.nasa.gov                               TXT     n=1   size=151   signed nasa.gov. alg=[8] 
+nist.gov                                      DNSKEY  n=2   size=500   signed nist.gov. alg=[8] 256/8/168B 257/8/264B
+nist.gov                                      DS      n=1   size=79    signed gov. alg=[13] 
+_dmarc.nist.gov                               TXT     n=1   size=236   signed nist.gov. alg=[8] 
+gov.uk                                        DNSKEY  n=2   size=590   signed gov.uk. alg=[8] 256/8/264B 257/8/264B
+gov.uk                                        DS      n=1   size=76    signed uk. alg=[8] 
+_dmarc.gov.uk                                 TXT     n=1   size=149   signed gov.uk. alg=[8] 
+ripe.net                                      DNSKEY  n=1   size=116   signed ripe.net. alg=[13] 257/13/68B
+ripe.net                                      DS      n=1   size=79    signed net. alg=[13] 
+_dmarc.ripe.net                               TXT     n=1   size=114   signed ripe.net. alg=[13] 
+apnic.net                                     DNSKEY  n=3   size=296   signed apnic.net. alg=[13] 256/13/68B 256/13/68B 257/13/68B
+apnic.net                                     DS      n=1   size=80    signed net. alg=[13] 
+_dmarc.apnic.net                              TXT     n=1   size=243   signed apnic.net. alg=[13] 
+arin.net                                      DNSKEY  n=4   size=908   signed arin.net. alg=[8] 256/8/136B 256/8/136B 257/8/264B 257/8/264B
+arin.net                                      DS      n=1   size=79    signed net. alg=[13] 
+_dmarc.arin.net                               TXT     n=1   size=159   signed arin.net. alg=[8] 
+dnssec-tools.org                              DNSKEY  n=2   size=228   signed dnssec-tools.org. alg=[13] 256/13/68B 257/13/68B
+dnssec-tools.org                              DS      n=1   size=87    signed org. alg=[8] 
+_dmarc.dnssec-tools.org                       TXT     -
+sidn.nl                                       DNSKEY  n=2   size=201   signed sidn.nl. alg=[13] 256/13/68B 257/13/68B
+sidn.nl                                       DS      n=1   size=77    signed nl. alg=[13] 
+_dmarc.sidn.nl                                TXT     n=1   size=183   signed sidn.nl. alg=[13] 
+switch.ch                                     DNSKEY  n=3   size=296   signed switch.ch. alg=[13] 256/13/68B 256/13/68B 257/13/68B
+switch.ch                                     DS      n=1   size=79    signed ch. alg=[13] 
+_dmarc.switch.ch                              TXT     n=1   size=166   signed switch.ch. alg=[13] 
+salesforce.com                                DNSKEY  n=2   size=222   signed salesforce.com. alg=[13] 256/13/68B 257/13/68B
+salesforce.com                                DS      n=1   size=85    signed com. alg=[13] 
+_dmarc.salesforce.com                         TXT     -
