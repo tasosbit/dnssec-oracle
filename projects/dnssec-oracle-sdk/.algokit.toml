@@ -1,0 +1,11 @@
+[algokit]
+min_version = "v2.0.0"
+
+[project]
+type = "sdk"
+name = 'dnssec-oracle-sdk'
+artifacts = "src/"
+
+[project.run]
+build = { commands = ['pnpm run build'], description = 'Build SDK' }
+typecheck = { commands = ['pnpm run typecheck'], description = 'Typecheck SDK' }

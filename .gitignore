@@ -1,1 +1,8 @@
 junk
+node_modules/
+dist/
+coverage/
+debug_traces/
+.env
+*.tsbuildinfo
+captures/cron.log

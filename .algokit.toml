@@ -1,0 +1,11 @@
+[algokit]
+min_version = "v2.6.0"
+
+[project]
+type = 'workspace'
+projects_root_path = 'projects'
+
+[project.run]
+build = ['dnssec-oracle', 'dnssec-oracle-sdk', 'cli']
+# contract last: its tests run against the built SDK
+test = ['cli', 'dnssec-oracle']

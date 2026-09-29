@@ -1,0 +1,11 @@
+[algokit]
+min_version = "v2.6.0"
+
+[project]
+type = 'backend'
+name = 'cli'
+
+[project.run]
+# bun executables are a release step, not a CI step: `pnpm run build:executables`
+build = { commands = ['pnpm run build:ts'], description = 'Build the CLI' }
+test = { commands = ['pnpm run test:run'], description = 'Run CLI unit tests' }

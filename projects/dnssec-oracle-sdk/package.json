@@ -1,0 +1,39 @@
+{
+  "name": "dnssec-oracle-sdk",
+  "version": "0.0.1",
+  "description": "TypeScript SDK and prover for the DNSSEC oracle on Algorand",
+  "license": "MIT",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "cp ../dnssec-oracle/smart_contracts/artifacts/dnssec_oracle/DnssecOracleClient.ts src/generated/DnssecOracleClient.ts && cp node_modules/@d13co/puya-ts-utils/src/rsaHint.ts src/generated/rsaHint.ts && tsx scripts/generate-errors.ts .",
+    "build": "rm -rf dist && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "capture": "tsx scripts/capture.mts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@algorandfoundation/algokit-utils": "^9.0.0",
+    "algosdk": "^3.0.0"
+  },
+  "devDependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.2",
+    "@types/node": "^22.0.0",
+    "algosdk": "^3.8.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@d13co/puya-ts-utils": "git+file:///home/bit/code/puya-ts-utils#183713f&path:/projects/puya-ts-utils"
+  }
+}

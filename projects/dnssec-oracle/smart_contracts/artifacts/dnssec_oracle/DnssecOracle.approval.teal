@@ -1,0 +1,4803 @@
+#pragma version 13
+#pragma typetrack false
+#pragma autosalt false
+
+// @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
+main:
+    intcblock 0 1 2 64 65535
+    bytecblock 0x "c" 0x01 "ERR:WIR" "w" "ERR:SGN" "t" "admin" "anchorCount" 0x00 "ERR:MIS" "r" "ERR:TYP" "ERR:ALG" "ERR:SLN" "ERR:SIG" "ERR:TLD" "ERR:OLD" "ERR:PRN" base64(DYEBQw==) "ERR:RCV" "ERR:AMT" "ERR:PAR"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:101
+    // export class DnssecOracle extends BaseContract {
+    txn NumAppArgs
+    bz main_createApplication@21
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    assert
+    pushbytess 0xe5737f55 0x9541b849 0x52741278 0x17866912 0x2e03d8a1 0xa9ec5e64 0xe307b5b4 0xc5216efd 0x77a26204 0x92f8f243 0x4118ecbf 0x3d75f0c4 0x941da4e5 0xeaee7fbd // method "addAnchor(byte[])void", method "addTld(byte[])void", method "removeTld(byte[])void", method "setAdmin(address)void", method "proveRoot(byte[],byte[],byte[],uint64)void", method "proveDs(byte[],byte[],byte[],uint64,byte[])void", method "proveDnskey(byte[],byte[],byte[],uint64,uint64,byte[])void", method "proveTxt(byte[],byte[],byte[],uint64,byte[])void", method "prune(byte[],uint64)void", method "logAttestations(byte[][])void", method "increaseBudget(uint64)void", method "depositCredits(address,pay)void", method "logCredits(address[])void", method "withdrawCredits()void"
+    txna ApplicationArgs 0
+    match addAnchor addTld removeTld setAdmin proveRoot proveDs proveDnskey proveTxt prune logAttestations increaseBudget depositCredits logCredits withdrawCredits
+    err
+
+main_createApplication@21:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:118
+    // @baremethod({ onCreate: 'require' })
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    assert
+    // smart_contracts/dnssec_oracle/contract.algo.ts:102
+    // admin = GlobalState<Account>({ key: 'admin' })
+    bytec 7 // "admin"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:120
+    // this.admin.value = Txn.sender
+    txn Sender
+    app_global_put
+    // smart_contracts/dnssec_oracle/contract.algo.ts:103
+    // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
+    bytec 8 // "anchorCount"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:121
+    // this.anchorCount.value = 0
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/dnssec_oracle/contract.algo.ts:123
+    // op.AppParamsSet.appForeignBoxReads(true)
+    intc_1 // 1
+    app_params_set AppForeignBoxReads
+    // smart_contracts/dnssec_oracle/contract.algo.ts:118
+    // @baremethod({ onCreate: 'require' })
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/wire.algo.ts::readName(data: bytes, at: uint64) -> uint64, uint64:
+readName:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:48
+    // export function readName(data: bytes, at: uint64): readonly [uint64, uint64] {
+    proto 2 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:50
+    // let labels: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:51
+    // let length = op.getByte(data, pos)
+    frame_dig -2
+    frame_dig -1
+    getbyte
+    frame_dig -1
+    swap
+
+readName_while_top@1:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:52-58
+    // while (length !== 0) {
+    //   loggedAssert(length < 0x40, errWire)
+    //   loggedAssert(length !== 1 || op.getByte(data, pos + 1) !== 0x2a, errWildcard)
+    //   pos += length + 1
+    //   labels++
+    //   length = op.getByte(data, pos)
+    // }
+    dup
+    bz readName_after_while@11
+    // smart_contracts/dnssec_oracle/wire.algo.ts:53
+    // loggedAssert(length < 0x40, errWire)
+    dup
+    intc_3 // 64
+    <
+    bnz readName_after_assert@4
+    bytec_3 // "ERR:WIR"
+    log
+    err // ERR:WIR
+
+readName_after_assert@4:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:54
+    // loggedAssert(length !== 1 || op.getByte(data, pos + 1) !== 0x2a, errWildcard)
+    dup
+    intc_1 // 1
+    !=
+    bnz readName_bool_true@6
+    dig 1
+    intc_1 // 1
+    +
+    frame_dig -2
+    swap
+    getbyte
+    pushint 42
+    !=
+    bz readName_bool_false@7
+
+readName_bool_true@6:
+    intc_1 // 1
+
+readName_bool_merge@8:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:54
+    // loggedAssert(length !== 1 || op.getByte(data, pos + 1) !== 0x2a, errWildcard)
+    bnz readName_after_assert@10
+    pushbytes "ERR:WLD"
+    log
+    err // ERR:WLD
+
+readName_after_assert@10:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:55
+    // pos += length + 1
+    intc_1 // 1
+    +
+    +
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:56
+    // labels++
+    uncover 2
+    intc_1 // 1
+    +
+    cover 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:57
+    // length = op.getByte(data, pos)
+    frame_dig -2
+    swap
+    getbyte
+    b readName_while_top@1
+
+readName_bool_false@7:
+    intc_0 // 0
+    b readName_bool_merge@8
+
+readName_after_while@11:
+    pop
+    // smart_contracts/dnssec_oracle/wire.algo.ts:59
+    // const end: uint64 = pos + 1
+    intc_1 // 1
+    +
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:60
+    // loggedAssert(end - at <= 255, errWire)
+    frame_dig -1
+    -
+    pushint 255
+    <=
+    bnz readName_after_assert@13
+    bytec_3 // "ERR:WIR"
+    log
+    err // ERR:WIR
+
+readName_after_assert@13:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:61
+    // return [end, labels]
+    swap
+    retsub
+
+
+// smart_contracts/dnssec_oracle/wire.algo.ts::walkRRset(data: bytes, start: uint64, rrtype: uint64, index: uint64, txt: uint64) -> bytes, uint64, bytes, bytes:
+walkRRset:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:79-85
+    // export function walkRRset(
+    //   data: bytes,
+    //   start: uint64,
+    //   rrtype: uint64,
+    //   index: uint64,
+    //   txt: boolean,
+    // ): readonly [bytes, uint64, bytes, bytes] {
+    proto 5 4
+    bytec_0 // ""
+    dupn 4
+    // smart_contracts/dnssec_oracle/wire.algo.ts:86
+    // const [ownerEnd, ownerLabels] = readName(data, start)
+    frame_dig -5
+    frame_dig -4
+    callsub readName
+    swap
+    // smart_contracts/dnssec_oracle/wire.algo.ts:87
+    // const owner = op.extract(data, start, ownerEnd - start)
+    frame_dig -4
+    -
+    frame_dig -5
+    frame_dig -4
+    uncover 2
+    extract3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:89
+    // let i: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:90
+    // let indexed = Bytes()
+    bytec_0 // 0x
+    cover 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:91
+    // let found = false
+    intc_0 // 0
+    cover 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:92
+    // let records = Bytes()
+    bytec_0 // 0x
+    swap
+    frame_dig -4
+
+walkRRset_while_top@1:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:93
+    // while (at < data.length) {
+    frame_dig -5
+    len
+    dup
+    cover 2
+    dig 1
+    >
+    // smart_contracts/dnssec_oracle/wire.algo.ts:93-112
+    // while (at < data.length) {
+    //   const [nameEnd] = readName(data, at)
+    //   loggedAssert(op.extract(data, at, nameEnd - at) === owner, errOwner)
+    //   loggedAssert(op.extractUint16(data, nameEnd) === rrtype, errType)
+    //   loggedAssert(op.extractUint16(data, nameEnd + 2) === CLASS_IN, errClass)
+    //   // TTL at nameEnd + 4 is not checked: the signature binds it
+    //   const rdlength = op.extractUint16(data, nameEnd + 8)
+    //   const rdataStart: uint64 = nameEnd + 10
+    //   loggedAssert(rdataStart + rdlength <= data.length, errWire)
+    //   if (i === index) {
+    //     indexed = op.extract(data, rdataStart, rdlength)
+    //     found = true
+    //   }
+    //   if (txt) {
+    //     checkTxt(op.extract(data, rdataStart, rdlength))
+    //     records = records.concat(op.extract(data, nameEnd + 8, rdlength + 2))
+    //   }
+    //   at = rdataStart + rdlength
+    //   i++
+    // }
+    bz walkRRset_after_while@15
+    // smart_contracts/dnssec_oracle/wire.algo.ts:94
+    // const [nameEnd] = readName(data, at)
+    frame_dig -5
+    dig 1
+    callsub readName
+    pop
+    dup
+    cover 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:95
+    // loggedAssert(op.extract(data, at, nameEnd - at) === owner, errOwner)
+    dig 1
+    -
+    frame_dig -5
+    cover 2
+    extract3
+    dig 5
+    ==
+    bnz walkRRset_after_assert@4
+    pushbytes "ERR:OWN"
+    log
+    err // ERR:OWN
+
+walkRRset_after_assert@4:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:96
+    // loggedAssert(op.extractUint16(data, nameEnd) === rrtype, errType)
+    frame_dig -5
+    dig 1
+    extract_uint16
+    frame_dig -3
+    ==
+    bnz walkRRset_after_assert@6
+    bytec 12 // "ERR:TYP"
+    log
+    err // ERR:TYP
+
+walkRRset_after_assert@6:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:97
+    // loggedAssert(op.extractUint16(data, nameEnd + 2) === CLASS_IN, errClass)
+    dup
+    intc_2 // 2
+    +
+    frame_dig -5
+    swap
+    extract_uint16
+    intc_1 // 1
+    ==
+    bnz walkRRset_after_assert@8
+    pushbytes "ERR:CLS"
+    log
+    err // ERR:CLS
+
+walkRRset_after_assert@8:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:99
+    // const rdlength = op.extractUint16(data, nameEnd + 8)
+    dup
+    pushint 8
+    +
+    dup
+    frame_bury 4
+    frame_dig -5
+    swap
+    extract_uint16
+    dup
+    frame_bury 2
+    // smart_contracts/dnssec_oracle/wire.algo.ts:100
+    // const rdataStart: uint64 = nameEnd + 10
+    swap
+    pushint 10
+    +
+    dup
+    frame_bury 1
+    // smart_contracts/dnssec_oracle/wire.algo.ts:101
+    // loggedAssert(rdataStart + rdlength <= data.length, errWire)
+    +
+    dup
+    uncover 2
+    <=
+    bnz walkRRset_after_assert@10
+    bytec_3 // "ERR:WIR"
+    log
+    err // ERR:WIR
+
+walkRRset_after_assert@10:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:102
+    // if (i === index) {
+    dig 1
+    frame_dig -2
+    ==
+    bz walkRRset_after_if_else@12
+    // smart_contracts/dnssec_oracle/wire.algo.ts:103
+    // indexed = op.extract(data, rdataStart, rdlength)
+    frame_dig -5
+    frame_dig 1
+    frame_dig 2
+    extract3
+    frame_bury 6
+    // smart_contracts/dnssec_oracle/wire.algo.ts:104
+    // found = true
+    intc_1 // 1
+    frame_bury 7
+
+walkRRset_after_if_else@12:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:106
+    // if (txt) {
+    frame_dig -1
+    bz walkRRset_after_if_else@14
+    // smart_contracts/dnssec_oracle/wire.algo.ts:107
+    // checkTxt(op.extract(data, rdataStart, rdlength))
+    frame_dig -5
+    frame_dig 1
+    frame_dig 2
+    extract3
+    swap
+    // smart_contracts/dnssec_oracle/wire.algo.ts:119
+    // let at: uint64 = 0
+    intc_0 // 0
+    frame_bury 0
+
+walkRRset_while_top@19:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:120
+    // while (at < rdata.length) {
+    dig 1
+    len
+    dup
+    frame_bury 3
+    frame_dig 0
+    >
+    // smart_contracts/dnssec_oracle/wire.algo.ts:120-122
+    // while (at < rdata.length) {
+    //   at += op.getByte(rdata, at) + 1
+    // }
+    bz walkRRset_after_while@21
+    // smart_contracts/dnssec_oracle/wire.algo.ts:121
+    // at += op.getByte(rdata, at) + 1
+    dig 1
+    frame_dig 0
+    dup
+    cover 2
+    getbyte
+    intc_1 // 1
+    +
+    +
+    frame_bury 0
+    b walkRRset_while_top@19
+
+walkRRset_after_while@21:
+    bury 1
+    // smart_contracts/dnssec_oracle/wire.algo.ts:123
+    // loggedAssert(rdata.length > 0 && at === rdata.length, errTxt)
+    frame_dig 3
+    bz walkRRset_bool_false@24
+    frame_dig 0
+    frame_dig 3
+    ==
+    bz walkRRset_bool_false@24
+    intc_1 // 1
+
+walkRRset_bool_merge@25:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:123
+    // loggedAssert(rdata.length > 0 && at === rdata.length, errTxt)
+    bnz walkRRset_after_assert@27
+    pushbytes "ERR:TXT"
+    log
+    err // ERR:TXT
+
+walkRRset_after_assert@27:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:108
+    // records = records.concat(op.extract(data, nameEnd + 8, rdlength + 2))
+    frame_dig 2
+    intc_2 // 2
+    +
+    frame_dig -5
+    frame_dig 4
+    uncover 2
+    extract3
+    uncover 3
+    swap
+    concat
+    cover 2
+
+walkRRset_after_if_else@14:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:111
+    // i++
+    swap
+    intc_1 // 1
+    +
+    swap
+    b walkRRset_while_top@1
+
+walkRRset_bool_false@24:
+    intc_0 // 0
+    b walkRRset_bool_merge@25
+
+walkRRset_after_while@15:
+    popn 3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:113
+    // loggedAssert(found, errIndex)
+    frame_dig 7
+    bnz walkRRset_after_assert@17
+    pushbytes "ERR:IDX"
+    log
+    err // ERR:IDX
+
+walkRRset_after_assert@17:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:114
+    // return [owner, ownerLabels, indexed, records]
+    swap
+    frame_dig 5
+    frame_dig 6
+    uncover 3
+    frame_bury 3
+    frame_bury 2
+    frame_bury 1
+    frame_bury 0
+    retsub
+
+
+// smart_contracts/dnssec_oracle/wire.algo.ts::parseSignedData(data: bytes, rrtype: uint64, index: uint64, now: uint64) -> uint64, uint64, uint64, bytes, bytes, uint64, bytes, bytes, bytes:
+parseSignedData:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:131
+    // export function parseSignedData(data: bytes, rrtype: uint64, index: uint64, now: uint64): SignedData {
+    proto 4 9
+    // smart_contracts/dnssec_oracle/wire.algo.ts:132
+    // loggedAssert(op.extractUint16(data, 0) === rrtype, errType)
+    frame_dig -4
+    intc_0 // 0
+    extract_uint16
+    frame_dig -3
+    ==
+    bnz parseSignedData_after_assert@2
+    bytec 12 // "ERR:TYP"
+    log
+    err // ERR:TYP
+
+parseSignedData_after_assert@2:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:133
+    // const labels = op.getByte(data, 3)
+    frame_dig -4
+    pushint 3
+    getbyte
+    // smart_contracts/dnssec_oracle/wire.algo.ts:134
+    // const expiration = op.extractUint32(data, 8)
+    frame_dig -4
+    pushint 8
+    extract_uint32
+    // smart_contracts/dnssec_oracle/wire.algo.ts:135
+    // const inception = op.extractUint32(data, 12)
+    frame_dig -4
+    pushint 12
+    extract_uint32
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:136
+    // loggedAssert(inception <= now && now <= expiration, errTime)
+    frame_dig -1
+    <=
+    bz parseSignedData_bool_false@5
+    frame_dig -1
+    dig 2
+    <=
+    bz parseSignedData_bool_false@5
+    intc_1 // 1
+
+parseSignedData_bool_merge@6:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:136
+    // loggedAssert(inception <= now && now <= expiration, errTime)
+    bnz parseSignedData_after_assert@8
+    pushbytes "ERR:TIM"
+    log
+    err // ERR:TIM
+
+parseSignedData_after_assert@8:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:137
+    // const [signerEnd] = readName(data, RRSIG_FIXED)
+    frame_dig -4
+    pushint 18
+    callsub readName
+    pop
+    dup
+    cover 3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:138
+    // const [owner, ownerLabels, indexed, records] = walkRRset(data, signerEnd, rrtype, index, rrtype === TYPE_TXT)
+    frame_dig -3
+    pushint 16
+    ==
+    frame_dig -4
+    uncover 2
+    frame_dig -3
+    frame_dig -2
+    uncover 4
+    callsub walkRRset
+    cover 6
+    cover 5
+    dup
+    cover 2
+    cover 5
+    swap
+    // smart_contracts/dnssec_oracle/wire.algo.ts:139
+    // loggedAssert(labels === ownerLabels, errLabels)
+    uncover 8
+    ==
+    bnz parseSignedData_after_assert@10
+    pushbytes "ERR:LBL"
+    log
+    err // ERR:LBL
+
+parseSignedData_after_assert@10:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:141
+    // algorithm: op.getByte(data, 2),
+    frame_dig -4
+    intc_2 // 2
+    getbyte
+    // smart_contracts/dnssec_oracle/wire.algo.ts:144
+    // signer: op.extract(data, RRSIG_FIXED, signerEnd - RRSIG_FIXED),
+    uncover 4
+    dup
+    pushint 18
+    -
+    frame_dig -4
+    pushint 18
+    uncover 2
+    extract3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:147
+    // rrset: op.extract(data, signerEnd, data.length - signerEnd),
+    frame_dig -4
+    len
+    dig 2
+    -
+    frame_dig -4
+    uncover 3
+    uncover 2
+    extract3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:140-150
+    // return {
+    //   algorithm: op.getByte(data, 2),
+    //   inception: inception,
+    //   expiration: expiration,
+    //   signer: op.extract(data, RRSIG_FIXED, signerEnd - RRSIG_FIXED),
+    //   owner: owner,
+    //   ownerLabels: ownerLabels,
+    //   rrset: op.extract(data, signerEnd, data.length - signerEnd),
+    //   indexed: indexed,
+    //   records: records,
+    // }
+    uncover 2
+    uncover 4
+    uncover 5
+    uncover 4
+    uncover 5
+    uncover 6
+    uncover 6
+    uncover 7
+    uncover 8
+    retsub
+
+parseSignedData_bool_false@5:
+    intc_0 // 0
+    b parseSignedData_bool_merge@6
+
+
+// smart_contracts/dnssec_oracle/wire.algo.ts::isAncestor(ancestor: bytes, name: bytes, proper: uint64) -> uint64:
+isAncestor:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:158
+    // export function isAncestor(ancestor: bytes, name: bytes, proper: boolean): boolean {
+    proto 3 1
+    bytec_0 // ""
+    // smart_contracts/dnssec_oracle/wire.algo.ts:159
+    // let at: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:160
+    // if (proper) {
+    frame_dig -1
+    bz isAncestor_while_top@5
+    // smart_contracts/dnssec_oracle/wire.algo.ts:161
+    // if (name.length === 1) return false
+    frame_dig -2
+    len
+    intc_1 // 1
+    ==
+    bz isAncestor_after_if_else@3
+    intc_0 // 0
+    frame_bury 0
+    retsub
+
+isAncestor_after_if_else@3:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:162
+    // at = op.getByte(name, 0) + 1
+    frame_dig -2
+    intc_0 // 0
+    getbyte
+    intc_1 // 1
+    +
+    frame_bury 1
+
+isAncestor_while_top@5:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:165
+    // while (name.length - at > ancestor.length) {
+    frame_dig -2
+    len
+    frame_dig 1
+    -
+    dup
+    frame_dig -3
+    len
+    dup
+    frame_bury 0
+    >
+    // smart_contracts/dnssec_oracle/wire.algo.ts:165-167
+    // while (name.length - at > ancestor.length) {
+    //   at += op.getByte(name, at) + 1
+    // }
+    bz isAncestor_after_while@7
+    pop
+    // smart_contracts/dnssec_oracle/wire.algo.ts:166
+    // at += op.getByte(name, at) + 1
+    frame_dig -2
+    frame_dig 1
+    dup
+    cover 2
+    getbyte
+    intc_1 // 1
+    +
+    +
+    frame_bury 1
+    b isAncestor_while_top@5
+
+isAncestor_after_while@7:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:168
+    // return name.length - at === ancestor.length && op.extract(name, at, ancestor.length) === ancestor
+    frame_dig 0
+    ==
+    bz isAncestor_bool_false@10
+    frame_dig -2
+    frame_dig 1
+    frame_dig 0
+    extract3
+    frame_dig -3
+    ==
+    bz isAncestor_bool_false@10
+    intc_1 // 1
+
+isAncestor_bool_merge@11:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:168
+    // return name.length - at === ancestor.length && op.extract(name, at, ancestor.length) === ancestor
+    frame_bury 0
+    retsub
+
+isAncestor_bool_false@10:
+    intc_0 // 0
+    b isAncestor_bool_merge@11
+
+
+// smart_contracts/dnssec_oracle/wire.algo.ts::tldOf(name: bytes) -> bytes:
+tldOf:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:172
+    // export function tldOf(name: bytes): bytes {
+    proto 1 1
+    // smart_contracts/dnssec_oracle/wire.algo.ts:173
+    // let at: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:174
+    // let length = op.getByte(name, 0)
+    frame_dig -1
+    intc_0 // 0
+    getbyte
+
+tldOf_while_top@1:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:175
+    // while (at + length + 2 < name.length) {
+    dup2
+    +
+    intc_2 // 2
+    +
+    frame_dig -1
+    len
+    <
+    // smart_contracts/dnssec_oracle/wire.algo.ts:175-178
+    // while (at + length + 2 < name.length) {
+    //   at += length + 1
+    //   length = op.getByte(name, at)
+    // }
+    bz tldOf_after_while@3
+    // smart_contracts/dnssec_oracle/wire.algo.ts:176
+    // at += length + 1
+    intc_1 // 1
+    +
+    +
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:177
+    // length = op.getByte(name, at)
+    frame_dig -1
+    swap
+    getbyte
+    b tldOf_while_top@1
+
+tldOf_after_while@3:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:179
+    // return op.extract(name, at + 1, length)
+    swap
+    intc_1 // 1
+    +
+    frame_dig -1
+    swap
+    uncover 2
+    extract3
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::monMul(a: bytes, b: bytes, n: bytes, nInv: bytes) -> bytes:
+monMul:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:286
+    // function monMul(a: bytes, b: bytes, n: bytes, nInv: biguint): bytes {
+    proto 4 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:287
+    // const len = n.length
+    frame_dig -2
+    len
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:288
+    // const bottom: uint64 = len - LIMB
+    dup
+    intc_3 // 64
+    -
+    swap
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:289
+    // let t = op.bzero(len)
+    dup
+    bzero
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:290
+    // let top = BigUint(0)
+    bytec_0 // 0x
+
+monMul_while_top@1:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:292
+    // for (let i = len; i > 0; ) {
+    dig 1
+    bz monMul_after_while@6
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:293
+    // i -= LIMB
+    swap
+    intc_3 // 64
+    -
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:294
+    // const bi = BigUint(op.extract(b, i, LIMB))
+    frame_dig -3
+    swap
+    intc_3 // 64
+    extract3
+    dup
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:295
+    // let r = mac(BigUint(op.extract(t, bottom, LIMB)), BigUint(op.extract(a, bottom, LIMB)), bi, BigUint(0))
+    frame_dig 0
+    dig 4
+    dup
+    cover 2
+    intc_3 // 64
+    extract3
+    frame_dig -4
+    dig 2
+    intc_3 // 64
+    extract3
+    uncover 3
+    bytec_0 // 0x
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    dup
+    extract 64 0
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:337
+    // return BigUint(op.extract(r, 0, LIMB))
+    extract 0 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:298
+    // const m = low(s * nInv)
+    dup
+    frame_dig -1
+    b*
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:347
+    // return BigUint(op.extract(pad128(x), LIMB, LIMB))
+    callsub pad128
+    extract 64 64
+    dup
+    cover 7
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:300
+    // let c2 = hi(mac(s, m, BigUint(op.extract(n, bottom, LIMB)), BigUint(0)))
+    frame_dig -2
+    dig 3
+    intc_3 // 64
+    extract3
+    bytec_0 // 0x
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    extract 64 0
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:301
+    // let next = Bytes()
+    bytec_0 // 0x
+    cover 4
+    swap
+
+monMul_while_top@3:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:302
+    // for (let j = bottom; j > 0; ) {
+    dig 1
+    bz monMul_after_while@5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:303
+    // j -= LIMB
+    swap
+    intc_3 // 64
+    -
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:304
+    // r = mac(BigUint(op.extract(t, j, LIMB)), BigUint(op.extract(a, j, LIMB)), bi, c1)
+    frame_dig 0
+    dig 1
+    intc_3 // 64
+    extract3
+    frame_dig -4
+    dig 2
+    intc_3 // 64
+    extract3
+    dig 11
+    uncover 7
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    dup
+    extract 64 0
+    cover 5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:337
+    // return BigUint(op.extract(r, 0, LIMB))
+    extract 0 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:306
+    // r = mac(lo(r), m, BigUint(op.extract(n, j, LIMB)), c2)
+    frame_dig -2
+    uncover 2
+    intc_3 // 64
+    extract3
+    dig 9
+    swap
+    uncover 8
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    dup
+    extract 64 0
+    cover 6
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:308
+    // next = op.extract(r, 0, LIMB).concat(next)
+    extract 0 64
+    uncover 5
+    concat
+    cover 4
+    b monMul_while_top@3
+
+monMul_after_while@5:
+    bury 1
+    uncover 6
+    pop
+    uncover 6
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:310
+    // r = mac(c1, top, BigUint(1), c2)
+    uncover 2
+    swap
+    bytec_2 // 0x01
+    uncover 5
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:311
+    // t = op.extract(r, 0, LIMB).concat(next)
+    dup
+    extract 0 64
+    uncover 3
+    concat
+    frame_bury 0
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    extract 64 0
+    b monMul_while_top@1
+
+monMul_after_while@6:
+    bury 1
+    bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:314
+    // return top > BigUint(0) || gte(t, n) ? sub(t, n) : t
+    bytec_0 // 0x
+    b>
+    bnz monMul_ternary_true@8
+    frame_dig 0
+    frame_dig -2
+    callsub gte
+    bz monMul_ternary_false@9
+
+monMul_ternary_true@8:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:314
+    // return top > BigUint(0) || gte(t, n) ? sub(t, n) : t
+    frame_dig 0
+    frame_dig -2
+    callsub sub
+
+monMul_ternary_merge@10:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:314
+    // return top > BigUint(0) || gte(t, n) ? sub(t, n) : t
+    swap
+    retsub
+
+monMul_ternary_false@9:
+    frame_dig 0
+    b monMul_ternary_merge@10
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::mac(t: bytes, x: bytes, y: bytes, c: bytes) -> bytes:
+mac:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:324
+    // function mac(t: biguint, x: biguint, y: biguint, c: biguint): bytes {
+    proto 4 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:325
+    // const p = pad128(x * y)
+    frame_dig -3
+    frame_dig -2
+    b*
+    callsub pad128
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:326
+    // let u = Bytes(BigUint(op.extract(p, LIMB, LIMB)) + t)
+    dup
+    extract 64 64
+    frame_dig -4
+    b+
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:327
+    // u = op.bzero(LIMB + 1 - u.length).concat(u)
+    dup
+    len
+    pushint 65
+    swap
+    -
+    bzero
+    swap
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:328
+    // let v = Bytes(BigUint(op.extract(u, 1, LIMB)) + c)
+    dup
+    extract 1 64
+    frame_dig -1
+    b+
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:329
+    // v = op.bzero(LIMB + 1 - v.length).concat(v)
+    dup
+    len
+    pushint 65
+    swap
+    -
+    bzero
+    swap
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:330-331
+    // return op
+    //   .extract(v, 1, LIMB)
+    dup
+    extract 1 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:332
+    // .concat(Bytes(BigUint(op.extract(p, 0, LIMB)) + BigUint(op.getByte(u, 0) + op.getByte(v, 0))))
+    uncover 3
+    extract 0 64
+    uncover 3
+    intc_0 // 0
+    getbyte
+    uncover 3
+    intc_0 // 0
+    getbyte
+    +
+    itob
+    b+
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:330-332
+    // return op
+    //   .extract(v, 1, LIMB)
+    //   .concat(Bytes(BigUint(op.extract(p, 0, LIMB)) + BigUint(op.getByte(u, 0) + op.getByte(v, 0))))
+    concat
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::pad128(x: bytes) -> bytes:
+pad128:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:351
+    // function pad128(x: biguint): bytes {
+    proto 1 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:353
+    // return op.bzero(2 * LIMB - b.length).concat(b)
+    frame_dig -1
+    len
+    pushint 128
+    swap
+    -
+    bzero
+    frame_dig -1
+    concat
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::add(x: bytes, y: bytes) -> bytes:
+add:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:366
+    // function add(x: bytes, y: bytes): [biguint, bytes] {
+    proto 2 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:367
+    // let carry = BigUint(0)
+    bytec_0 // 0x
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:368
+    // let sum = Bytes()
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:369
+    // for (let j: uint64 = 0; j < x.length / LIMB; j++) {
+    intc_0 // 0
+
+add_while_top@1:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:369
+    // for (let j: uint64 = 0; j < x.length / LIMB; j++) {
+    frame_dig -2
+    len
+    intc_3 // 64
+    /
+    dig 1
+    >
+    bz add_after_while@3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:370
+    // const r = mac(limb(x, j), limb(y, j), BigUint(1), carry)
+    frame_dig -2
+    dig 1
+    callsub limb
+    frame_dig -1
+    dig 2
+    callsub limb
+    bytec_2 // 0x01
+    uncover 5
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    dup
+    extract 64 0
+    cover 3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:372
+    // sum = op.extract(r, 0, LIMB).concat(sum)
+    extract 0 64
+    uncover 2
+    concat
+    swap
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:369
+    // for (let j: uint64 = 0; j < x.length / LIMB; j++) {
+    intc_1 // 1
+    +
+    b add_while_top@1
+
+add_after_while@3:
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:374
+    // return [carry, sum]
+    swap
+    dup
+    len
+    intc_3 // 64
+    <=
+    assert // overflow
+    intc_3 // 64
+    bzero
+    b|
+    swap
+    dup
+    len
+    itob
+    extract 6 2
+    swap
+    concat
+    swap
+    pushbytes 0x0042
+    concat
+    swap
+    concat
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::sub(x: bytes, n: bytes) -> bytes:
+sub:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:378
+    // function sub(x: bytes, n: bytes): bytes {
+    proto 2 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:385
+    // return n.bitwiseInvert().bitwiseOr(Bytes.fromHex('01'))
+    frame_dig -1
+    b~
+    bytec_2 // 0x01
+    b|
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:379
+    // const [, difference] = add(x, negate(n))
+    frame_dig -2
+    swap
+    callsub add
+    dup
+    intc_3 // 64
+    extract_uint16
+    dig 1
+    len
+    substring3
+    extract 2 0
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:380
+    // return difference
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::gte(x: bytes, y: bytes) -> uint64:
+gte:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:389
+    // function gte(x: bytes, y: bytes): boolean {
+    proto 2 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:390
+    // for (let offset: uint64 = 0; offset < x.length; offset += LIMB) {
+    intc_0 // 0
+
+gte_while_top@1:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:390
+    // for (let offset: uint64 = 0; offset < x.length; offset += LIMB) {
+    frame_dig -2
+    len
+    dig 1
+    >
+    bz gte_after_while@5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:391
+    // const xl = BigUint(op.extract(x, offset, LIMB))
+    frame_dig -2
+    dig 1
+    dup
+    cover 2
+    intc_3 // 64
+    extract3
+    dup
+    cover 2
+    cover 3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:392
+    // const yl = BigUint(op.extract(y, offset, LIMB))
+    frame_dig -1
+    swap
+    intc_3 // 64
+    extract3
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:393
+    // if (xl !== yl) {
+    b!=
+    bz gte_after_if_else@4
+    bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:394
+    // return xl > yl
+    b>
+    retsub
+
+gte_after_if_else@4:
+    pop
+    bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:390
+    // for (let offset: uint64 = 0; offset < x.length; offset += LIMB) {
+    intc_3 // 64
+    +
+    b gte_while_top@1
+
+gte_after_while@5:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:397
+    // return true
+    intc_1 // 1
+    swap
+    retsub
+
+
+// @d13co/puya-ts-utils/src/rsa.algo.ts::limb(x: bytes, i: uint64) -> bytes:
+limb:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:401
+    // function limb(x: bytes, i: uint64): biguint {
+    proto 2 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:402
+    // return BigUint(op.extract(x, x.length - (i + 1) * LIMB, LIMB))
+    frame_dig -2
+    len
+    frame_dig -1
+    intc_1 // 1
+    +
+    intc_3 // 64
+    *
+    -
+    frame_dig -2
+    swap
+    intc_3 // 64
+    extract3
+    retsub
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::checkKey(rdata: bytes, algorithm: uint64) -> bytes, uint64:
+checkKey:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:389
+    // function checkKey(rdata: bytes, algorithm: uint64): readonly [bytes, uint64] {
+    proto 2 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:390
+    // const flags = op.extractUint16(rdata, 0)
+    frame_dig -2
+    intc_0 // 0
+    extract_uint16
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:391
+    // loggedAssert((flags & FLAG_ZONE) !== 0 && (flags & FLAG_REVOKE) === 0, errKeyFlags)
+    pushint 256
+    &
+    bz checkKey_bool_false@3
+    frame_dig 0
+    pushint 128
+    &
+    bnz checkKey_bool_false@3
+    intc_1 // 1
+
+checkKey_bool_merge@4:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:391
+    // loggedAssert((flags & FLAG_ZONE) !== 0 && (flags & FLAG_REVOKE) === 0, errKeyFlags)
+    bnz checkKey_after_assert@6
+    pushbytes "ERR:KFL"
+    log
+    err // ERR:KFL
+
+checkKey_after_assert@6:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:392
+    // loggedAssert(op.getByte(rdata, 2) === 3, errProtocol)
+    frame_dig -2
+    intc_2 // 2
+    getbyte
+    pushint 3
+    ==
+    bnz checkKey_after_assert@8
+    pushbytes "ERR:PRO"
+    log
+    err // ERR:PRO
+
+checkKey_after_assert@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:393
+    // loggedAssert(op.getByte(rdata, 3) === algorithm, errAlgorithm)
+    frame_dig -2
+    pushint 3
+    getbyte
+    frame_dig -1
+    ==
+    bnz checkKey_after_assert@10
+    bytec 13 // "ERR:ALG"
+    log
+    err // ERR:ALG
+
+checkKey_after_assert@10:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:394
+    // const publicKey = op.extract(rdata, 4, rdata.length - 4)
+    frame_dig -2
+    len
+    pushint 4
+    -
+    frame_dig -2
+    pushint 4
+    uncover 2
+    extract3
+    // smart_contracts/dnssec_oracle/contract.algo.ts:395
+    // if (algorithm === ALG_ECDSAP256SHA256) {
+    frame_dig -1
+    pushint 13
+    ==
+    bz checkKey_after_if_else@14
+    // smart_contracts/dnssec_oracle/contract.algo.ts:396
+    // loggedAssert(publicKey.length === 64, errEcKey)
+    dup
+    len
+    intc_3 // 64
+    ==
+    bnz checkKey_after_assert@13
+    pushbytes "ERR:ECK"
+    log
+    err // ERR:ECK
+
+checkKey_after_assert@13:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:397
+    // return [publicKey, ECDSA_P256_KEY_BITS]
+    pushint 3072
+    uncover 2
+    retsub
+
+checkKey_after_if_else@14:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:399
+    // loggedAssert(algorithm === ALG_RSASHA256, errAlgorithm)
+    frame_dig -1
+    pushint 8
+    ==
+    bnz checkKey_after_assert@16
+    bytec 13 // "ERR:ALG"
+    log
+    err // ERR:ALG
+
+checkKey_after_assert@16:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:400
+    // loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
+    dup
+    len
+    dup
+    cover 2
+    pushint 4
+    >
+    bz checkKey_bool_false@19
+    dup
+    extract 0 4
+    pushbytes 0x03010001
+    ==
+    bz checkKey_bool_false@19
+    intc_1 // 1
+
+checkKey_bool_merge@20:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:400
+    // loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
+    bnz checkKey_after_assert@22
+    pushbytes "ERR:EXP"
+    log
+    err // ERR:EXP
+
+checkKey_after_assert@22:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:401
+    // const first = op.getByte(publicKey, 4)
+    dup
+    pushint 4
+    getbyte
+    // smart_contracts/dnssec_oracle/contract.algo.ts:402
+    // const bits: uint64 = (publicKey.length - 5) * 8 + op.bitLength(first)
+    uncover 2
+    pushint 5
+    -
+    pushint 8
+    *
+    dig 1
+    bitlen
+    +
+    cover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:403
+    // loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
+    bz checkKey_bool_false@26
+    dig 1
+    pushint 1024
+    >=
+    bz checkKey_bool_false@26
+    dig 1
+    pushint 2048
+    <=
+    bz checkKey_bool_false@26
+    intc_1 // 1
+
+checkKey_bool_merge@27:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:403
+    // loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
+    bnz checkKey_after_assert@29
+    pushbytes "ERR:MOD"
+    log
+    err // ERR:MOD
+
+checkKey_after_assert@29:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:404
+    // return [publicKey, bits]
+    swap
+    uncover 2
+    retsub
+
+checkKey_bool_false@26:
+    intc_0 // 0
+    b checkKey_bool_merge@27
+
+checkKey_bool_false@19:
+    intc_0 // 0
+    b checkKey_bool_merge@20
+
+checkKey_bool_false@3:
+    intc_0 // 0
+    b checkKey_bool_merge@4
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uint64, publicKey: bytes) -> void:
+verify:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:408
+    // function verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uint64, publicKey: bytes): void {
+    proto 5 0
+    intc_0 // 0
+    bytec_0 // ""
+    dupn 4
+    // smart_contracts/dnssec_oracle/contract.algo.ts:409
+    // const digest = op.sha256(signedData)
+    frame_dig -5
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:410
+    // if (algorithm === ALG_ECDSAP256SHA256) {
+    frame_dig -2
+    pushint 13
+    ==
+    bz verify_after_if_else@8
+    // smart_contracts/dnssec_oracle/contract.algo.ts:411
+    // loggedAssert(signature.length === 64, errSigLength)
+    frame_dig -4
+    len
+    intc_3 // 64
+    ==
+    bnz verify_after_assert@3
+    bytec 14 // "ERR:SLN"
+    log
+    err // ERR:SLN
+
+verify_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:412
+    // let s = BigUint(op.extract(signature, 32, 32))
+    frame_dig -4
+    extract 32 32
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:413
+    // if (s > P256_HALF_N) s = P256_N - s
+    pushbytes 0x7fffffff800000007fffffffffffffffde737d56d38bcf4279dce5617e3192a8
+    b>
+    bz verify_after_if_else@5
+    pushbytes 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+    swap
+    b-
+
+verify_after_if_else@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:414
+    // const low = op.bzero(32).bitwiseOr(Bytes(s))
+    pushint 32
+    bzero
+    b|
+    // smart_contracts/dnssec_oracle/contract.algo.ts:418
+    // op.extract(signature, 0, 32),
+    frame_dig -4
+    extract 0 32
+    // smart_contracts/dnssec_oracle/contract.algo.ts:420
+    // op.extract(publicKey, 0, 32),
+    frame_dig -1
+    extract 0 32
+    // smart_contracts/dnssec_oracle/contract.algo.ts:421
+    // op.extract(publicKey, 32, 32),
+    frame_dig -1
+    extract 32 32
+    // smart_contracts/dnssec_oracle/contract.algo.ts:415-422
+    // const valid = op.ecdsaVerify(
+    //   op.Ecdsa.Secp256r1,
+    //   digest,
+    //   op.extract(signature, 0, 32),
+    //   low,
+    //   op.extract(publicKey, 0, 32),
+    //   op.extract(publicKey, 32, 32),
+    // )
+    uncover 4
+    uncover 3
+    cover 4
+    cover 4
+    ecdsa_verify Secp256r1
+    // smart_contracts/dnssec_oracle/contract.algo.ts:423
+    // loggedAssert(valid, errSignature)
+    bnz verify_after_assert@7
+    bytec 15 // "ERR:SIG"
+    log
+    err // ERR:SIG
+
+verify_after_assert@7:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:424
+    // return
+    retsub
+
+verify_after_if_else@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:426
+    // const modulus = op.extract(publicKey, 4, publicKey.length - 4)
+    frame_dig -1
+    len
+    pushint 4
+    -
+    frame_dig -1
+    pushint 4
+    uncover 2
+    extract3
+    dup
+    frame_bury 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:427
+    // loggedAssert(signature.length === modulus.length, errSigLength)
+    frame_dig -4
+    len
+    dup
+    cover 2
+    cover 3
+    len
+    dup
+    frame_bury 2
+    ==
+    dup
+    bnz verify_after_assert@10
+    bytec 14 // "ERR:SLN"
+    log
+    err // ERR:SLN
+
+verify_after_assert@10:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:428
+    // loggedAssert(hint.length > 0, errHint)
+    frame_dig -3
+    len
+    dup
+    cover 3
+    bnz verify_after_assert@12
+    pushbytes "ERR:HNT"
+    log
+    err // ERR:HNT
+
+verify_after_assert@12:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:429
+    // loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
+    frame_dig -1
+    extract 1 3
+    cover 3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:115
+    // assert(modulus.length >= digestInfo.length + digest.length + 11, errModulusShort)
+    frame_dig 2
+    dup
+    pushint 62
+    >=
+    assert // ERR:MODSHORT
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:142
+    // assert(length <= MAX_MODULUS, errModulusLong)
+    dup
+    pushint 512
+    <=
+    assert // ERR:MODLONG
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:143
+    // assert(length > 0 && op.getByte(modulus, 0) !== 0, errModulusZero)
+    bz verify_bool_false@18
+    frame_dig 0
+    intc_0 // 0
+    getbyte
+    bz verify_bool_false@18
+    intc_1 // 1
+
+verify_bool_merge@19:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:143
+    // assert(length > 0 && op.getByte(modulus, 0) !== 0, errModulusZero)
+    assert // ERR:MODZERO
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:144
+    // assert(signature.length === length, errSignatureLength)
+    assert // ERR:SIGLEN
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:145
+    // assert(exponent.length > 0 && exponent.length <= 4, errExponentLength)
+    dig 2
+    len
+    dup
+    frame_bury 5
+    bz verify_bool_false@22
+    frame_dig 5
+    pushint 4
+    <=
+    bz verify_bool_false@22
+    intc_1 // 1
+
+verify_bool_merge@23:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:145
+    // assert(exponent.length > 0 && exponent.length <= 4, errExponentLength)
+    assert // ERR:EXPLEN
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:146
+    // const e = op.btoi(exponent)
+    uncover 2
+    btoi
+    dup
+    frame_bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:147
+    // assert(e >= 3 && e % 2 === 1, errExponent)
+    pushint 3
+    >=
+    bz verify_bool_false@26
+    frame_dig 1
+    intc_2 // 2
+    %
+    intc_1 // 1
+    ==
+    bz verify_bool_false@26
+    intc_1 // 1
+
+verify_bool_merge@27:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:147
+    // assert(e >= 3 && e % 2 === 1, errExponent)
+    assert // ERR:EXPVAL
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:150
+    // const width: uint64 = ((length + LIMB - 1) / LIMB) * LIMB
+    frame_dig 2
+    dup
+    intc_3 // 64
+    +
+    intc_1 // 1
+    -
+    intc_3 // 64
+    /
+    intc_3 // 64
+    *
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:407
+    // return op.bzero(width - x.length).concat(x)
+    dup
+    uncover 2
+    -
+    bzero
+    frame_dig 0
+    concat
+    dup
+    cover 2
+    cover 4
+    dup
+    uncover 6
+    -
+    bzero
+    frame_dig -4
+    concat
+    dup
+    cover 2
+    cover 6
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:153
+    // assert(op.getBit(n, width * 8 - 1), errModulusEven)
+    pushint 8
+    *
+    intc_1 // 1
+    -
+    dig 2
+    swap
+    getbit
+    assert // ERR:MODEVEN
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:154
+    // assert(!gte(s, n), errSignatureRange)
+    dig 1
+    callsub gte
+    !
+    assert // ERR:SIGRANGE
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:156
+    // const nInv = negInverse(limb(n, 0))
+    intc_0 // 0
+    callsub limb
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:358
+    // let m = BigUint(1)
+    bytec_2 // 0x01
+    cover 5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:359
+    // for (let i: uint64 = 0; i < 9; i++) {
+    intc_0 // 0
+
+verify_while_top@28:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:359
+    // for (let i: uint64 = 0; i < 9; i++) {
+    dup
+    pushint 9
+    <
+    bz verify_after_while@30
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:360
+    // m = low(m * low(low(n0 * m) + BigUint(2)))
+    dig 3
+    uncover 7
+    dup
+    cover 2
+    b*
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:347
+    // return BigUint(op.extract(pad128(x), LIMB, LIMB))
+    callsub pad128
+    extract 64 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:360
+    // m = low(m * low(low(n0 * m) + BigUint(2)))
+    pushbytes 0x02
+    b+
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:347
+    // return BigUint(op.extract(pad128(x), LIMB, LIMB))
+    callsub pad128
+    extract 64 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:360
+    // m = low(m * low(low(n0 * m) + BigUint(2)))
+    b*
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:347
+    // return BigUint(op.extract(pad128(x), LIMB, LIMB))
+    callsub pad128
+    extract 64 64
+    cover 6
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:359
+    // for (let i: uint64 = 0; i < 9; i++) {
+    intc_1 // 1
+    +
+    b verify_while_top@28
+
+verify_after_while@30:
+    pop
+    uncover 2
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:157
+    // const base = monMul(s, hint.length === 0 ? computeRSquared(n, nInv) : checkHint(hint, n, nInv), n, nInv)
+    dig 1
+    bnz verify_ternary_false@42
+    bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:270
+    // const bits = op.bitLength(n)
+    dig 1
+    dup
+    bitlen
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:271
+    // let x = op.setBit(op.bzero(n.length), n.length * 8 - bits, 1)
+    swap
+    len
+    dup
+    frame_bury 3
+    dup
+    bzero
+    swap
+    pushint 8
+    *
+    dup
+    frame_bury 4
+    dig 2
+    -
+    intc_1 // 1
+    setbit
+
+verify_while_top@32:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:272
+    // for (let i = bits; i <= n.length * 8 + n.length / 16; i++) {
+    frame_dig 3
+    pushint 16
+    /
+    frame_dig 4
+    +
+    dig 2
+    >=
+    bz verify_after_while@38
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:273
+    // const [carry, twice] = add(x, x)
+    dup
+    callsub add
+    dup
+    extract 0 64
+    dig 1
+    intc_3 // 64
+    extract_uint16
+    dig 2
+    len
+    uncover 3
+    cover 2
+    substring3
+    extract 2 0
+    swap
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:274
+    // x = carry > BigUint(0) || gte(twice, n) ? sub(twice, n) : twice
+    bytec_0 // 0x
+    b>
+    bnz verify_ternary_true@35
+    dup
+    dig 4
+    callsub gte
+    bz verify_ternary_false@36
+
+verify_ternary_true@35:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:274
+    // x = carry > BigUint(0) || gte(twice, n) ? sub(twice, n) : twice
+    dig 3
+    callsub sub
+
+verify_ternary_merge@37:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:272
+    // for (let i = bits; i <= n.length * 8 + n.length / 16; i++) {
+    swap
+    intc_1 // 1
+    +
+    swap
+    b verify_while_top@32
+
+verify_ternary_false@36:
+    b verify_ternary_merge@37
+
+verify_after_while@38:
+    bury 1
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:276
+    // for (let i: uint64 = 0; i < 7; i++) {
+    intc_0 // 0
+    cover 2
+
+verify_while_top@39:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:276
+    // for (let i: uint64 = 0; i < 7; i++) {
+    dig 2
+    pushint 7
+    <
+    bz verify_after_while@41
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:277
+    // x = monMul(x, x, n, nInv)
+    dup
+    dig 4
+    dig 7
+    callsub monMul
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:276
+    // for (let i: uint64 = 0; i < 7; i++) {
+    uncover 2
+    intc_1 // 1
+    +
+    cover 2
+    b verify_while_top@39
+
+verify_after_while@41:
+    uncover 2
+    pop
+
+verify_ternary_merge@50:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:157
+    // const base = monMul(s, hint.length === 0 ? computeRSquared(n, nInv) : checkHint(hint, n, nInv), n, nInv)
+    uncover 3
+    dup
+    uncover 2
+    uncover 4
+    dup
+    cover 3
+    uncover 6
+    dup
+    cover 4
+    callsub monMul
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:160
+    // .itob(op.bitLength(e) - 1)
+    frame_dig 1
+    dup
+    bitlen
+    intc_1 // 1
+    -
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-160
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    itob
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:161
+    // .concat(op.itob(e))
+    swap
+    itob
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-161
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:162
+    // .concat(op.itob(length))
+    frame_dig 2
+    itob
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-162
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:407
+    // return op.bzero(width - x.length).concat(x)
+    dig 2
+    len
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:163
+    // .concat(pad(Bytes(nInv), LIMB))
+    intc_3 // 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:407
+    // return op.bzero(width - x.length).concat(x)
+    swap
+    -
+    bzero
+    uncover 3
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-163
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    //   .concat(pad(Bytes(nInv), LIMB))
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-164
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    //   .concat(pad(Bytes(nInv), LIMB))
+    //   .concat(n)
+    uncover 2
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-165
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    //   .concat(pad(Bytes(nInv), LIMB))
+    //   .concat(n)
+    //   .concat(s)
+    uncover 2
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-166
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    //   .concat(pad(Bytes(nInv), LIMB))
+    //   .concat(n)
+    //   .concat(s)
+    //   .concat(base)
+    dig 1
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:159-167
+    // return op
+    //   .itob(op.bitLength(e) - 1)
+    //   .concat(op.itob(e))
+    //   .concat(op.itob(length))
+    //   .concat(pad(Bytes(nInv), LIMB))
+    //   .concat(n)
+    //   .concat(s)
+    //   .concat(base)
+    //   .concat(base)
+    swap
+    concat
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:179
+    // let remaining = op.extractUint64(state, 0)
+    dup
+    intc_0 // 0
+    extract_uint64
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:180
+    // const e = op.extractUint64(state, 8)
+    dup
+    pushint 8
+    extract_uint64
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:181
+    // const nInv = BigUint(op.extract(state, 24, LIMB))
+    dup
+    extract 24 64
+    cover 5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:182
+    // const width: uint64 = (state.length - HEADER) / 4
+    dup
+    len
+    pushint 88
+    -
+    pushint 4
+    /
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:183
+    // const n = op.extract(state, HEADER, width)
+    dig 1
+    pushint 88
+    dig 2
+    extract3
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:184
+    // const s = op.extract(state, HEADER + width, width)
+    pushint 88
+    dig 1
+    +
+    dig 2
+    swap
+    dig 2
+    extract3
+    cover 5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:185
+    // const base = op.extract(state, HEADER + 2 * width, width)
+    intc_2 // 2
+    dig 1
+    *
+    pushint 88
+    +
+    dig 2
+    swap
+    dig 2
+    extract3
+    cover 5
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:186
+    // let acc = op.extract(state, HEADER + 3 * width, width)
+    pushint 3
+    dig 1
+    *
+    pushint 88
+    +
+    dup
+    cover 6
+    swap
+    extract3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:187
+    // for (let done: uint64 = 0; done < bits && remaining > 0; done++) {
+    intc_0 // 0
+
+verify_while_top@53:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:187
+    // for (let done: uint64 = 0; done < bits && remaining > 0; done++) {
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:116
+    // return rsaFinish(rsaStep(rsaStart(signature, modulus, exponent, hint), ALL_BITS), digest, modulus, exponent, digestInfo)
+    pushint 32
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:187
+    // for (let done: uint64 = 0; done < bits && remaining > 0; done++) {
+    <
+    bz verify_after_while@61
+    dig 3
+    bz verify_after_while@61
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:188
+    // remaining--
+    uncover 3
+    intc_1 // 1
+    -
+    dup
+    cover 4
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:189
+    // acc = monMul(acc, acc, n, nInv)
+    uncover 2
+    dup
+    dig 6
+    dig 13
+    callsub monMul
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:190
+    // if (remaining === 0) {
+    bnz verify_else_body@57
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:191
+    // acc = monMul(acc, s, n, nInv)
+    swap
+    dig 7
+    dig 5
+    dig 12
+    callsub monMul
+    swap
+
+verify_after_if_else@60:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:187
+    // for (let done: uint64 = 0; done < bits && remaining > 0; done++) {
+    intc_1 // 1
+    +
+    b verify_while_top@53
+
+verify_else_body@57:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:192
+    // } else if (op.getBit(e, remaining)) {
+    dig 9
+    dig 4
+    getbit
+    bz verify_after_if_else@60
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:193
+    // acc = monMul(acc, base, n, nInv)
+    swap
+    dig 6
+    dig 5
+    dig 12
+    callsub monMul
+    swap
+    b verify_after_if_else@60
+
+verify_after_while@61:
+    pop
+    uncover 3
+    pop
+    uncover 4
+    pop
+    uncover 4
+    pop
+    uncover 5
+    pop
+    uncover 5
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:196
+    // return op.replace(op.replace(state, 0, op.itob(remaining)), HEADER + 3 * width, acc)
+    uncover 2
+    itob
+    uncover 4
+    swap
+    replace2 0
+    uncover 3
+    uncover 2
+    replace3
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:213
+    // assert(op.extractUint64(state, 0) === 0, errUnfinished)
+    dup
+    intc_0 // 0
+    extract_uint64
+    !
+    assert // ERR:UNFINISHED
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:214
+    // const length = op.extractUint64(state, 16)
+    dup
+    pushint 16
+    extract_uint64
+    dup
+    cover 2
+    cover 3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:215
+    // const width: uint64 = (state.length - HEADER) / 4
+    len
+    pushint 88
+    -
+    pushint 4
+    /
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:217
+    // modulus.length === length &&
+    frame_dig 2
+    ==
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:217-218
+    // modulus.length === length &&
+    //   op.extract(state, HEADER, width) === pad(modulus, width) &&
+    bz verify_bool_false@68
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:218
+    // op.extract(state, HEADER, width) === pad(modulus, width) &&
+    dig 3
+    pushint 88
+    dig 3
+    dup
+    cover 3
+    extract3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:407
+    // return op.bzero(width - x.length).concat(x)
+    swap
+    frame_dig 2
+    -
+    bzero
+    frame_dig 0
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:218
+    // op.extract(state, HEADER, width) === pad(modulus, width) &&
+    ==
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:217-218
+    // modulus.length === length &&
+    //   op.extract(state, HEADER, width) === pad(modulus, width) &&
+    bz verify_bool_false@68
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:219
+    // exponent.length <= 8 &&
+    frame_dig 5
+    pushint 8
+    <=
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:217-219
+    // modulus.length === length &&
+    //   op.extract(state, HEADER, width) === pad(modulus, width) &&
+    //   exponent.length <= 8 &&
+    bz verify_bool_false@68
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:220
+    // op.btoi(exponent) === op.extractUint64(state, 8),
+    dig 3
+    pushint 8
+    extract_uint64
+    frame_dig 1
+    ==
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:217-220
+    // modulus.length === length &&
+    //   op.extract(state, HEADER, width) === pad(modulus, width) &&
+    //   exponent.length <= 8 &&
+    //   op.btoi(exponent) === op.extractUint64(state, 8),
+    bz verify_bool_false@68
+    intc_1 // 1
+
+verify_bool_merge@69:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:216-222
+    // assert(
+    //   modulus.length === length &&
+    //     op.extract(state, HEADER, width) === pad(modulus, width) &&
+    //     exponent.length <= 8 &&
+    //     op.btoi(exponent) === op.extractUint64(state, 8),
+    //   errKeyMismatch,
+    // )
+    assert // ERR:KEY
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:70
+    // return rsaPkcs1v15Verify(digest, signature, modulus, exponent, SHA256_DIGEST_INFO, hint)
+    pushbytes 0x3031300d060960864801650304020105000420
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:223
+    // const tail = digestInfo.concat(digest)
+    swap
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:224
+    // assert(length >= tail.length + 11, errModulusShort)
+    dup
+    len
+    dup
+    pushint 11
+    +
+    uncover 4
+    dup
+    uncover 2
+    >=
+    assert // ERR:MODSHORT
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:226
+    // .concat(op.bzero<uint64>(length - 3 - tail.length).bitwiseInvert())
+    pushint 3
+    -
+    swap
+    -
+    bzero
+    b~
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:225
+    // const block = Bytes.fromHex('0001')
+    pushbytes 0x0001
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:225-226
+    // const block = Bytes.fromHex('0001')
+    //   .concat(op.bzero<uint64>(length - 3 - tail.length).bitwiseInvert())
+    swap
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:227
+    // .concat(Bytes.fromHex('00'))
+    bytec 9 // 0x00
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:225-227
+    // const block = Bytes.fromHex('0001')
+    //   .concat(op.bzero<uint64>(length - 3 - tail.length).bitwiseInvert())
+    //   .concat(Bytes.fromHex('00'))
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:225-228
+    // const block = Bytes.fromHex('0001')
+    //   .concat(op.bzero<uint64>(length - 3 - tail.length).bitwiseInvert())
+    //   .concat(Bytes.fromHex('00'))
+    //   .concat(tail)
+    swap
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:229
+    // return op.extract(state, HEADER + 3 * width, width) === pad(block, width)
+    pushint 3
+    uncover 2
+    dup
+    cover 2
+    *
+    pushint 88
+    +
+    uncover 3
+    swap
+    dig 2
+    extract3
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:407
+    // return op.bzero(width - x.length).concat(x)
+    dig 2
+    len
+    uncover 2
+    swap
+    -
+    bzero
+    uncover 2
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:229
+    // return op.extract(state, HEADER + 3 * width, width) === pad(block, width)
+    ==
+    // smart_contracts/dnssec_oracle/contract.algo.ts:429
+    // loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
+    bnz verify_after_assert@14
+    bytec 15 // "ERR:SIG"
+    log
+    err // ERR:SIG
+
+verify_after_assert@14:
+    retsub
+
+verify_bool_false@68:
+    intc_0 // 0
+    b verify_bool_merge@69
+
+verify_ternary_false@42:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:240
+    // assert(hint.length > n.length && hint.length <= n.length + LIMB, errHintLength)
+    dig 2
+    len
+    dup
+    dig 3
+    <
+    bz verify_bool_false@45
+    dup
+    intc_3 // 64
+    +
+    dig 3
+    >=
+    bz verify_bool_false@45
+    intc_1 // 1
+
+verify_bool_merge@46:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:240
+    // assert(hint.length > n.length && hint.length <= n.length + LIMB, errHintLength)
+    assert // ERR:HINTLEN
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:241
+    // const h = op.extract(hint, 0, n.length)
+    frame_dig -3
+    intc_0 // 0
+    dig 2
+    dup
+    cover 3
+    extract3
+    dup
+    cover 2
+    cover 7
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:242
+    // const q = BigUint(op.extract(hint, n.length))
+    uncover 4
+    dig 1
+    -
+    frame_dig -3
+    dig 2
+    uncover 2
+    extract3
+    cover 8
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:243
+    // assert(!gte(h, n), errHintRange)
+    dig 1
+    dig 5
+    dup
+    cover 4
+    callsub gte
+    !
+    assert // ERR:HINTRANGE
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:244
+    // const one = op.setBit(op.bzero(n.length), n.length * 8 - 1, 1)
+    dup
+    bzero
+    swap
+    pushint 8
+    *
+    intc_1 // 1
+    -
+    intc_1 // 1
+    setbit
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:245
+    // const rModN = monMul(h, one, n, nInv)
+    uncover 2
+    dig 8
+    callsub monMul
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:247
+    // let carry = BigUint(0)
+    bytec_0 // 0x
+    cover 2
+
+verify_while_top@47:
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:248
+    // for (let i = n.length; i > 0; ) {
+    dup
+    bz verify_after_while@49
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:249
+    // i -= LIMB
+    intc_3 // 64
+    -
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:250
+    // const r = mac(BigUint(op.extract(rModN, i, LIMB)), q, BigUint(op.extract(n, i, LIMB)), carry)
+    dig 4
+    dig 1
+    intc_3 // 64
+    extract3
+    dig 6
+    uncover 2
+    intc_3 // 64
+    extract3
+    dig 10
+    swap
+    uncover 5
+    callsub mac
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:337
+    // return BigUint(op.extract(r, 0, LIMB))
+    dup
+    extract 0 64
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:251
+    // assert(lo(r) === BigUint(0), errHint)
+    bytec_0 // 0x
+    b==
+    assert // ERR:BADHINT
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:342
+    // return BigUint(op.extract(r, LIMB))
+    extract 64 0
+    cover 2
+    b verify_while_top@47
+
+verify_after_while@49:
+    pop
+    uncover 2
+    pop
+    uncover 6
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:254
+    // assert(carry === BigUint(1), errHint)
+    swap
+    bytec_2 // 0x01
+    b==
+    assert // ERR:BADHINT
+    uncover 3
+    b verify_ternary_merge@50
+
+verify_bool_false@45:
+    intc_0 // 0
+    b verify_bool_merge@46
+
+verify_bool_false@26:
+    intc_0 // 0
+    b verify_bool_merge@27
+
+verify_bool_false@22:
+    intc_0 // 0
+    b verify_bool_merge@23
+
+verify_bool_false@18:
+    intc_0 // 0
+    b verify_bool_merge@19
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.addAnchor[routing]() -> void:
+addAnchor:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:136
+    // public addAnchor(dnskeyRdata: bytes): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:137
+    // this.onlyAdmin()
+    callsub onlyAdmin
+    // smart_contracts/dnssec_oracle/contract.algo.ts:138
+    // loggedAssert(this.anchorCount.value === 0, errAnchorSet)
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:103
+    // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
+    bytec 8 // "anchorCount"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:138
+    // loggedAssert(this.anchorCount.value === 0, errAnchorSet)
+    app_global_get_ex
+    assert // check GlobalState exists
+    bz addAnchor_after_assert@3
+    pushbytes "ERR:AST"
+    log
+    err // ERR:AST
+
+addAnchor_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // loggedAssert(op.extractUint16(dnskeyRdata, 0) === ANCHOR_FLAGS, errAnchorFlags)
+    dup
+    intc_0 // 0
+    extract_uint16
+    pushint 257
+    ==
+    bnz addAnchor_after_assert@5
+    pushbytes "ERR:AFL"
+    log
+    err // ERR:AFL
+
+addAnchor_after_assert@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:140
+    // const algorithm = op.getByte(dnskeyRdata, 3)
+    dup
+    pushint 3
+    getbyte
+    // smart_contracts/dnssec_oracle/contract.algo.ts:141
+    // const [publicKey] = checkKey(dnskeyRdata, algorithm)
+    swap
+    dig 1
+    callsub checkKey
+    pop
+    swap
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:380
+    // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
+    swap
+    itob
+    extract 7 1
+    uncover 2
+    concat
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:106
+    // anchors = BoxMap<bytes<32>, bytes>({ keyPrefix: 'a' })
+    pushbytes "a"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:143
+    // this.anchors(anchorKey(algorithm, publicKey)).value = Bytes()
+    dup
+    box_del
+    pop
+    bytec_0 // 0x
+    box_put
+    // smart_contracts/dnssec_oracle/contract.algo.ts:103
+    // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
+    bytec 8 // "anchorCount"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:144
+    // this.anchorCount.value = 1
+    intc_1 // 1
+    app_global_put
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:136
+    // public addAnchor(dnskeyRdata: bytes): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.addTld[routing]() -> void:
+addTld:
+    bytec_0 // ""
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
+    // public addTld(label: bytes): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:150
+    // this.onlyAdmin()
+    callsub onlyAdmin
+    // smart_contracts/dnssec_oracle/contract.algo.ts:151
+    // loggedAssert(label.length > 0 && label.length < 64, errTld)
+    len
+    dup
+    bz addTld_bool_false@4
+    dup
+    intc_3 // 64
+    <
+    bz addTld_bool_false@4
+    intc_1 // 1
+
+addTld_bool_merge@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:151
+    // loggedAssert(label.length > 0 && label.length < 64, errTld)
+    bnz addTld_after_assert@7
+    bytec 16 // "ERR:TLD"
+    log
+    err // ERR:TLD
+
+addTld_after_assert@7:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:153
+    // for (let i: uint64 = 0; i < label.length; i++) {
+    intc_0 // 0
+
+addTld_while_top@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:153
+    // for (let i: uint64 = 0; i < label.length; i++) {
+    dup
+    dig 2
+    <
+    bz addTld_after_while@16
+    // smart_contracts/dnssec_oracle/contract.algo.ts:154
+    // const c = op.getByte(label, i)
+    dig 2
+    dig 1
+    getbyte
+    dup
+    bury 5
+    // smart_contracts/dnssec_oracle/contract.algo.ts:155
+    // loggedAssert(c < 0x41 || c > 0x5a, errTld)
+    pushint 65
+    <
+    bnz addTld_bool_true@11
+    dig 3
+    pushint 90
+    >
+    bz addTld_bool_false@12
+
+addTld_bool_true@11:
+    intc_1 // 1
+
+addTld_bool_merge@13:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:155
+    // loggedAssert(c < 0x41 || c > 0x5a, errTld)
+    bnz addTld_after_assert@15
+    bytec 16 // "ERR:TLD"
+    log
+    err // ERR:TLD
+
+addTld_after_assert@15:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:153
+    // for (let i: uint64 = 0; i < label.length; i++) {
+    intc_1 // 1
+    +
+    b addTld_while_top@8
+
+addTld_bool_false@12:
+    intc_0 // 0
+    b addTld_bool_merge@13
+
+addTld_after_while@16:
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:108
+    // whitelist = BoxMap<bytes, bytes>({ keyPrefix: 'w' })
+    bytec 4 // "w"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:157
+    // loggedAssert(!this.whitelist(label).exists, errTldExists)
+    box_len
+    bury 1
+    bz addTld_after_assert@18
+    pushbytes "ERR:TLX"
+    log
+    err // ERR:TLX
+
+addTld_after_assert@18:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:158
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:159
+    // this.whitelist(label).value = Bytes()
+    swap
+    dup
+    box_del
+    pop
+    bytec_0 // 0x
+    box_put
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
+    // public addTld(label: bytes): void {
+    intc_1 // 1
+    return
+
+addTld_bool_false@4:
+    intc_0 // 0
+    b addTld_bool_merge@5
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.removeTld[routing]() -> void:
+removeTld:
+    bytec_0 // ""
+    // smart_contracts/dnssec_oracle/contract.algo.ts:168
+    // public removeTld(label: bytes): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:169
+    // this.onlyAdmin()
+    callsub onlyAdmin
+    // smart_contracts/dnssec_oracle/contract.algo.ts:108
+    // whitelist = BoxMap<bytes, bytes>({ keyPrefix: 'w' })
+    bytec 4 // "w"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:170
+    // loggedAssert(this.whitelist(label).exists, errMissing)
+    box_len
+    bury 1
+    bnz removeTld_after_assert@3
+    bytec 10 // "ERR:MIS"
+    log
+    err // ERR:MIS
+
+removeTld_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:171
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    bury 3
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:172
+    // this.whitelist(label).delete()
+    box_del
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:173
+    // if (this.userCredits(Txn.sender).exists) this.manageMbrCredits(mbrBefore)
+    txn Sender
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:173
+    // if (this.userCredits(Txn.sender).exists) this.manageMbrCredits(mbrBefore)
+    box_len
+    bury 1
+    bz removeTld_after_if_else@5
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    dig 1
+    callsub settleMbrCredits
+
+removeTld_after_if_else@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:168
+    // public removeTld(label: bytes): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.setAdmin[routing]() -> void:
+setAdmin:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
+    // public setAdmin(newAdmin: Account): void {
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // smart_contracts/dnssec_oracle/contract.algo.ts:178
+    // this.onlyAdmin()
+    callsub onlyAdmin
+    // smart_contracts/dnssec_oracle/contract.algo.ts:102
+    // admin = GlobalState<Account>({ key: 'admin' })
+    bytec 7 // "admin"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:179
+    // this.admin.value = newAdmin
+    swap
+    app_global_put
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
+    // public setAdmin(newAdmin: Account): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveRoot[routing]() -> void:
+proveRoot:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:191
+    // public proveRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 3
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 4
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // smart_contracts/dnssec_oracle/contract.algo.ts:192
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    cover 6
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:193
+    // const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
+    global LatestTimestamp
+    uncover 2
+    pushint 48
+    uncover 3
+    uncover 3
+    callsub parseSignedData
+    cover 11
+    cover 7
+    cover 10
+    cover 9
+    dup
+    cover 5
+    cover 5
+    cover 4
+    cover 4
+    cover 2
+    swap
+    // smart_contracts/dnssec_oracle/contract.algo.ts:194
+    // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
+    bytec 9 // 0x00
+    ==
+    bz proveRoot_bool_false@4
+    dig 2
+    bytec 9 // 0x00
+    ==
+    bz proveRoot_bool_false@4
+    intc_1 // 1
+
+proveRoot_bool_merge@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:194
+    // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
+    bnz proveRoot_after_assert@7
+    bytec 5 // "ERR:SGN"
+    log
+    err // ERR:SGN
+
+proveRoot_after_assert@7:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:195
+    // const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
+    dig 5
+    dig 1
+    dup
+    cover 2
+    callsub checkKey
+    cover 11
+    dup
+    uncover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:380
+    // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
+    itob
+    extract 7 1
+    swap
+    concat
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:106
+    // anchors = BoxMap<bytes<32>, bytes>({ keyPrefix: 'a' })
+    pushbytes "a"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:196
+    // loggedAssert(this.anchors(anchorKey(s.algorithm, publicKey)).exists, errAnchor)
+    box_len
+    bury 1
+    bnz proveRoot_after_assert@9
+    pushbytes "ERR:ANC"
+    log
+    err // ERR:ANC
+
+proveRoot_after_assert@9:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:197
+    // verify(signedData, signature, hint, s.algorithm, publicKey)
+    uncover 9
+    uncover 9
+    uncover 9
+    uncover 4
+    dup
+    cover 4
+    uncover 5
+    callsub verify
+    // smart_contracts/dnssec_oracle/contract.algo.ts:198
+    // this.writeCache(s, TYPE_DNSKEY, s.expiration, bits)
+    swap
+    uncover 3
+    dup
+    cover 3
+    uncover 4
+    uncover 5
+    uncover 8
+    uncover 9
+    uncover 8
+    uncover 10
+    pushint 48
+    uncover 10
+    uncover 11
+    callsub writeCache
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:191
+    // public proveRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
+    intc_1 // 1
+    return
+
+proveRoot_bool_false@4:
+    intc_0 // 0
+    b proveRoot_bool_merge@5
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveDs[routing]() -> void:
+proveDs:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:207
+    // public proveDs(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 3
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 4
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    swap
+    txna ApplicationArgs 5
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    // smart_contracts/dnssec_oracle/contract.algo.ts:208
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    cover 7
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:209
+    // const s = parseSignedData(signedData, TYPE_DS, 0, Global.latestTimestamp)
+    global LatestTimestamp
+    swap
+    pushint 43
+    intc_0 // 0
+    uncover 3
+    callsub parseSignedData
+    cover 13
+    cover 9
+    cover 8
+    cover 7
+    dup
+    cover 5
+    cover 5
+    dup
+    cover 4
+    cover 5
+    cover 6
+    cover 5
+    cover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:210
+    // loggedAssert(isAncestor(s.signer, s.owner, true), errSigner)
+    swap
+    intc_1 // 1
+    callsub isAncestor
+    bnz proveDs_after_assert@3
+    bytec 5 // "ERR:SGN"
+    log
+    err // ERR:SGN
+
+proveDs_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:211
+    // this.checkListed(s.owner)
+    uncover 2
+    dup
+    callsub checkListed
+    // smart_contracts/dnssec_oracle/contract.algo.ts:212
+    // const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
+    uncover 2
+    dup
+    pushint 48
+    uncover 7
+    dup
+    cover 3
+    callsub parentEntry
+    cover 4
+    cover 3
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:213
+    // const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
+    intc_0 // 0
+    pushint 48
+    uncover 10
+    intc_0 // 0
+    callsub walkRRset
+    pop
+    cover 2
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:214
+    // const [publicKey, bits] = checkKey(key, s.algorithm)
+    uncover 5
+    dup
+    cover 2
+    callsub checkKey
+    // smart_contracts/dnssec_oracle/contract.algo.ts:215
+    // verify(signedData, signature, hint, s.algorithm, publicKey)
+    uncover 14
+    uncover 14
+    uncover 14
+    dig 5
+    uncover 5
+    callsub verify
+    // smart_contracts/dnssec_oracle/contract.algo.ts:375
+    // return a < b ? a : b
+    uncover 7
+    dup
+    dig 4
+    <
+    uncover 4
+    dig 2
+    uncover 2
+    select
+    dig 2
+    dig 5
+    <
+    uncover 5
+    uncover 4
+    uncover 2
+    select
+    // smart_contracts/dnssec_oracle/contract.algo.ts:216
+    // this.writeCache(s, TYPE_DS, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits))
+    uncover 3
+    uncover 6
+    uncover 4
+    uncover 5
+    uncover 6
+    uncover 7
+    uncover 8
+    uncover 9
+    uncover 10
+    pushint 43
+    uncover 11
+    uncover 11
+    callsub writeCache
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:207
+    // public proveDs(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveDnskey[routing]() -> void:
+proveDnskey:
+    intc_0 // 0
+    bytec_0 // ""
+    dupn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:226-233
+    // public proveDnskey(
+    //   signedData: bytes,
+    //   signature: bytes,
+    //   hint: bytes,
+    //   keyIndex: uint64,
+    //   dsIndex: uint64,
+    //   parent: bytes,
+    // ): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 3
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 4
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    txna ApplicationArgs 5
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    cover 2
+    txna ApplicationArgs 6
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    cover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:234
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    cover 5
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:235
+    // const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
+    global LatestTimestamp
+    uncover 2
+    pushint 48
+    uncover 3
+    uncover 3
+    callsub parseSignedData
+    cover 10
+    cover 7
+    cover 9
+    cover 8
+    dup
+    cover 5
+    cover 6
+    dup
+    cover 4
+    cover 9
+    cover 8
+    cover 7
+    cover 6
+    // smart_contracts/dnssec_oracle/contract.algo.ts:236
+    // loggedAssert(s.signer === s.owner, errSigner)
+    ==
+    bnz proveDnskey_after_assert@3
+    bytec 5 // "ERR:SGN"
+    log
+    err // ERR:SGN
+
+proveDnskey_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:237
+    // this.checkListed(s.owner)
+    dig 1
+    dup
+    callsub checkListed
+    // smart_contracts/dnssec_oracle/contract.algo.ts:238
+    // const cached = this.parentEntry(s.owner, TYPE_DS, parent)
+    pushint 43
+    uncover 4
+    dup
+    cover 3
+    callsub parentEntry
+    bury 20
+    bury 20
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:239
+    // const [, , ds] = walkRRset(parent, 0, TYPE_DS, dsIndex, false)
+    intc_0 // 0
+    pushint 43
+    uncover 5
+    intc_0 // 0
+    callsub walkRRset
+    pop
+    dup
+    cover 3
+    bury 20
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:434
+    // loggedAssert(ds.length === 36 && op.getByte(ds, 3) === 2, errDsDigest)
+    len
+    pushint 36
+    ==
+    bz proveDnskey_bool_false@7
+    dig 16
+    pushint 3
+    getbyte
+    intc_2 // 2
+    ==
+    bz proveDnskey_bool_false@7
+    intc_1 // 1
+
+proveDnskey_bool_merge@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:434
+    // loggedAssert(ds.length === 36 && op.getByte(ds, 3) === 2, errDsDigest)
+    bnz proveDnskey_after_assert@10
+    pushbytes "ERR:DSD"
+    log
+    err // ERR:DSD
+
+proveDnskey_after_assert@10:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:436
+    // op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    dig 16
+    intc_0 // 0
+    extract_uint16
+    // smart_contracts/dnssec_oracle/wire.algo.ts:189
+    // let acc: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:190
+    // let i: uint64 = 0
+    dup
+    bury 16
+
+proveDnskey_while_top@11:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:191
+    // for (; i + 1 < rdata.length; i += 2) {
+    dig 15
+    intc_1 // 1
+    +
+    dig 3
+    len
+    dup
+    cover 2
+    <
+    bz proveDnskey_after_while@13
+    pop
+    // smart_contracts/dnssec_oracle/wire.algo.ts:192
+    // acc += op.extractUint16(rdata, i)
+    dig 2
+    dig 16
+    dup
+    cover 2
+    extract_uint16
+    uncover 2
+    +
+    swap
+    // smart_contracts/dnssec_oracle/wire.algo.ts:191
+    // for (; i + 1 < rdata.length; i += 2) {
+    intc_2 // 2
+    +
+    bury 16
+    b proveDnskey_while_top@11
+
+proveDnskey_after_while@13:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:194
+    // if (i < rdata.length) acc += op.getByte(rdata, i) << 8
+    dig 16
+    >
+    bz proveDnskey_after_if_else@15
+    dig 2
+    dig 16
+    getbyte
+    pushint 8
+    shl
+    +
+
+proveDnskey_after_if_else@15:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:195
+    // acc += (acc >> 16) & 0xffff
+    dup
+    pushint 16
+    shr
+    intc 4 // 65535
+    &
+    +
+    // smart_contracts/dnssec_oracle/wire.algo.ts:196
+    // return acc & 0xffff
+    intc 4 // 65535
+    &
+    // smart_contracts/dnssec_oracle/contract.algo.ts:436
+    // op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    ==
+    // smart_contracts/dnssec_oracle/contract.algo.ts:436-437
+    // op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
+    bz proveDnskey_bool_false@19
+    // smart_contracts/dnssec_oracle/contract.algo.ts:437
+    // op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
+    dig 16
+    intc_2 // 2
+    getbyte
+    dig 1
+    pushint 3
+    getbyte
+    ==
+    // smart_contracts/dnssec_oracle/contract.algo.ts:436-437
+    // op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
+    bz proveDnskey_bool_false@19
+    // smart_contracts/dnssec_oracle/contract.algo.ts:438
+    // op.extract(ds, 4, 32) === op.sha256(owner.concat(dnskey)),
+    dig 16
+    extract 4 32
+    dig 2
+    dig 2
+    concat
+    sha256
+    ==
+    // smart_contracts/dnssec_oracle/contract.algo.ts:436-438
+    // op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
+    //   op.extract(ds, 4, 32) === op.sha256(owner.concat(dnskey)),
+    bz proveDnskey_bool_false@19
+    intc_1 // 1
+
+proveDnskey_bool_merge@20:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:435-440
+    // loggedAssert(
+    //   op.extractUint16(ds, 0) === keyTag(dnskey) &&
+    //     op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
+    //     op.extract(ds, 4, 32) === op.sha256(owner.concat(dnskey)),
+    //   errDsMatch,
+    // )
+    bnz proveDnskey_after_assert@22
+    pushbytes "ERR:DSM"
+    log
+    err // ERR:DSM
+
+proveDnskey_after_assert@22:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:241
+    // const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
+    dup
+    dig 3
+    dup
+    cover 2
+    callsub checkKey
+    // smart_contracts/dnssec_oracle/contract.algo.ts:242
+    // verify(signedData, signature, hint, s.algorithm, publicKey)
+    dig 15
+    dig 15
+    dig 15
+    dig 5
+    uncover 5
+    callsub verify
+    // smart_contracts/dnssec_oracle/contract.algo.ts:375
+    // return a < b ? a : b
+    dig 6
+    dup
+    dig 19
+    dup
+    cover 2
+    <
+    dig 2
+    swap
+    select
+    dig 2
+    dig 19
+    dup
+    cover 2
+    <
+    swap
+    uncover 4
+    uncover 2
+    select
+    // smart_contracts/dnssec_oracle/contract.algo.ts:243
+    // this.writeCache(s, TYPE_DNSKEY, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits))
+    uncover 3
+    dig 7
+    uncover 4
+    dig 10
+    uncover 7
+    dig 12
+    dig 14
+    uncover 9
+    dig 16
+    pushint 48
+    uncover 11
+    uncover 11
+    callsub writeCache
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    dig 8
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:226-233
+    // public proveDnskey(
+    //   signedData: bytes,
+    //   signature: bytes,
+    //   hint: bytes,
+    //   keyIndex: uint64,
+    //   dsIndex: uint64,
+    //   parent: bytes,
+    // ): void {
+    intc_1 // 1
+    return
+
+proveDnskey_bool_false@19:
+    intc_0 // 0
+    b proveDnskey_bool_merge@20
+
+proveDnskey_bool_false@7:
+    intc_0 // 0
+    b proveDnskey_bool_merge@8
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveTxt[routing]() -> void:
+proveTxt:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:253
+    // public proveTxt(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 3
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 4
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    swap
+    txna ApplicationArgs 5
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    // smart_contracts/dnssec_oracle/contract.algo.ts:254
+    // const s = parseSignedData(signedData, TYPE_TXT, 0, Global.latestTimestamp)
+    global LatestTimestamp
+    swap
+    pushint 16
+    intc_0 // 0
+    uncover 3
+    callsub parseSignedData
+    cover 10
+    popn 3
+    dup
+    cover 5
+    cover 11
+    dup
+    cover 4
+    cover 5
+    cover 4
+    cover 3
+    cover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:255
+    // loggedAssert(isAncestor(s.signer, s.owner, false), errSigner)
+    swap
+    intc_0 // 0
+    callsub isAncestor
+    bnz proveTxt_after_assert@3
+    bytec 5 // "ERR:SGN"
+    log
+    err // ERR:SGN
+
+proveTxt_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:256
+    // this.checkListed(s.owner)
+    dig 10
+    callsub checkListed
+    // smart_contracts/dnssec_oracle/contract.algo.ts:257
+    // const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
+    uncover 3
+    pushint 48
+    uncover 5
+    dup
+    cover 3
+    callsub parentEntry
+    cover 7
+    cover 5
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:258
+    // const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
+    intc_0 // 0
+    pushint 48
+    uncover 8
+    intc_0 // 0
+    callsub walkRRset
+    pop
+    cover 2
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:259
+    // const [publicKey, bits] = checkKey(key, s.algorithm)
+    dig 1
+    callsub checkKey
+    cover 3
+    // smart_contracts/dnssec_oracle/contract.algo.ts:260
+    // verify(signedData, signature, hint, s.algorithm, publicKey)
+    uncover 10
+    uncover 10
+    uncover 10
+    uncover 4
+    uncover 4
+    callsub verify
+    // smart_contracts/dnssec_oracle/contract.algo.ts:262
+    // loggedAssert(ATTESTATION_HEADER + s.records.length <= MAX_VALUE, errTooBig)
+    dig 5
+    len
+    pushint 56
+    +
+    pushint 4096
+    <=
+    bnz proveTxt_after_assert@5
+    pushbytes "ERR:BIG"
+    log
+    err // ERR:BIG
+
+proveTxt_after_assert@5:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:263
+    // const box = this.attestations(op.sha256(s.owner))
+    dig 6
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:112
+    // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
+    bytec 6 // "t"
+    swap
+    concat
+    dup
+    cover 5
+    // smart_contracts/dnssec_oracle/contract.algo.ts:264
+    // if (box.exists) {
+    box_len
+    bury 1
+    bz proveTxt_after_if_else@9
+    // smart_contracts/dnssec_oracle/contract.algo.ts:265
+    // loggedAssert(s.inception >= op.extractUint64(box.extract(0, 8), 0), errOld)
+    dig 4
+    intc_0 // 0
+    pushint 8
+    box_extract
+    intc_0 // 0
+    extract_uint64
+    dig 1
+    <=
+    bnz proveTxt_after_assert@8
+    bytec 17 // "ERR:OLD"
+    log
+    err // ERR:OLD
+
+proveTxt_after_assert@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:266
+    // this.deleteAttestation(s.owner)
+    dig 7
+    callsub deleteAttestation
+
+proveTxt_after_if_else@9:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:268
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:269-270
+    // box.value = op
+    //   .itob(s.inception)
+    swap
+    itob
+    // smart_contracts/dnssec_oracle/contract.algo.ts:375
+    // return a < b ? a : b
+    uncover 4
+    dup
+    uncover 5
+    dup
+    cover 2
+    <
+    swap
+    cover 2
+    select
+    // smart_contracts/dnssec_oracle/contract.algo.ts:271
+    // .concat(op.itob(min(s.expiration, cached.expiry)))
+    itob
+    // smart_contracts/dnssec_oracle/contract.algo.ts:269-271
+    // box.value = op
+    //   .itob(s.inception)
+    //   .concat(op.itob(min(s.expiration, cached.expiry)))
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:375
+    // return a < b ? a : b
+    uncover 2
+    dup
+    uncover 5
+    dup
+    cover 2
+    <
+    swap
+    cover 2
+    select
+    // smart_contracts/dnssec_oracle/contract.algo.ts:272
+    // .concat(op.itob(min(bits, cached.weakestKeyBits)))
+    itob
+    // smart_contracts/dnssec_oracle/contract.algo.ts:269-272
+    // box.value = op
+    //   .itob(s.inception)
+    //   .concat(op.itob(min(s.expiration, cached.expiry)))
+    //   .concat(op.itob(min(bits, cached.weakestKeyBits)))
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:273
+    // .concat(Txn.sender.bytes)
+    txn Sender
+    // smart_contracts/dnssec_oracle/contract.algo.ts:269-273
+    // box.value = op
+    //   .itob(s.inception)
+    //   .concat(op.itob(min(s.expiration, cached.expiry)))
+    //   .concat(op.itob(min(bits, cached.weakestKeyBits)))
+    //   .concat(Txn.sender.bytes)
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:269-274
+    // box.value = op
+    //   .itob(s.inception)
+    //   .concat(op.itob(min(s.expiration, cached.expiry)))
+    //   .concat(op.itob(min(bits, cached.weakestKeyBits)))
+    //   .concat(Txn.sender.bytes)
+    //   .concat(s.records)
+    uncover 3
+    concat
+    uncover 2
+    dup
+    box_del
+    pop
+    swap
+    box_put
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    // smart_contracts/dnssec_oracle/contract.algo.ts:253
+    // public proveTxt(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.prune[routing]() -> void:
+prune:
+    bytec_0 // ""
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:286
+    // public prune(name: bytes, rrtype: uint64): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    swap
+    // smart_contracts/dnssec_oracle/wire.algo.ts:66
+    // const [end, labels] = readName(name, 0)
+    dup
+    intc_0 // 0
+    callsub readName
+    pop
+    // smart_contracts/dnssec_oracle/wire.algo.ts:67
+    // loggedAssert(end === name.length, errWire)
+    swap
+    len
+    ==
+    bnz prune_after_assert@21
+    bytec_3 // "ERR:WIR"
+    log
+    err // ERR:WIR
+
+prune_after_assert@21:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:288
+    // const now = Global.latestTimestamp
+    global LatestTimestamp
+    bury 3
+    // smart_contracts/dnssec_oracle/contract.algo.ts:289
+    // if (rrtype === TYPE_TXT) {
+    dup
+    pushint 16
+    ==
+    bz prune_else_body@13
+    pop
+    // smart_contracts/dnssec_oracle/contract.algo.ts:290
+    // const box = this.attestations(op.sha256(name))
+    dup
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:112
+    // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
+    bytec 6 // "t"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:291
+    // loggedAssert(box.exists, errMissing)
+    box_len
+    bury 1
+    bnz prune_after_assert@4
+    bytec 10 // "ERR:MIS"
+    log
+    err // ERR:MIS
+
+prune_after_assert@4:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:292
+    // const expiration = op.extractUint64(box.extract(8, 8), 0)
+    dup
+    pushint 8
+    dup
+    box_extract
+    intc_0 // 0
+    extract_uint64
+    bury 4
+    // smart_contracts/dnssec_oracle/contract.algo.ts:293
+    // const payer = Account(box.extract(24, 32))
+    pushints 24 32
+    box_extract
+    // smart_contracts/dnssec_oracle/contract.algo.ts:295
+    // (Txn.sender === payer && now > expiration) ||
+    txn Sender
+    ==
+    bz prune_or_contd@6
+    dig 1
+    dig 3
+    >
+    bnz prune_bool_true@8
+
+prune_or_contd@6:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:296
+    // now > expiration + PRUNE_GRACE_SECONDS ||
+    dig 2
+    pushint 2592000
+    +
+    dig 2
+    <
+    // smart_contracts/dnssec_oracle/contract.algo.ts:295-296
+    // (Txn.sender === payer && now > expiration) ||
+    //   now > expiration + PRUNE_GRACE_SECONDS ||
+    bnz prune_bool_true@8
+    // smart_contracts/dnssec_oracle/contract.algo.ts:297
+    // !this.whitelist(tldOf(name)).exists,
+    dup
+    callsub tldOf
+    // smart_contracts/dnssec_oracle/contract.algo.ts:108
+    // whitelist = BoxMap<bytes, bytes>({ keyPrefix: 'w' })
+    bytec 4 // "w"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:297
+    // !this.whitelist(tldOf(name)).exists,
+    box_len
+    bury 1
+    bnz prune_bool_false@9
+
+prune_bool_true@8:
+    intc_1 // 1
+
+prune_bool_merge@10:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:294-299
+    // loggedAssert(
+    //   (Txn.sender === payer && now > expiration) ||
+    //     now > expiration + PRUNE_GRACE_SECONDS ||
+    //     !this.whitelist(tldOf(name)).exists,
+    //   errPrune,
+    // )
+    bnz prune_after_assert@12
+    bytec 18 // "ERR:PRN"
+    log
+    err // ERR:PRN
+
+prune_after_assert@12:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:300
+    // this.deleteAttestation(name)
+    callsub deleteAttestation
+
+prune_after_if_else@18:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:286
+    // public prune(name: bytes, rrtype: uint64): void {
+    intc_1 // 1
+    return
+
+prune_bool_false@9:
+    intc_0 // 0
+    b prune_bool_merge@10
+
+prune_else_body@13:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:184
+    // return name.concat(op.extract(op.itob(rrtype), 6, 2))
+    itob
+    extract 6 2
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:302
+    // const box = this.caches(op.sha256(nameType(name, rrtype)))
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:110
+    // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
+    bytec 11 // "r"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:303
+    // loggedAssert(box.exists, errMissing)
+    box_len
+    bury 1
+    bnz prune_after_assert@15
+    bytec 10 // "ERR:MIS"
+    log
+    err // ERR:MIS
+
+prune_after_assert@15:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:304
+    // loggedAssert(now > box.value.expiry, errPrune)
+    dup
+    box_get
+    assert // Box must have value
+    pushint 40
+    extract_uint64
+    dig 2
+    <
+    bnz prune_after_assert@17
+    bytec 18 // "ERR:PRN"
+    log
+    err // ERR:PRN
+
+prune_after_assert@17:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:305
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:306
+    // box.delete()
+    swap
+    box_del
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:60
+    // this.settleMbrCredits(Txn.sender, mbrBefore)
+    txn Sender
+    swap
+    callsub settleMbrCredits
+    b prune_after_if_else@18
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.logAttestations[routing]() -> void:
+logAttestations:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:314-315
+    // @readonly
+    // public logAttestations(names: bytes[]): void {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    dup
+    cover 2
+    intc_2 // 2
+    *
+    swap
+    dup
+    len
+    cover 2
+    extract 2 0
+    intc_0 // 0
+
+logAttestations_for_header@1:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:314-315
+    // @readonly
+    // public logAttestations(names: bytes[]): void {
+    dup
+    dig 5
+    <
+    bz logAttestations_after_for@4
+    dup
+    intc_2 // 2
+    *
+    dig 2
+    dup
+    uncover 2
+    extract_uint16 // on error: invalid array encoding
+    dup
+    uncover 5
+    dup
+    cover 4
+    ==
+    assert // invalid tail pointer for (len+(len+uint8[])[])
+    dig 1
+    len
+    substring3
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    +
+    cover 2
+    intc_1 // 1
+    +
+    b logAttestations_for_header@1
+
+logAttestations_after_for@4:
+    pop
+    // smart_contracts/dnssec_oracle/contract.algo.ts:314-315
+    // @readonly
+    // public logAttestations(names: bytes[]): void {
+    swap
+    intc_2 // 2
+    +
+    uncover 2
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<bytes>
+    intc_0 // 0
+
+logAttestations_for_header@6:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:316
+    // for (const name of names) {
+    dup
+    dig 3
+    <
+    bz logAttestations_after_for@9
+    dup
+    intc_2 // 2
+    *
+    dig 2
+    dup
+    uncover 2
+    extract_uint16
+    dup2
+    extract_uint16
+    intc_2 // 2
+    +
+    extract3
+    // smart_contracts/dnssec_oracle/contract.algo.ts:316
+    // for (const name of names) {
+    extract 2 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:317
+    // const [value, exists] = this.attestations(op.sha256(name)).maybe()
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:112
+    // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
+    bytec 6 // "t"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:317
+    // const [value, exists] = this.attestations(op.sha256(name)).maybe()
+    box_get
+    // smart_contracts/dnssec_oracle/contract.algo.ts:318
+    // log(exists ? value : Bytes())
+    bytec_0 // 0x
+    cover 2
+    select
+    log
+    intc_1 // 1
+    +
+    b logAttestations_for_header@6
+
+logAttestations_after_for@9:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:314-315
+    // @readonly
+    // public logAttestations(names: bytes[]): void {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/base/base.algo.ts::BaseContract.increaseBudget[routing]() -> void:
+increaseBudget:
+    // smart_contracts/base/base.algo.ts:17
+    // @abimethod({ validateEncoding: 'unsafe-disabled' })
+    txna ApplicationArgs 1
+    btoi
+    // smart_contracts/base/base.algo.ts:20
+    // for (let i: uint64 = 0; i < itxns; i++) {
+    intc_0 // 0
+
+increaseBudget_while_top@2:
+    // smart_contracts/base/base.algo.ts:20
+    // for (let i: uint64 = 0; i < itxns; i++) {
+    dup
+    dig 2
+    <
+    bz increaseBudget_after_while@5
+    // smart_contracts/base/base.algo.ts:21-27
+    // itxn
+    //   .applicationCall({
+    //     approvalProgram: empty.clearStateProgram, // intentionally the clear state program: a bare "return 1"
+    //     clearStateProgram: empty.clearStateProgram,
+    //     onCompletion: OnCompleteAction.DeleteApplication,
+    //   })
+    //   .submit()
+    itxn_begin
+    // smart_contracts/base/base.algo.ts:25
+    // onCompletion: OnCompleteAction.DeleteApplication,
+    pushint 5
+    itxn_field OnCompletion
+    // smart_contracts/base/base.algo.ts:19
+    // const empty = compile(EmptyContract)
+    bytec 19 // base64(DYEBQw==)
+    itxn_field ClearStateProgramPages
+    bytec 19 // base64(DYEBQw==)
+    itxn_field ApprovalProgramPages
+    // smart_contracts/base/base.algo.ts:21-26
+    // itxn
+    //   .applicationCall({
+    //     approvalProgram: empty.clearStateProgram, // intentionally the clear state program: a bare "return 1"
+    //     clearStateProgram: empty.clearStateProgram,
+    //     onCompletion: OnCompleteAction.DeleteApplication,
+    //   })
+    pushint 6
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // smart_contracts/base/base.algo.ts:21-27
+    // itxn
+    //   .applicationCall({
+    //     approvalProgram: empty.clearStateProgram, // intentionally the clear state program: a bare "return 1"
+    //     clearStateProgram: empty.clearStateProgram,
+    //     onCompletion: OnCompleteAction.DeleteApplication,
+    //   })
+    //   .submit()
+    itxn_submit
+    // smart_contracts/base/base.algo.ts:20
+    // for (let i: uint64 = 0; i < itxns; i++) {
+    intc_1 // 1
+    +
+    b increaseBudget_while_top@2
+
+increaseBudget_after_while@5:
+    // smart_contracts/base/base.algo.ts:17
+    // @abimethod({ validateEncoding: 'unsafe-disabled' })
+    intc_1 // 1
+    return
+
+
+// @d13co/puya-ts-utils/src/mbrManager.algo.ts::MbrManager.depositCredits[routing]() -> void:
+depositCredits:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:86
+    // public depositCredits(creditor: Account, txn: gtxn.PaymentTxn) {
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    txn GroupIndex
+    intc_1 // 1
+    -
+    dupn 2
+    gtxns TypeEnum
+    intc_1 // pay
+    ==
+    assert // transaction type is pay
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:87
+    // loggedAssert(txn.receiver === Global.currentApplicationAddress, errReceiver)
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    bnz depositCredits_after_assert@3
+    bytec 20 // "ERR:RCV"
+    log
+    err // ERR:RCV
+
+depositCredits_after_assert@3:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:88
+    // loggedAssert(txn.amount > 0, errAmt)
+    gtxns Amount
+    dup
+    bnz depositCredits_after_assert@5
+    bytec 21 // "ERR:AMT"
+    log
+    err // ERR:AMT
+
+depositCredits_after_assert@5:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    uncover 2
+    dup
+    cover 2
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:89
+    // const current = this.userCredits(creditor).get({ default: 0 })
+    dup
+    box_get
+    swap
+    btoi
+    intc_0 // 0
+    swap
+    uncover 2
+    select
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:91
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:92
+    // this.userCredits(creditor).value = current + txn.amount
+    swap
+    uncover 4
+    +
+    itob
+    uncover 2
+    swap
+    box_put
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:93
+    // this.settleMbrCredits(creditor, mbrBefore)
+    callsub settleMbrCredits
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:86
+    // public depositCredits(creditor: Account, txn: gtxn.PaymentTxn) {
+    intc_1 // 1
+    return
+
+
+// @d13co/puya-ts-utils/src/mbrManager.algo.ts::MbrManager.logCredits[routing]() -> void:
+logCredits:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:102-103
+    // @readonly
+    // public logCredits(accounts: Account[]): void {
+    txna ApplicationArgs 1
+    dupn 2
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    dup
+    cover 2
+    pushint 32
+    *
+    intc_2 // 2
+    +
+    swap
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<account>
+    intc_0 // 0
+
+logCredits_for_header@2:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:104
+    // for (const account of accounts) {
+    dup
+    dig 2
+    <
+    bz logCredits_after_for@8
+    dig 2
+    extract 2 0
+    dig 1
+    pushint 32
+    *
+    pushint 32
+    extract3 // on error: index access is out of bounds
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    swap
+    concat
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:106
+    // if (box.exists) {
+    box_len
+    bury 1
+    bz logCredits_else_body@5
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:107
+    // log(op.itob(box.value))
+    box_get
+    assert // Box must have value
+    btoi
+    itob
+    log
+
+logCredits_after_if_else@6:
+    intc_1 // 1
+    +
+    b logCredits_for_header@2
+
+logCredits_else_body@5:
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:109
+    // log(Bytes())
+    bytec_0 // 0x
+    log
+    b logCredits_after_if_else@6
+
+logCredits_after_for@8:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:102-103
+    // @readonly
+    // public logCredits(accounts: Account[]): void {
+    intc_1 // 1
+    return
+
+
+// @d13co/puya-ts-utils/src/mbrManager.algo.ts::MbrManager.withdrawCredits[routing]() -> void:
+withdrawCredits:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:120
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:122
+    // loggedAssert(this.userCredits(Txn.sender).exists, errAmt)
+    txn Sender
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:122
+    // loggedAssert(this.userCredits(Txn.sender).exists, errAmt)
+    box_len
+    bury 1
+    bnz withdrawCredits_after_assert@3
+    bytec 21 // "ERR:AMT"
+    log
+    err // ERR:AMT
+
+withdrawCredits_after_assert@3:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:123
+    // const credit: uint64 = this.userCredits(Txn.sender).value
+    txn Sender
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:123
+    // const credit: uint64 = this.userCredits(Txn.sender).value
+    box_get
+    assert // Box must have value
+    btoi
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:125
+    // this.userCredits(Txn.sender).delete()
+    txn Sender
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    concat
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:125
+    // this.userCredits(Txn.sender).delete()
+    box_del
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:126
+    // const mbrAfter = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    assert // account funded
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:127
+    // const finalCredit: uint64 = credit + (mbrBefore - mbrAfter)
+    uncover 2
+    swap
+    -
+    +
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:129-134
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: finalCredit,
+    //   })
+    //   .submit()
+    itxn_begin
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:131
+    // receiver: Txn.sender,
+    txn Sender
+    itxn_field Receiver
+    itxn_field Amount
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:129-133
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: finalCredit,
+    //   })
+    intc_1 // 1
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:129-134
+    // itxn
+    //   .payment({
+    //     receiver: Txn.sender,
+    //     amount: finalCredit,
+    //   })
+    //   .submit()
+    itxn_submit
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:119
+    // public withdrawCredits() {
+    intc_1 // 1
+    return
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.onlyAdmin() -> void:
+onlyAdmin:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:129
+    // loggedAssert(Txn.sender === this.admin.value, errAdmin)
+    txn Sender
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:102
+    // admin = GlobalState<Account>({ key: 'admin' })
+    bytec 7 // "admin"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:129
+    // loggedAssert(Txn.sender === this.admin.value, errAdmin)
+    app_global_get_ex
+    assert // check GlobalState exists
+    ==
+    bnz onlyAdmin_after_assert@2
+    pushbytes "ERR:ADM"
+    log
+    err // ERR:ADM
+
+onlyAdmin_after_assert@2:
+    retsub
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.checkListed(owner: bytes) -> void:
+checkListed:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:325
+    // private checkListed(owner: bytes): void {
+    proto 1 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:326
+    // loggedAssert(owner.length > 1, errRoot)
+    frame_dig -1
+    len
+    intc_1 // 1
+    >
+    bnz checkListed_after_assert@2
+    pushbytes "ERR:ROT"
+    log
+    err // ERR:ROT
+
+checkListed_after_assert@2:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:327
+    // loggedAssert(this.whitelist(tldOf(owner)).exists, errListed)
+    frame_dig -1
+    callsub tldOf
+    // smart_contracts/dnssec_oracle/contract.algo.ts:108
+    // whitelist = BoxMap<bytes, bytes>({ keyPrefix: 'w' })
+    bytec 4 // "w"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:327
+    // loggedAssert(this.whitelist(tldOf(owner)).exists, errListed)
+    box_len
+    bury 1
+    bnz checkListed_after_assert@4
+    pushbytes "ERR:WLS"
+    log
+    err // ERR:WLS
+
+checkListed_after_assert@4:
+    retsub
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.parentEntry(name: bytes, rrtype: uint64, parent: bytes) -> bytes, uint64, uint64, uint64:
+parentEntry:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:331
+    // private parentEntry(name: bytes, rrtype: uint64, parent: bytes): CacheEntry {
+    proto 3 4
+    // smart_contracts/dnssec_oracle/wire.algo.ts:184
+    // return name.concat(op.extract(op.itob(rrtype), 6, 2))
+    frame_dig -2
+    itob
+    extract 6 2
+    frame_dig -3
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:333
+    // const box = this.caches(op.sha256(nameType(name, rrtype)))
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:110
+    // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
+    bytec 11 // "r"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:334
+    // loggedAssert(box.exists, errParent)
+    box_len
+    bury 1
+    bnz parentEntry_after_assert@2
+    bytec 22 // "ERR:PAR"
+    log
+    err // ERR:PAR
+
+parentEntry_after_assert@2:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:335
+    // const entry = box.value
+    box_get
+    assert // Box must have value
+    dup
+    extract 0 32
+    swap
+    dup
+    pushint 32
+    extract_uint64
+    cover 2
+    dup
+    pushint 40
+    extract_uint64
+    dup
+    cover 2
+    cover 3
+    pushint 48
+    extract_uint64
+    cover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:336
+    // loggedAssert(Global.latestTimestamp <= entry.expiry, errStale)
+    global LatestTimestamp
+    >=
+    bnz parentEntry_after_assert@4
+    pushbytes "ERR:STL"
+    log
+    err // ERR:STL
+
+parentEntry_after_assert@4:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:337
+    // loggedAssert(op.sha256(parent) === entry.hash, errParent)
+    frame_dig -1
+    sha256
+    dig 1
+    ==
+    bnz parentEntry_after_assert@6
+    bytec 22 // "ERR:PAR"
+    log
+    err // ERR:PAR
+
+parentEntry_after_assert@6:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:338
+    // return entry
+    cover 3
+    retsub
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.writeCache(s.algorithm: uint64, s.inception: uint64, s.expiration: uint64, s.signer: bytes, s.owner: bytes, s.ownerLabels: uint64, s.rrset: bytes, s.indexed: bytes, s.records: bytes, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64) -> void:
+writeCache:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:347
+    // private writeCache(s: SignedData, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64): void {
+    proto 12 0
+    bytec_0 // ""
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:184
+    // return name.concat(op.extract(op.itob(rrtype), 6, 2))
+    frame_dig -3
+    itob
+    extract 6 2
+    frame_dig -8
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:348
+    // const box = this.caches(op.sha256(nameType(s.owner, rrtype)))
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:110
+    // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
+    bytec 11 // "r"
+    swap
+    concat
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:349
+    // if (box.exists) {
+    box_len
+    bury 1
+    bz writeCache_after_if_else@11
+    // smart_contracts/dnssec_oracle/contract.algo.ts:350
+    // const old = box.value
+    dup
+    box_get
+    assert // Box must have value
+    dup
+    pushint 32
+    extract_uint64
+    dup
+    cover 2
+    cover 3
+    dup
+    pushint 40
+    extract_uint64
+    frame_bury 0
+    pushint 48
+    extract_uint64
+    frame_bury 1
+    // smart_contracts/dnssec_oracle/contract.algo.ts:351
+    // loggedAssert(s.inception >= old.inception, errOld)
+    frame_dig -11
+    <=
+    bnz writeCache_after_assert@3
+    bytec 17 // "ERR:OLD"
+    log
+    err // ERR:OLD
+
+writeCache_after_assert@3:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:353
+    // s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
+    frame_dig -11
+    uncover 2
+    >
+    bnz writeCache_bool_true@6
+    frame_dig -2
+    frame_dig 0
+    >=
+    bz writeCache_bool_false@7
+    frame_dig -1
+    frame_dig 1
+    >=
+    bz writeCache_bool_false@7
+
+writeCache_bool_true@6:
+    intc_1 // 1
+
+writeCache_bool_merge@8:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:352-355
+    // loggedAssert(
+    //   s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
+    //   errWorse,
+    // )
+    bnz writeCache_after_if_else@11
+    pushbytes "ERR:WRS"
+    log
+    err // ERR:WRS
+
+writeCache_after_if_else@11:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:357
+    // box.value = { hash: op.sha256(s.rrset), inception: s.inception, expiry: expiry, weakestKeyBits: weakestKeyBits }
+    frame_dig -6
+    sha256
+    frame_dig -11
+    itob
+    concat
+    frame_dig -2
+    itob
+    concat
+    frame_dig -1
+    itob
+    concat
+    box_put
+    retsub
+
+writeCache_bool_false@7:
+    intc_0 // 0
+    b writeCache_bool_merge@8
+
+
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.deleteAttestation(name: bytes) -> void:
+deleteAttestation:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:365
+    // private deleteAttestation(name: bytes): void {
+    proto 1 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:366
+    // const box = this.attestations(op.sha256(name))
+    frame_dig -1
+    sha256
+    // smart_contracts/dnssec_oracle/contract.algo.ts:112
+    // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
+    bytec 6 // "t"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:367
+    // const payer = Account(box.extract(24, 32))
+    dup
+    pushints 24 32
+    box_extract
+    dup
+    uncover 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:368
+    // const mbrBefore = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    cover 3
+    assert // account funded
+    // smart_contracts/dnssec_oracle/contract.algo.ts:369
+    // box.delete()
+    box_del
+    pop
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/contract.algo.ts:370
+    // if (this.userCredits(payer).exists) this.settleMbrCredits(payer, mbrBefore)
+    box_len
+    bury 1
+    bz deleteAttestation_after_if_else@2
+    frame_dig 0
+    frame_dig 1
+    callsub settleMbrCredits
+
+deleteAttestation_after_if_else@2:
+    retsub
+
+
+// @d13co/puya-ts-utils/src/mbrManager.algo.ts::MbrManager.settleMbrCredits(account: bytes, mbrBefore: uint64) -> void:
+settleMbrCredits:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:64
+    // protected settleMbrCredits(account: Account, mbrBefore: uint64) {
+    proto 2 0
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:65
+    // const mbrAfter = Global.currentApplicationAddress.minBalance
+    global CurrentApplicationAddress
+    acct_params_get AcctMinBalance
+    swap
+    dup
+    uncover 2
+    assert // account funded
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:66
+    // if (mbrAfter === mbrBefore) return
+    frame_dig -1
+    ==
+    bz settleMbrCredits_else_body@2
+    retsub
+
+settleMbrCredits_else_body@2:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:67
+    // else if (mbrAfter > mbrBefore) {
+    dup
+    frame_dig -1
+    >
+    bz settleMbrCredits_else_body@6
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:68
+    // const creditNeeded: uint64 = mbrAfter - mbrBefore
+    frame_dig -1
+    -
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    frame_dig -2
+    concat
+    dup
+    cover 2
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:69
+    // const userCredit = this.userCredits(account).get({ default: 0 })
+    box_get
+    swap
+    btoi
+    intc_0 // 0
+    swap
+    uncover 2
+    select
+    dup
+    uncover 2
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:70
+    // loggedAssert(userCredit >= creditNeeded, errCredit)
+    >=
+    bnz settleMbrCredits_after_assert@5
+    pushbytes "ERR:CRD"
+    log
+    err // ERR:CRD
+
+settleMbrCredits_after_assert@5:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:71
+    // this.userCredits(account).value = userCredit - creditNeeded
+    uncover 2
+    -
+    itob
+    box_put
+    retsub
+
+settleMbrCredits_else_body@6:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:73
+    // const creditToReturn: uint64 = mbrBefore - mbrAfter
+    frame_dig -1
+    swap
+    -
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
+    // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
+    bytec_1 // "c"
+    frame_dig -2
+    concat
+    dup
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:74
+    // loggedAssert(this.userCredits(account).exists, errReceiver)
+    box_len
+    bury 1
+    bnz settleMbrCredits_after_assert@8
+    bytec 20 // "ERR:RCV"
+    log
+    err // ERR:RCV
+
+settleMbrCredits_after_assert@8:
+    // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:75
+    // this.userCredits(account).value += creditToReturn
+    dup
+    box_get
+    assert // Box must have value
+    btoi
+    uncover 2
+    +
+    itob
+    box_put
+    retsub

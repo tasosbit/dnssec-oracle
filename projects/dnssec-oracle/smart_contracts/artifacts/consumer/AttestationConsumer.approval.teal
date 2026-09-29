@@ -1,0 +1,352 @@
+#pragma version 13
+#pragma typetrack false
+#pragma autosalt false
+
+// @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
+main:
+    intcblock 0 1 2 8
+    bytecblock "oracle"
+    // smart_contracts/consumer/contract.algo.ts:6
+    // export class AttestationConsumer extends Contract {
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    bz main_create_NoOp@5
+    pushbytes 0x9279a12b // method "hasTxt(byte[],byte[],uint64,uint64)bool"
+    txna ApplicationArgs 0
+    match hasTxt
+    err
+
+main_create_NoOp@5:
+    // smart_contracts/consumer/contract.algo.ts:6
+    // export class AttestationConsumer extends Contract {
+    pushbytes 0x973b616f // method "createApplication(uint64)void"
+    txna ApplicationArgs 0
+    match createApplication
+    err
+
+
+// smart_contracts/consumer/contract.algo.ts::AttestationConsumer.createApplication[routing]() -> void:
+createApplication:
+    // smart_contracts/consumer/contract.algo.ts:10
+    // @abimethod({ onCreate: 'require' })
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // smart_contracts/consumer/contract.algo.ts:8
+    // oracle = GlobalState<Application>({ key: 'oracle' })
+    bytec_0 // "oracle"
+    // smart_contracts/consumer/contract.algo.ts:12
+    // this.oracle.value = oracle
+    swap
+    app_global_put
+    // smart_contracts/consumer/contract.algo.ts:10
+    // @abimethod({ onCreate: 'require' })
+    intc_1 // 1
+    return
+
+
+// smart_contracts/consumer/contract.algo.ts::AttestationConsumer.hasTxt[routing]() -> void:
+hasTxt:
+    pushbytes ""
+    // smart_contracts/consumer/contract.algo.ts:21-22
+    // @readonly
+    // public hasTxt(name: bytes, text: bytes, maxAge: uint64, minKeyBits: uint64): boolean {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    dup
+    cover 2
+    txna ApplicationArgs 3
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    cover 2
+    txna ApplicationArgs 4
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    cover 2
+    // smart_contracts/consumer/contract.algo.ts:23
+    // assert(text.length <= 255, 'text over 255 bytes')
+    len
+    dup
+    cover 2
+    pushint 255
+    <=
+    assert // text over 255 bytes
+    // smart_contracts/consumer/contract.algo.ts:24
+    // const oracle = this.oracle.value
+    intc_0 // 0
+    // smart_contracts/consumer/contract.algo.ts:8
+    // oracle = GlobalState<Application>({ key: 'oracle' })
+    bytec_0 // "oracle"
+    // smart_contracts/consumer/contract.algo.ts:24
+    // const oracle = this.oracle.value
+    app_global_get_ex
+    swap
+    dup
+    cover 2
+    cover 3
+    assert // check GlobalState exists
+    // smart_contracts/dnssec_oracle/reader.algo.ts:28
+    // return op.AppBox.get(oracle, Bytes('t').concat(op.sha256(name)))
+    swap
+    sha256
+    pushbytes "t"
+    swap
+    concat
+    app_box_get
+    // smart_contracts/consumer/contract.algo.ts:27-28
+    // exists &&
+    // tldListed(oracle, name) &&
+    bz hasTxt_bool_false@6
+    // smart_contracts/dnssec_oracle/wire.algo.ts:173
+    // let at: uint64 = 0
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/wire.algo.ts:174
+    // let length = op.getByte(name, 0)
+    dig 7
+    intc_0 // 0
+    getbyte
+    swap
+
+hasTxt_while_top@26:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:175
+    // while (at + length + 2 < name.length) {
+    dup
+    dig 2
+    +
+    intc_2 // 2
+    +
+    dig 9
+    len
+    <
+    // smart_contracts/dnssec_oracle/wire.algo.ts:175-178
+    // while (at + length + 2 < name.length) {
+    //   at += length + 1
+    //   length = op.getByte(name, at)
+    // }
+    bz hasTxt_after_while@28
+    // smart_contracts/dnssec_oracle/wire.algo.ts:176
+    // at += length + 1
+    swap
+    intc_1 // 1
+    +
+    +
+    dup
+    // smart_contracts/dnssec_oracle/wire.algo.ts:177
+    // length = op.getByte(name, at)
+    dig 8
+    swap
+    getbyte
+    swap
+    b hasTxt_while_top@26
+
+hasTxt_after_while@28:
+    // smart_contracts/dnssec_oracle/wire.algo.ts:179
+    // return op.extract(name, at + 1, length)
+    intc_1 // 1
+    +
+    dig 8
+    swap
+    uncover 2
+    extract3
+    // smart_contracts/dnssec_oracle/reader.algo.ts:36
+    // const [, exists] = op.AppBox.length(oracle, Bytes('w').concat(tldOf(name)))
+    pushbytes "w"
+    swap
+    concat
+    dig 2
+    swap
+    app_box_len
+    bury 1
+    // smart_contracts/consumer/contract.algo.ts:27-28
+    // exists &&
+    // tldListed(oracle, name) &&
+    bz hasTxt_bool_false@6
+    // smart_contracts/dnssec_oracle/reader.algo.ts:62
+    // const now = Global.latestTimestamp
+    global LatestTimestamp
+    dup
+    bury 9
+    // smart_contracts/dnssec_oracle/reader.algo.ts:45
+    // return op.extractUint64(value, 8)
+    dig 1
+    intc_3 // 8
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:64
+    // now <= attestationExpiration(value) &&
+    <=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:64-65
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    bz hasTxt_bool_false@22
+    // smart_contracts/dnssec_oracle/reader.algo.ts:41
+    // return op.extractUint64(value, 0)
+    dup
+    intc_0 // 0
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:65
+    // now <= attestationInception(value) + maxAge &&
+    dig 5
+    +
+    dig 8
+    >=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:64-65
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    bz hasTxt_bool_false@22
+    // smart_contracts/dnssec_oracle/reader.algo.ts:49
+    // return op.extractUint64(value, 16)
+    dup
+    pushint 16
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:66
+    // attestationWeakestKeyBits(value) >= minKeyBits
+    dig 4
+    >=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:64-66
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    // attestationWeakestKeyBits(value) >= minKeyBits
+    bz hasTxt_bool_false@22
+    intc_1 // 1
+
+hasTxt_bool_merge@23:
+    // smart_contracts/consumer/contract.algo.ts:27-29
+    // exists &&
+    // tldListed(oracle, name) &&
+    // attestationUsable(value, maxAge, minKeyBits) &&
+    bz hasTxt_bool_false@6
+    // smart_contracts/dnssec_oracle/reader.algo.ts:83
+    // return op.extract(op.itob(text.length), 7, 1).concat(text)
+    dig 2
+    itob
+    extract 7 1
+    dig 6
+    concat
+    // smart_contracts/dnssec_oracle/reader.algo.ts:72
+    // let at = ATTESTATION_HEADER
+    pushint 56
+
+hasTxt_while_top@11:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:73
+    // while (at < value.length) {
+    dig 2
+    len
+    dig 1
+    >
+    // smart_contracts/dnssec_oracle/reader.algo.ts:73-77
+    // while (at < value.length) {
+    //   const length = op.extractUint16(value, at)
+    //   if (length === rdata.length && op.extract(value, at + 2, length) === rdata) return true
+    //   at += length + 2
+    // }
+    bz hasTxt_after_while@16
+    // smart_contracts/dnssec_oracle/reader.algo.ts:74
+    // const length = op.extractUint16(value, at)
+    dig 2
+    dig 1
+    extract_uint16
+    dup
+    cover 2
+    // smart_contracts/dnssec_oracle/reader.algo.ts:75
+    // if (length === rdata.length && op.extract(value, at + 2, length) === rdata) return true
+    dig 3
+    len
+    ==
+    bz hasTxt_after_if_else@15
+    dup
+    intc_2 // 2
+    +
+    dig 4
+    swap
+    dig 3
+    extract3
+    dig 3
+    ==
+    bz hasTxt_after_if_else@15
+    popn 3
+    intc_1 // 1
+
+hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@17:
+    // smart_contracts/consumer/contract.algo.ts:27-30
+    // exists &&
+    // tldListed(oracle, name) &&
+    // attestationUsable(value, maxAge, minKeyBits) &&
+    // attestationHasRecord(value, txtRdata(text))
+    bz hasTxt_bool_false@6
+    intc_1 // 1
+
+hasTxt_bool_merge@7:
+    // smart_contracts/consumer/contract.algo.ts:21-22
+    // @readonly
+    // public hasTxt(name: bytes, text: bytes, maxAge: uint64, minKeyBits: uint64): boolean {
+    pushbytes 0x00
+    intc_0 // 0
+    uncover 2
+    setbit
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_1 // 1
+    return
+
+hasTxt_bool_false@6:
+    intc_0 // 0
+    b hasTxt_bool_merge@7
+
+hasTxt_after_if_else@15:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:76
+    // at += length + 2
+    swap
+    intc_2 // 2
+    +
+    +
+    b hasTxt_while_top@11
+
+hasTxt_after_while@16:
+    popn 2
+    // smart_contracts/dnssec_oracle/reader.algo.ts:78
+    // return false
+    intc_0 // 0
+    // smart_contracts/consumer/contract.algo.ts:30
+    // attestationHasRecord(value, txtRdata(text))
+    b hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@17
+
+hasTxt_bool_false@22:
+    intc_0 // 0
+    b hasTxt_bool_merge@23

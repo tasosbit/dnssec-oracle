@@ -146,7 +146,9 @@ for a sibling name inside their own TXT value.
 
 Hard limit: `sha256` takes one value of at most 4,096 bytes and cannot stream,
 so signed data or a parent RRset above that size is unprovable. Documented,
-not worked around; rejected before hashing.
+not worked around. The contract needs no check: v42 caps each app argument at
+4,096 bytes, so oversized data never reaches it. The SDK's prover refuses it
+before sending.
 
 Wire rules: a label length byte must be below `0x40`, which rejects
 compression pointers and extended label types.
@@ -200,7 +202,13 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `payer`.
   against the owner's rightmost label. `proveRoot` is exempt: the root has no
   labels.
 - Ancestry is tested label by label.
-- Newest inception wins, for caches and attestations alike. Ties replace.
+- Newest inception wins, for caches and attestations alike. Ties replace,
+  except that a cache entry at the same inception is replaced only if its
+  expiry and `weakestKeyBits` get no worse (`WRS`): a second signature cannot
+  shorten or weaken it, and a re-proof after its parent is refreshed still
+  extends it.
+- `addTld` rejects uppercase labels: owners are matched byte for byte, so one
+  would whitelist nothing.
 - A TXT proof replaces the whole RDATA set, so a removed record disappears as
   soon as anyone submits the newer RRset.
 - `setAdmin` to the zero address renounces the role permanently. Doing it
@@ -259,14 +267,18 @@ payments, so a closed account can never block a write.
   with the app instead of failing, since `settleMbrCredits` would assert.
   `ponytail:` stranded dust, add a sweep if it ever adds up.
 - A pruner must hold a credit box to receive the refund.
-- The 30-day grace keeps the newest-inception mark alive for short-lived
-  signatures such as Route 53's.
+- The 30-day grace keeps an expired attestation readable. It is not a
+  freshness guarantee: once pruned, an older RRset still inside its window
+  can be proven again. Consumers bound that with a maximum age on
+  `inception` (below).
 
 ### Reading attestations
 
 - On-chain: the contract enables `ForeignBoxReads` on itself at creation with
   `app_params_set` (AVM v13). Consumers read the `t` box directly with the
-  reference reader. Fallback, only if PuyaTs 1.3.1 does not expose
+  reference reader, from an oracle app ID they pin (the example consumer
+  stores it at create), and check the `w` box too (`tldListed`): after
+  `removeTld`, attestations stay readable until pruned. Fallback, only if PuyaTs 1.3.1 does not expose
   `app_params_set`: consumers call `logAttestations` as an inner call.
 - Off-chain, SDK: point lookups simulate `logAttestations` (batched,
   `@chunked`); listing every attestation or cache uses the algod
@@ -328,7 +340,7 @@ Ordered from unavoidable to self-inflicted.
 | 7 | **Whitelist admin** | Add a TLD: extends trust to that registry, for names under it only. Remove a TLD: blocks proofs and lets its attestations be pruned. **Cannot forge** under existing TLDs, cannot touch anchors or code. |
 | 8 | **Algorand consensus and AVM** | The only clock is the block timestamp, bounded to +25 s per block but not to wall-clock time. Proposers stalling it extend the life of expired signatures. |
 | 9 | **Verification code** | The RSA and MBR libraries, the wire parser, the Puya compiler, the rule list. A bug equals a forged root key, and the contract cannot be patched. Largest avoidable risk. |
-| 10 | **Consumer code** | Must parse the attestation box by its layout. A substring match is a forgery at the consumer. |
+| 10 | **Consumer code** | Must pin the oracle app ID and parse the attestation box by its layout. Reading from an app the caller names, or a substring match, is a forgery at the consumer. |
 | 11 | **Watchers, for liveness** | Someone must submit the root RRset at least every 21 days or every proof below stalls. Cheap, permissionless, should be a cron job. |
 | — | **Relayer** | **Not trusted for integrity.** Freshness depends on everyone who can submit, below. |
 

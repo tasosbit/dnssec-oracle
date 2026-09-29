@@ -1,0 +1,1234 @@
+; captured 2026-09-29T01:17:01Z
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @a.root-servers.net . DNSKEY +dnssec +norec +tcp +multi
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31562
+;; flags: qr aa; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 4096
+;; QUESTION SECTION:
+;.			IN DNSKEY
+
+;; ANSWER SECTION:
+.			172800 IN DNSKEY 256 3 8 (
+				AwEAAcorNxNc9t0ue1ZenPjVMRujlQ2YLBJ0pR/4XMjH
+				by9vr03cRxFSKnWpxeg5PL384D9VeqdS1bjrGyTsHtoa
+				gzI3NiXFd8sjHMOnZxu5pp/+UBIg7tasYgVMMdUiM1Yu
+				/c+t30d1Qw/v6NYLNnOnywTu6HuUh7Y1sZRq/GZcrxLE
+				NXHQoyKpOrOr8R3+qd6wK69IKB80ZBZtkX9rdEqKJk+y
+				YXjEZzZ0zkAFthmNgCreAoU9PVlU66dyOsaLjf3wKUlU
+				m9SNOKs+tK6LuSmRbK6+1T/tPaRaMBSEuv2G6vXfnJ1u
+				yMbGvtpRn/YDcvTjrp6DzE6XyF44QdwJ3oKx4ek=
+				) ; ZSK; alg = RSASHA256 ; key id = 8763
+.			172800 IN DNSKEY 256 3 8 (
+				AwEAAeCYD6Z7WWKVLeuWgowKP+3g+Gs1cnLKq7a3CaQx
+				Qpv8bfuFVI0WnG33qaSH/Mw9IBgifrdzf4XY/DQLnyBJ
+				9MfaOyAWuEaEmYJ+GQPiwVVfstGwSA1McfFJUttTgq2H
+				uu74KARhtA8wPo/N3XcyYQtNhz+qCM5NBb3ecx/naw6s
+				Yab9LxS6f2cU0q03++BP5Ks0Uef8WJCa/1izCYE+vMkw
+				oltV+tENa3hpXiZ7jle/xdgaZrPi5ZGmyLVI34g1XVYr
+				NlsCCTmNvFQIfzW5STFQFsQpizczyFn9r3LzSxxPCNwd
+				lCG84bER0BmdwqbF6Tanv+FxMOavrahkj4wIy5k=
+				) ; ZSK; alg = RSASHA256 ; key id = 57780
+.			172800 IN DNSKEY 257 3 8 (
+				AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTO
+				iW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN
+				7SWXgnLh4+B5xQlNVz8Og8kvArMtNROxVQuCaSnIDdD5
+				LKyWbRd2n9WGe2R8PzgCmr3EgVLrjyBxWezF0jLHwVN8
+				efS3rCj/EWgvIWgb9tarpVUDK/b58Da+sqqls3eNbuv7
+				pr+eoZG+SrDK6nWeL3c6H5Apxz7LjVc1uTIdsIXxuOLY
+				A4/ilBmSVIzuDWfdRUfhHdY6+cn8HFRm+2hM8AnXGXws
+				9555KrUB5qihylGa8subX2Nn6UwNR1AkUTV74bU=
+				) ; KSK; alg = RSASHA256 ; key id = 20326
+.			172800 IN DNSKEY 257 3 8 (
+				AwEAAa96jeuknZlaeSrvyAJj6ZHv28hhOKkx3rLGXVaC
+				6rXTsDc449/cidltpkyGwCJNnOAlFNKF2jBosZBU5eeH
+				spaQWOmOElZsjICMQMC3aeHbGiShvZsx4wMYSjH8e7Vr
+				hbu6irwCzVBApESjbUdpWWmEnhathWu1jo+siFUiRAAx
+				m9qyJNg/wOZqqzL/dL/q8PkcRU5oUKEpUge71M3ej2/7
+				CPqpdVwuMoTvoB+ZOT4YeGyxMvHmbrxlFzGOHOijtzN+
+				u1TQNatX2XBuzZNQ1K+s2CXkPIZo7s6JgZyvaBevYtxP
+				vYLw4z9mR7K2vaF18UYH9Z9GNUUeayffKC73PYc=
+				) ; KSK; alg = RSASHA256 ; key id = 38696
+.			172800 IN RRSIG	DNSKEY 8 0 172800 (
+				20261010000000 20260919000000 20326 .
+				SeT2U+BKi7S4R7OPnQ0EBjS6DtsNPasISEAE3iOUQWl5
+				52IWiqHLBYkZOa5au73wjV5oH9vQleMBgtIQleByqX74
+				kORDKMmx+EIhhDmiNOf9w33OqM4+s0Etem28QjqQ9e4Q
+				gsKI6N39HDMedL31iybJn6ghPcDT73IyzgTs6mtyV+Lp
+				u1ZqH1yXNNB34YsEzgquGDKU7QkAlQMupqKlZOhJC2pj
+				4724FzjrMXq68MYAitHMmfnrm2/iqP8i0jIrIQgIl4mV
+				OO4VxMZEsQa+ESJWEBQJ3Fu3jLRII/xIEq1qXb8F87yh
+				BvKhzuyLfQGaKttdkN9oudecqKuNezNp0g== )
+
+;; Query time: 13 msec
+;; SERVER: 2001:503:ba3e::2:30#53(a.root-servers.net) (TCP)
+;; WHEN: Tue Sep 29 03:17:01 CEST 2026
+;; MSG SIZE  rcvd: 1414
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 com DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 58223
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;com.			IN DS
+
+;; ANSWER SECTION:
+com.			70696 IN DS 19718 13 2 (
+				8ACBB0CD28F41250A80A491389424D341522D946B0DA
+				0C0291F2D3D771D7805A )
+com.			70696 IN RRSIG DS 8 1 86400 (
+				20261011200000 20260928190000 57780 .
+				R0qlaflC+NdfTiVeG2YU26WDSnmWbiwWFvIqFhNB5wMu
+				zm/hP+W2kY/ppeQ7tLUVRINz3GET4/7Lm3lXNjzGtYR8
+				mj1TGuhhNUZcsoBg88nekYrRCtO5F0CjZougu4/aGXWR
+				Zyn1zrOuVkLAAlbt4c5+96l0Hn7PiC2fE6fgqzNRDxC/
+				5adBsOFLNOnlq9EiEq5mJJpCmRFvhGYLUinb0QQeHmd5
+				K6r032bh3uilVbWXVW/aWe28ucSVR/Qvhn4B7qfOmdBq
+				FfgQ3gm0apGEwzpgPlyYM0IoHqgDWIaOqjj2qKPjCh1n
+				PATVY/OE0StQ5sZbUtZJPWxXZhQfMe2aYQ== )
+
+;; Query time: 13 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:01 CEST 2026
+;; MSG SIZE  rcvd: 367
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 com DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 58239
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;com.			IN DNSKEY
+
+;; ANSWER SECTION:
+com.			2382 IN	DNSKEY 256 3 13 (
+				o6onp+t66olg3PFhuIXaaatogT3OrqHrqt48IkYGuxwW
+				8tSnQVMGyO+TSmp8sTRtkD9km+N/VQvvtqVM8ra9/Q==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 41446
+com.			2382 IN	DNSKEY 257 3 13 (
+				tx8EZRAd2+K/DJRV0S+hbBzaRPS/G6JVNBitHzqpsGlz
+				8huE61Ms9ANe6NSDLKJtiTBqfTJWDAywEp1FCsEINQ==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 19718
+com.			2382 IN	RRSIG DNSKEY 13 1 86400 (
+				20261009140235 20260924135735 19718 com.
+				P/KPj3jnoiFUa4iYnB/ENiRwaaUO34K78Da96VFHXLn9
+				p9BCyX0Wh8s4nek955T+6KSY95NuNB3S19P/ULBMqA== )
+
+;; Query time: 8 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 291
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 publicnode.com DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 25746
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;publicnode.com.		IN DS
+
+;; ANSWER SECTION:
+publicnode.com.		86400 IN DS 2371 13 2 (
+				C93A9255E4252A1ED9009D5F2863E074E62D5BA34A93
+				71E5D7BFF7E0C6EBE679 )
+publicnode.com.		86400 IN RRSIG DS 13 2 86400 (
+				20261006003417 20260928232417 41446 com.
+				+b3iUocgMLrGPO1gYttN1/W5oAlec5yWpZAPcX68RmLX
+				WS3c3uTg0ys8mG7nvvFpzRxq/46XdhC3+D4Zj7dsNw== )
+
+;; Query time: 14 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 190
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 publicnode.com DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 29482
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;publicnode.com.		IN DNSKEY
+
+;; ANSWER SECTION:
+publicnode.com.		832 IN DNSKEY 256 3 13 (
+				oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeq
+				CYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 34505
+publicnode.com.		832 IN DNSKEY 257 3 13 (
+				mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+Gq
+				JxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 2371
+publicnode.com.		832 IN RRSIG DNSKEY 13 2 3600 (
+				20261123204352 20260923204352 2371 publicnode.com.
+				+Myh0oiIr1gcImtVugtFXXgBcJAP12xzw50Iby/KixZl
+				da0qrSJlC8kohztEXck8WIK0OSh56jUqPOuX0h98/w== )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 313
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.publicnode.com DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4568
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.publicnode.com.	IN DS
+
+;; AUTHORITY SECTION:
+publicnode.com.		300 IN SOA amir.ns.cloudflare.com. dns.cloudflare.com. (
+				2415768337 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				300        ; minimum (5 minutes)
+				)
+publicnode.com.		300 IN RRSIG SOA 13 2 300 (
+				20260930021702 20260928001702 34505 publicnode.com.
+				6xP+WlBwB7R36RKNq2uzk2V7xwop6R3sEFPus4yei63C
+				LH4AfC53EloKFY2sEg0SarA5igauWHpT6E4s6UfmCg== )
+_dmarc.publicnode.com.	300 IN NSEC \000._dmarc.publicnode.com. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.publicnode.com.	300 IN RRSIG NSEC 13 3 300 (
+				20260930021702 20260928001702 34505 publicnode.com.
+				j/JJaXFm/HJYbSXJI1OmDuWh72Lk2md1QY6k9MYDuUag
+				Yalnq0KDSVEMuUE1a6Ch5L54L+9XMyEZf1WuWMhpxA== )
+
+;; Query time: 16 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 380
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.publicnode.com DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 2473
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.publicnode.com.	IN DNSKEY
+
+;; AUTHORITY SECTION:
+publicnode.com.		300 IN SOA amir.ns.cloudflare.com. dns.cloudflare.com. (
+				2415768337 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				300        ; minimum (5 minutes)
+				)
+publicnode.com.		300 IN RRSIG SOA 13 2 300 (
+				20260930021702 20260928001702 34505 publicnode.com.
+				UoZPA3hq8sXublzyohapKFiGR3Cr6advyPeZBZvqBTgM
+				1H0H/7nanahHI4vjautCO7yb9PM5g1euQXoiAMO1Yg== )
+_dmarc.publicnode.com.	300 IN NSEC \000._dmarc.publicnode.com. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.publicnode.com.	300 IN RRSIG NSEC 13 3 300 (
+				20260930021702 20260928001702 34505 publicnode.com.
+				/JLIOB8O+9vtgSVIm1qqk1uj+cu807Dbjvb/t4NNSVFG
+				zbRQWihaCrm81nrkjwsobUJO72ppbhrHfkAOqXyi7A== )
+
+;; Query time: 14 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 380
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.publicnode.com TXT +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 42601
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.publicnode.com.	IN TXT
+
+;; ANSWER SECTION:
+_dmarc.publicnode.com.	300 IN TXT "v=DMARC1; p=quarantine; pct=100; rua=mailto:postmaster@publicnode.com; ruf=mailto:postmaster@publicnode.com; sp=quarantine; aspf=r;"
+_dmarc.publicnode.com.	300 IN RRSIG TXT 13 3 300 (
+				20260930021702 20260928001702 34505 publicnode.com.
+				0ThC14z1cONmfgqfo26v/OPTYhWiltw7b1OB3aNCaNuz
+				+IkzfwEzgCAHfwff3qga1f03PChCRtHHgCThQod6sw== )
+
+;; Query time: 20 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 304
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 io DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 43589
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;io.			IN DS
+
+;; ANSWER SECTION:
+io.			75907 IN DS 57355 8 2 (
+				95A57C3BAB7849DBCDDF7C72ADA71A88146B14111031
+				8CA5BE672057E865C3E2 )
+io.			75907 IN RRSIG DS 8 1 86400 (
+				20261011200000 20260928190000 57780 .
+				QhV3ptEGwlvxon7IonCUo00p4Qp8cCj9iWeDoCKClTI9
+				FMaxPIOxQrJOgnUcDF4zFbRNplvXZ2X9fmG3IOE35OuH
+				/d75K20DtkWRFvProl9T/blYkVIeJ6dKff8psozw43Sq
+				8GYAftYxkNu6KpGITsgzvSm35+eE2z5Rm2NZgeXXj3Oa
+				yQ/3B4kRkyFEaJxilS+u2n9FsYeaA7EigihdLQmmdgoS
+				URkedAhJ13XzkVqvcGG+eDE7tZC8rSF07F1TQrmNiW2M
+				ZSbr8eOcgF3IL33KbzvbtZMYpvtW2jAscM598dfGPfWn
+				izyy0CrDO8wx9lEbd2j98s+LvNx2BAVqBA== )
+
+;; Query time: 13 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 366
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 io DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 17008
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 6, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;io.			IN DNSKEY
+
+;; ANSWER SECTION:
+io.			344 IN DNSKEY 256 3 8 (
+				AwEAAaLKt9MqfC7gbAsdF1Ic7cjOsHoKw13bAgW/YyFP
+				2I7MEBJwdlIJ5qnChMgmzoF9hYNNPsGTH4vzP57n1Isf
+				akPUsC5SXpjXxfWb5FVkmlDecj1KDNiB3S67pGYDRl3D
+				KOAsbNkOI+ESXsJG6dGgnxVdY5cESKNY2kz2SHA2v045
+				) ; ZSK; alg = RSASHA256 ; key id = 43371
+io.			344 IN DNSKEY 256 3 8 (
+				AwEAAbVN4merOsI+7SogMySBo5hFYd7scbXjPADbHfNX
+				ggfe9rB+PbYTkY7coO4MY/Uq7sC5CMfrStpdi3bvhNtU
+				AvIDrPMiYL+PQk3qMLSeptJT+JDmf2ZN4qKzv5Mxh/QO
+				dfdYLVG4vAtMYsGkH1Yo7hJ237dWcWdbRdTx7cwPLly5
+				) ; ZSK; alg = RSASHA256 ; key id = 4300
+io.			344 IN DNSKEY 256 3 8 (
+				AwEAAde8vMlzOW7Xz8hAOXFFb3u4czZOqAYHOyseaABF
+				h1w+4DXkeF9FGYXKm8rRFR1FlGFsa49TmtEposerwB7L
+				PJ8fzeZwlQcz+xeEHHjWuAYWTA447qO1xSPDabXbHjyl
+				QgdlKeBWgFELnCb+W9gBwZIVJ+vFY5f6yrGOfgaBEbv5
+				) ; ZSK; alg = RSASHA256 ; key id = 60948
+io.			344 IN DNSKEY 257 3 8 (
+				AwEAAdgV7ipvizPjJNDZ1O5Ea7hmp+qelixmzCqWbwPH
+				00VOKvlEcWfM/PKGLt+Phj9jVJqDytWIm7Ff7+fUaRMP
+				zMuUW2Z7ViLitxH4iNtKtwU+DMzdGpzRMXFAF1WdbxCF
+				5lWoK0MHsIR5oD9VkwopkttyGnKjYhTDNObYHg8Mi5E9
+				j0FjU4OEpKw6NbZduVKp2pRBBejm/8WKq0O1PukchMa6
+				TQIJlYNsJZNzD1QLcKZWEup+fTvqzAWiK2Su6rlDC7rg
+				we6OjhrT2ejqlORp3h5S4WJGi3haUczvA/O5GYjhGmXx
+				p5CJ01RJSYG0BsbY1tpEX+9Y4+GhS/nf8Qo0iDc=
+				) ; KSK; alg = RSASHA256 ; key id = 57355
+io.			344 IN DNSKEY 257 3 8 (
+				AwEAAeEq7xf1mGKTMMZat1vKp9JM2b86r0WkXJJHokIW
+				ULsqpIk881lS8H+KpvkYaWGJ9UGeoBai9Q+rvjR12YDZ
+				oVO8V3qoNJVFTzTOpe6AA9A6XgedL1mOl7zswAnVU7gU
+				hsYLzMUfK2yruVs/AIgzyfPw1eLG990HvsFfk/IYWfS7
+				a9euPkPNgRtor7YqKc7Kl40eSF4xWEm/tGBrbnkplEQh
+				Kh0ugw2XrjsfwitHtvI3QQwNGCz2yvsyve0jYJOXvf+J
+				OZOpJTyqm0kby/Yxnr9KzzEfAyuObGwHrSOZf6eE8KjY
+				1gdr9D4xYMWLqx/1j201mNgRLIVnQkSqIUOkxRk=
+				) ; KSK; alg = RSASHA256 ; key id = 38690
+io.			344 IN RRSIG DNSKEY 8 1 3600 (
+				20261016185914 20260925175914 57355 io.
+				FbwLDK9jAAvoKaaFMQcwkGSRX3MvqQzUhYaJkeKOJRom
+				F5onXPVQ9AdCxdESWjYtFM2pcVhJCV2UEfD2igN8erud
+				bRIvf3JCmrEjvHC/t6lpAIfh3G9Br0LkTBPhOXz4s2wq
+				vl6ujDwf+hi1Xx+KGvZmO61PrHJbfXrBhAcGIpmpB42N
+				Wyn2x+um4SS0R6zSjw3hPvywXUUGayjTBEt1n7NXOeLL
+				7ugLXO7uJhhGsAXQhJIGy86vXlbnztNnO4z3l7ZduSS5
+				3q7jRfbeCgRxAu0sNZCvnjuSNE4vk93Q3OT/Mnd35BzP
+				5xu6J71rqpXAQVKSps2VW5Rtfx7WnOqduA== )
+
+;; Query time: 15 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 1317
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 nodely.io DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 39325
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;nodely.io.		IN DS
+
+;; ANSWER SECTION:
+nodely.io.		3600 IN	DS 2371 13 2 (
+				11B79166AB7FACFB7E67FB50A406DE50CBE1D5863D80
+				38819DC88A31A4A5A35A )
+nodely.io.		3600 IN	RRSIG DS 8 2 3600 (
+				20261016185914 20260925175914 43371 io.
+				K+k9kj24U+QVm/OxtydCml7XoY5LlzOkgKXjJkencevX
+				5B3a5TMWbWg3YtJf75C+2KfRjde96gIxWgzaxh/zTS9x
+				4CKAz+hB/zfy+IbxIONpBJRrgoXCjiyRMJ8Is9iNeadf
+				w/IT/ur2vODhWnJ61+9oHBaw6pwzj4kSuK55DXw= )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 248
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 nodely.io DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 61367
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;nodely.io.		IN DNSKEY
+
+;; ANSWER SECTION:
+nodely.io.		3600 IN	DNSKEY 256 3 13 (
+				oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeq
+				CYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 34505
+nodely.io.		3600 IN	DNSKEY 257 3 13 (
+				mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+Gq
+				JxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 2371
+nodely.io.		3600 IN	RRSIG DNSKEY 13 2 3600 (
+				20261115074428 20260915074428 2371 nodely.io.
+				HT3W2zVF/pNkS5D9zRnf4/fZ2O05oOqJZTp4bWbtKcg2
+				6FvN42/a3RNkJpbdo7noyDLEQ0PMK/vMHuvTF+t1PA== )
+
+;; Query time: 16 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 303
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.nodely.io DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31601
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.nodely.io.	IN DS
+
+;; AUTHORITY SECTION:
+nodely.io.		1800 IN	SOA phil.ns.cloudflare.com. dns.cloudflare.com. (
+				2415930272 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				1800       ; minimum (30 minutes)
+				)
+nodely.io.		1800 IN	RRSIG SOA 13 2 1800 (
+				20260930021702 20260928001702 34505 nodely.io.
+				1qatYKA9nsACn/ipUing7CNset2NjYduwDDmBMrLnX5K
+				+UkI3HZuJCrSACj47Gpz0vC93wnUI5p/VQCVyd8yUg== )
+_dmarc.nodely.io.	1800 IN	NSEC \000._dmarc.nodely.io. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.nodely.io.	1800 IN	RRSIG NSEC 13 3 1800 (
+				20260930021702 20260928001702 34505 nodely.io.
+				6OaWr5Uy97GsoGxXIUMVkufZEZ1Ju6ZcxedSvRohbluy
+				lO/SA56Wcjfkr3vwSWQ+XGhXr6qgLmmD5e1j3r02eA== )
+
+;; Query time: 17 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 363
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.nodely.io DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 15545
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.nodely.io.	IN DNSKEY
+
+;; AUTHORITY SECTION:
+nodely.io.		1800 IN	SOA phil.ns.cloudflare.com. dns.cloudflare.com. (
+				2415930272 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				1800       ; minimum (30 minutes)
+				)
+nodely.io.		1800 IN	RRSIG SOA 13 2 1800 (
+				20260930021702 20260928001702 34505 nodely.io.
+				GJYigDoKk3HIMVV0w/I438IUX0NL7P7cWFOdXgfKAlrw
+				cmQpi0sFDQX4Wo9MFAtoR7BZ011De/nsRtRfhO6hqg== )
+_dmarc.nodely.io.	1800 IN	NSEC \000._dmarc.nodely.io. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.nodely.io.	1800 IN	RRSIG NSEC 13 3 1800 (
+				20260930021702 20260928001702 34505 nodely.io.
+				x99IAknqx3A9BQpmW2mFx52L1sm3oP1GBGtQK5TxB8iJ
+				vkM9CIbjdcy+9HJzxy4nfmQzPBD5zKRx9SNjNSipPQ== )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 363
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.nodely.io TXT +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 6475
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.nodely.io.	IN TXT
+
+;; ANSWER SECTION:
+_dmarc.nodely.io.	300 IN TXT "v=DMARC1;  p=reject; rua=mailto:66118eab3b1349c5a83195676918ad60@dmarc-reports.cloudflare.net,mailto:3c245ce7fb954128935e771946567afc@dmarc-reports.cloudflare.net"
+_dmarc.nodely.io.	300 IN RRSIG TXT 13 3 300 (
+				20260930021702 20260928001702 34505 nodely.io.
+				7k4cA8/4IBdP9Kcrs5x0IdPBkbb65XGCcv1z333AybDX
+				6hjUbxVSgbja/dBubhP0xM6IGR8Nk8EM9jT9O5irTg== )
+
+;; Query time: 20 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 325
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 finance DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 9065
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;finance.		IN DS
+
+;; ANSWER SECTION:
+finance.		86400 IN DS 28624 8 2 (
+				860C6291C65E96464ECDB0F349A9F9F10B1F5872D8A3
+				9BA27DBFAFE38D85F07D )
+finance.		86400 IN RRSIG DS 8 1 86400 (
+				20261011200000 20260928190000 57780 .
+				fWnwFcAMEDHgrMVjvIVH4KP85OR0VpOVtYV+yOghZast
+				Qidq19q1m/bD4XPjwWOAIWgwiVSENBgo+xtzq8/6H07c
+				tGzjtkI4W/Xl39+T9ifaLJoCAsikMlSTXSqXpde9uO1B
+				K7NE52FMRccqmZNG+HgE5FvXQEdaHG3iq8cnUOTamyqH
+				Q4f2x6bw6EmsOR9VPud2rzaVuYcwl5xyWQCDk75KXVEg
+				8I+QZ+7XzDus2dKu9axPtHIVyWZ7XSTYclcwRDMaVZYE
+				GCub9HJZ2GdGDzC5lEebtFEhBic3iC7xZjtKyPuBAXkN
+				ElyP2h3307V453dVrurXB8FWNiWvXZuGIw== )
+
+;; Query time: 19 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 371
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 finance DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 29342
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 6, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;finance.		IN DNSKEY
+
+;; ANSWER SECTION:
+finance.		1422 IN	DNSKEY 256 3 8 (
+				AwEAAak0yp4OHW9eUp0ULn7zHWe2yj9o0eBjvKH4v5cS
+				XKL+xZpuyV9X7XUMcNHXwyaLu/O7ctaKdHwsBZWFKl87
+				VXLIyiaHnYd/aBmsP8lc/oTejOox4SaKt3A4ZiELh8Ts
+				0Ggn9zhiZHhaJG+kdI5FrMKze7gAvfY5u5Ogl9N8Fdyx
+				) ; ZSK; alg = RSASHA256 ; key id = 28941
+finance.		1422 IN	DNSKEY 256 3 8 (
+				AwEAAcd/uuPdugDBmuhNEhZE4rhb+FEsJiAn0UQaxA8I
+				PVLM0ODMvPPsj76mLYjYNAzTI0nwivX/WbqJrm5LLSwe
+				55Ufg91j8NsMDURABfVYW0L4dcNHRrxLxxwI5HEpokBI
+				VC8lcIknguhOMgC6Wm7kp+g7ZxsokNFRy/20RX9dKOBP
+				) ; ZSK; alg = RSASHA256 ; key id = 35761
+finance.		1422 IN	DNSKEY 256 3 8 (
+				AwEAAc/XCBymu3BLufsI85qT/jct/oQqmNzZw/ezaBIJ
+				+yvVNEFHPevbk8JaC9vL/z9fIF7v18eBTGiNxa5l2trR
+				r60iEH6z5JC8wHQX7+oF89fuqy4Z5IU+pA6Eg6tkbAJX
+				hHxWI1jUG+l7hRm5KEQtE0zLPvwJKwqayMPJ3z/aAeF3
+				) ; ZSK; alg = RSASHA256 ; key id = 46710
+finance.		1422 IN	DNSKEY 257 3 8 (
+				AwEAAbzV9Xvd9xS33l7Sxb7pE6VY9pqL3RD9NYc7oE68
+				5IHL6rP9flREHde/JF6UafKyjve7/TvSWJsKR7A3uriR
+				aagMk23moxaH6UIjYymzz/ncgbcEsSc1pee3JFOnOtx5
+				WigKR+987cgzWiyCB0kADFY14aZKzGk/a4dN6QqQp3Lz
+				qKbcOYw6xnj4q8CU+9R3PS1OS59Ccu+kbkHXvFTSaMV3
+				ebR3ADvDf7xbL7/mA+kf2EqDQOOn/J/GNgLraOt2Umt+
+				s9+8EyXCAG/yq3RDoIRotpLpxzDf27H90CATXZkdPFqL
+				43is5jpZt/hNQ9dOJh1r1N63C5TmVTcmX6K6oj8=
+				) ; KSK; alg = RSASHA256 ; key id = 28624
+finance.		1422 IN	DNSKEY 257 3 8 (
+				AwEAAetJ3HvyglcW3tetixxuJZqCJx3XQz8ciC+Ex/mC
+				CXqxvWkeTuAcHIQQ+yuN5iOiJ2d3TtEzbn6zyXH4/VIe
+				vERnMM8nLqVs6AOAkPrIcYPYfqALe6SMVYXbi5wCSs+S
+				gvObX/dR1nmACMWR8di3AvTFIMJxyqbC8war8UNGeKa2
+				KHYqLra7RTPQf8gkCiE3+HnFYc+WRcqPABJWKjfVrPfq
+				Fku5sDAxztZKXZP6vLNNcsiILeZdCMOJLQvMap90oVEo
+				N7kr7y1egObFlMHeKuSLpqsNgevVesnXgAyz3TVgPHli
+				X+gOaSadcHu/Jsh84Ffb6D6WObsi4KGNfUy3IdM=
+				) ; KSK; alg = RSASHA256 ; key id = 46861
+finance.		1422 IN	RRSIG DNSKEY 8 1 3600 (
+				20261016184018 20260925174018 28624 finance.
+				PtNTDfEszlfTVMHFDjuYQdkw4A/ezDl0XlpyHbk6a5N/
+				ZGaITh4r4uUEYbRcx+veYmYjAvUtAHNhmdarat1A9DE1
+				d5DzZgYM6GWXJqQpWsOWl08c2l/9i+M9bkN3YxyPrazx
+				UcqRDI3JKnTOiajW9gQcycyuxXgoMwpjyyEBg91eD10j
+				xJQCSiU0XyIRWPD8rwJbgtxFealh+c60TXOo5fcatPpo
+				J5/2e+RjeqWgYt2IMocNDnS+rtepHunZ3Fmi727neO1I
+				D2LP+eTIPO3XBVY6ksNSWEZ5xu0/NZS2291lez5fZmzL
+				nBNSC2AusjsGSYFJv0drH2aLdFnoWDFXjQ== )
+
+;; Query time: 12 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 1327
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 folks.finance DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11855
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;folks.finance.		IN DS
+
+;; ANSWER SECTION:
+folks.finance.		3600 IN	DS 7950 13 2 (
+				B989CF20BD3BCFF812CE5B425E59C1DD8A3758FBB4C1
+				C07D3E0F48D4055B6E47 )
+folks.finance.		3600 IN	RRSIG DS 8 2 3600 (
+				20261016184018 20260925174018 46710 finance.
+				nMXbqiZPAnNrXgm+UwuaYuX6pPuS5SM9A5Jxa0XQuWHf
+				5EdUYcvMIzAmX2X1WZIpEMjHJ3i+n6WcHvh/otCsS3Em
+				b7MBz5OHu3VlVn0081gsLDrExEeniiimdos9y6W6YpG1
+				gohINcf6Slk1oLb1Welyj0gOzGE+2EmcIiQH+mI= )
+
+;; Query time: 14 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 257
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 folks.finance DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1222
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;folks.finance.		IN DNSKEY
+
+;; ANSWER SECTION:
+folks.finance.		3600 IN	DNSKEY 256 3 13 (
+				NUMyCD/Su0iRLuDCP/U2+BwQpAqGSJBkIY9kzIJNRh8Z
+				NFR4JkFLRnOYgnNIHoBhMko1Z11cLaYDXxZTZcbJog==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 20081
+folks.finance.		3600 IN	DNSKEY 256 3 13 (
+				+PNter+r2TQ8GWa6tdgLV1HMXC2l61vDsECYZLWUm0UG
+				JkQpYI7aI22IBxcvu4UCvmHxItNa9k5DPV+PGjHFWw==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 23150
+folks.finance.		3600 IN	DNSKEY 257 3 13 (
+				IhYONehS3mV2tmNI31BMtByZwGdd51B43k3QkK8hVNmW
+				lyJnCX6bl2HX5fpG640ApLjuxYv5jtty8C+q9nIeig==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 7950
+folks.finance.		3600 IN	RRSIG DNSKEY 13 2 3600 (
+				20260929100000 20260928230000 7950 folks.finance.
+				FuPmiXOynSomp3GgQJj6BYbiHseOEkR0tSzVX96zOS9X
+				6ci73dwIrHrgLEB/Nkn+bShety8lwu+fiQS+pmZijQ== )
+
+;; Query time: 20 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 391
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.folks.finance DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 61503
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.folks.finance.	IN DS
+
+;; AUTHORITY SECTION:
+folks.finance.		900 IN SOA ns-647.awsdns-16.net. awsdns-hostmaster.amazon.com. (
+				1          ; serial
+				7200       ; refresh (2 hours)
+				900        ; retry (15 minutes)
+				1209600    ; expire (2 weeks)
+				300        ; minimum (5 minutes)
+				)
+folks.finance.		900 IN RRSIG SOA 13 2 900 (
+				20260929023202 20260929001702 23150 folks.finance.
+				VXnb3Dv/3YPhGHGAfOeeiCQL0RX5UvouKEdguTbp1CeV
+				4CUC0jvgKZ/34I0k12MUG4KdzRiNdwCC3wwqDnm7DA== )
+_dmarc.folks.finance.	300 IN NSEC \000._dmarc.folks.finance. A PTR HINFO MX TXT RP AAAA SRV NAPTR SSHFP RRSIG NSEC TLSA SVCB HTTPS SPF CAA
+_dmarc.folks.finance.	300 IN RRSIG NSEC 13 3 300 (
+				20260929022202 20260929001702 23150 folks.finance.
+				+hsBOT2x/xXA+bIWiP5evv8d7/dN1J81tXSWtQCX4Y48
+				1ieznwvO3CrPf/mci30W+MKv4HhPjX3Gi/M69epF2w== )
+
+;; Query time: 12 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 405
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.folks.finance DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45324
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.folks.finance.	IN DNSKEY
+
+;; AUTHORITY SECTION:
+folks.finance.		900 IN SOA ns-647.awsdns-16.net. awsdns-hostmaster.amazon.com. (
+				1          ; serial
+				7200       ; refresh (2 hours)
+				900        ; retry (15 minutes)
+				1209600    ; expire (2 weeks)
+				300        ; minimum (5 minutes)
+				)
+folks.finance.		900 IN RRSIG SOA 13 2 900 (
+				20260929023202 20260929001702 23150 folks.finance.
+				WiDMZKUFAaaTJDyzv+hlDmsjzFyi5qAOC/r5SS2tOiMN
+				WMc+vvSbvuTHcoh8zWxCJyRYrIELphTUKqo0I1NjdQ== )
+_dmarc.folks.finance.	300 IN NSEC \000._dmarc.folks.finance. A PTR HINFO MX TXT RP AAAA SRV NAPTR SSHFP RRSIG NSEC TLSA SVCB HTTPS SPF CAA
+_dmarc.folks.finance.	300 IN RRSIG NSEC 13 3 300 (
+				20260929022202 20260929001702 23150 folks.finance.
+				0SwoCtCPj4J/zXN+jEaHzvtEK8aaOImupLOXjxNd49ce
+				EPDjlPm2Ghu7v1AxdGQgQE0oPdCGuj3p2XVeY0sooA== )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 405
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.folks.finance TXT +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 59012
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.folks.finance.	IN TXT
+
+;; ANSWER SECTION:
+_dmarc.folks.finance.	300 IN TXT "v=DMARC1;p=quarantine;pct=100;rua=mailto:dmarcreports@folks.finance,mailto:rua@dmarc.brevo.com"
+_dmarc.folks.finance.	300 IN RRSIG TXT 13 3 300 (
+				20260929022202 20260929001702 23150 folks.finance.
+				USgPwdLT6esviMYXZ9nryNHOvd3wa6sJmg3Jr5dqsKOK
+				wGlg0T8MYaLDqfYFAkP+C3jO7wdB5eeiaUCpWohKpw== )
+
+;; Query time: 20 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:02 CEST 2026
+;; MSG SIZE  rcvd: 265
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 co DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 21649
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;co.			IN DS
+
+;; ANSWER SECTION:
+co.			86400 IN DS 7786 8 2 (
+				EB84F864CBE86E913796D2C8DD81933AA2C94BBCFB73
+				419A42250BC4650B081B )
+co.			86400 IN RRSIG DS 8 1 86400 (
+				20261011200000 20260928190000 57780 .
+				DS2vLx39/EsLn30jXyyBXtQC2TfLtuPBjLLxjMZFUeAP
+				gW1W4arb91uVwmKnceqquul9mFuRuvzMFg4lbeh4vHri
+				vWYp8bN/Fl0tvfhWZjT+j/7+KTAOj5Gg2MpiwJwkohYV
+				tIUsWd3LSif3CV6UEfxQX6DZ/iPfuxEDoxY1Zt/WFZ7w
+				DAOa41l4jYLtwPVoWlzQITP01Wi4UgyDk2dVQBIcDRBX
+				mZqQx2biA218wg7/JrmZ2MY1TFDc5pgmz2aa71uet7Jj
+				iT+pEVYAnKAUMQjQ/XJ2sRSfvDp5uMaFWjDDXyl+wjT4
+				stouFiTUQNg9JWdmO8EWv2tW87w137fGsQ== )
+
+;; Query time: 13 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 366
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 co DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 30894
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;co.			IN DNSKEY
+
+;; ANSWER SECTION:
+co.			2879 IN	DNSKEY 256 3 8 (
+				AwEAAZUNwwlhsXkr6ze4Fg8wjl72xA/8cbM9XNUHAV6q
+				ExeHURpQH/DeWl1MaCabYYCGSet/6ZeVmzjCujrZ9cmg
+				Srrn+gCdAFMQbFAYgNoBLKL4EpXZclfQarE6x7mfeEvR
+				AJH0FJSpRgJlIrq7xS4d11Eg1xJ45XJ9+IgjqLg0D/d9
+				ADxP/0piOBc5cVshYx5uQ2QX5TCoR+Y95hOaiRmntzc=
+				) ; ZSK; alg = RSASHA256 ; key id = 16855
+co.			2879 IN	DNSKEY 256 3 8 (
+				AwEAAdMFk31+xTEr/nEs1uwVxl1BcMFtUaGTRyw2+LMO
+				g/LyL5H50sowxTVKuKag2eg2Vr4tEeY8/yqGh80rwksV
+				PeYj7FAt3Bfx6MFMrmIRDG3pHuioecKfLFElyAq/bsci
+				b8MNkCh/fm+u/WVoUVdCEWcb+ihHFaREggYywz28xC0j
+				) ; ZSK; alg = RSASHA256 ; key id = 17211
+co.			2879 IN	DNSKEY 257 3 8 (
+				AwEAAZ4KunSnSWulRURRhnyWMk/qGvCku/rfQriFLogn
+				0B0Cp4GaB1ZYFS5dq4C9ls9yANvmSoOFCsVEo6/Ty5Vn
+				Lnx96/W5EJTtJd7ddFPfLmVaVnR/35X90Str0/7wd02H
+				4OdN69q7ihARx9cv7gMgRiICEfUU7ooXb3WAiUPH5qGA
+				wAtO3C85L+wJfPLpAQFxHHDF2AOmwV3DL7XvYiek3LrP
+				YU0X90JO4AbyUg6vw74ynfEQlZdqHw//uN95Qty3LG+i
+				lM97NGN9nmCLscDPawDXkdiCGrUzNpZUSSE+cAy92yd5
+				fEHV4Ol+PiLs3sx6lSRIS/Q1RdaLjj3CPYjwDes=
+				) ; KSK; alg = RSASHA256 ; key id = 31790
+co.			2879 IN	DNSKEY 257 3 8 (
+				AwEAAczABmT0oI8qk/8hB86dKORi8mBv9mHPnIPYNCpD
+				wK/lPjLyjYFR/rqSr3ide6TvE6Fz4Lt1E6Cr0cES98MQ
+				IPNXbb40I/2QuAhG/q6WpdXAH4WQd1qRiqaYfQQsCma9
+				4ckEmbSFjAsykAsJO9a/RhaK8Q3abPiZZEzyXE+KXS+y
+				gztEFnP5BgVuaODvQwCDh1kIFV8Clb29czmsYDLjxc3N
+				1UXj0pCHcP+JtFjhDAWbNMe7YH1GQsYIA0EO2Vq8gozI
+				j7SUgGO64xAA9IrT7wVioUEwxLFialy4G23CxLUAfuOp
+				6u86fZj6bxQnnwtZk9ayJkHu4UopRVJtHR5QbNM=
+				) ; KSK; alg = RSASHA256 ; key id = 7786
+co.			2879 IN	RRSIG DNSKEY 8 1 3600 (
+				20261021133158 20260921120158 7786 co.
+				O2CXGQnCMPhQo3kqsfYSPgSjJtzUx+HRnob2+AE0HcBp
+				qhJ3aycsXb6qHPnjeEGVOfsfQJ1qtvFh+2QTyCAvNGHy
+				Xd+ll4txS4WZia401/1PX4NK9iYsYveThbMKk2V5obJH
+				QuScAwT1+g5X+t5K8H31sCFW87RNkBpBy+mhPU2kZKQA
+				8q0MVzaouumnqxwK6YQCHvt+ES6NjSHGF9up1FywL/Qw
+				CjzssmglEG5L/A8n6n2Zxl57BR45VlaoLe+NxQuRD63u
+				Zi4Qtc+c5LDzBBBJLLD5VCpMe315cuqfOL+0OMN3aQ5/
+				EA6xwzodQaUM+h2Uco/gFe7uCTg+uX1qEA== )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 1201
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 mercury.co DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 5137
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;mercury.co.		IN DS
+
+;; ANSWER SECTION:
+mercury.co.		3600 IN	DS 2371 13 2 (
+				8CDD29E8226702EEC11E32990F5DCC6DC18B6C534BAE
+				746ACA695ED49EA5FED7 )
+mercury.co.		3600 IN	RRSIG DS 8 2 3600 (
+				20261007114346 20260907101346 16855 co.
+				ai/KEObLDdkB7gShXvs5Hxat2WZmosqw7/Si0IUyrDbt
+				qGBMeWJ6BLjyWfA04emEOXicF3XAmGZt0p3rdIyRx4Am
+				DUODxC3TdYkgvss6gVuOoliSNOZ4kUGvwgveTdGhPYDn
+				RP8MTLBMv92suL89Q9b++oOLPqb9KKP/aGjGYu3Ux9va
+				g/Ht9L0V89LW9DH3spG+HKkD0fJZSsZaHnnsKg== )
+
+;; Query time: 17 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 281
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 mercury.co DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 9276
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;mercury.co.		IN DNSKEY
+
+;; ANSWER SECTION:
+mercury.co.		3600 IN	DNSKEY 256 3 13 (
+				oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeq
+				CYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 34505
+mercury.co.		3600 IN	DNSKEY 257 3 13 (
+				mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+Gq
+				JxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 2371
+mercury.co.		3600 IN	RRSIG DNSKEY 13 2 3600 (
+				20261119201918 20260919201918 2371 mercury.co.
+				4AEC5FWoUdp0rfW6bxopbNA97D1K+adsnwuBxaB5uD5G
+				xU3KDMWcGZdQxKqULIxw3/kaYB92X7Tzx5xCo5vyfg== )
+
+;; Query time: 17 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 305
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.mercury.co DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 37793
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.mercury.co.	IN DS
+
+;; AUTHORITY SECTION:
+mercury.co.		1800 IN	SOA jim.ns.cloudflare.com. dns.cloudflare.com. (
+				2415421263 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				1800       ; minimum (30 minutes)
+				)
+mercury.co.		1800 IN	RRSIG SOA 13 2 1800 (
+				20260930021703 20260928001703 34505 mercury.co.
+				b6rMsGq8EEI7oMMxxBIeed93IrV0Z1u4n6oyp/rm+tvD
+				DrGBRdFbRwzeMvYtAJdZckK/iOT6+qmtM49UYqYVrg== )
+_dmarc.mercury.co.	1800 IN	NSEC \000._dmarc.mercury.co. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.mercury.co.	1800 IN	RRSIG NSEC 13 3 1800 (
+				20260930021703 20260928001703 34505 mercury.co.
+				Ymmyt1tBPQY2cHd2JqOxuprySNnSPM8WIH//kg/nAFI2
+				ta4wwlUWI4FpbgIYLcloshf6vJRGh6lVarr1pmPjVw== )
+
+;; Query time: 22 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 366
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.mercury.co DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45759
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 4, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.mercury.co.	IN DNSKEY
+
+;; AUTHORITY SECTION:
+mercury.co.		1800 IN	SOA jim.ns.cloudflare.com. dns.cloudflare.com. (
+				2415421263 ; serial
+				10000      ; refresh (2 hours 46 minutes 40 seconds)
+				2400       ; retry (40 minutes)
+				604800     ; expire (1 week)
+				1800       ; minimum (30 minutes)
+				)
+mercury.co.		1800 IN	RRSIG SOA 13 2 1800 (
+				20260930021703 20260928001703 34505 mercury.co.
+				l8ISPXXfbRnLaHOX9vqUjyW80IaJAPRpOqbBx5DmrX8v
+				xyBKz1eJmhInXAY8NvTOEDlUq/iYqWOEJFFcq6m6kQ== )
+_dmarc.mercury.co.	1800 IN	NSEC \000._dmarc.mercury.co. A PTR HINFO MX TXT AAAA LOC SRV NAPTR CERT SSHFP RRSIG NSEC TLSA SMIMEA HIP OPENPGPKEY SVCB HTTPS URI CAA
+_dmarc.mercury.co.	1800 IN	RRSIG NSEC 13 3 1800 (
+				20260930021703 20260928001703 34505 mercury.co.
+				Y47dEOzFp/OhQOW9gsxirE1l/zak4mazdcrLSem/zb1n
+				sZWwlSheSuiPWqvUr4qewfimgrK0JxGuQUrzcpW5yw== )
+
+;; Query time: 22 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 366
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 _dmarc.mercury.co TXT +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 47724
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;_dmarc.mercury.co.	IN TXT
+
+;; ANSWER SECTION:
+_dmarc.mercury.co.	300 IN TXT "v=DMARC1; p=reject; rua=mailto:dmarc@mercury.co"
+_dmarc.mercury.co.	300 IN RRSIG TXT 13 3 300 (
+				20260930021703 20260928001703 34505 mercury.co.
+				kjmGsgrwi4MkbwT5mGp+SEp4k7zBPCoiI8oJo/ydbhlg
+				bQaC4ebPvqaGS9/wR68z2O2eNDpX6CxOGXXUDk+ylQ== )
+
+;; Query time: 21 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 212
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 com DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 38234
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;com.			IN DS
+
+;; ANSWER SECTION:
+com.			77781 IN DS 19718 13 2 (
+				8ACBB0CD28F41250A80A491389424D341522D946B0DA
+				0C0291F2D3D771D7805A )
+com.			77781 IN RRSIG DS 8 1 86400 (
+				20261011200000 20260928190000 57780 .
+				R0qlaflC+NdfTiVeG2YU26WDSnmWbiwWFvIqFhNB5wMu
+				zm/hP+W2kY/ppeQ7tLUVRINz3GET4/7Lm3lXNjzGtYR8
+				mj1TGuhhNUZcsoBg88nekYrRCtO5F0CjZougu4/aGXWR
+				Zyn1zrOuVkLAAlbt4c5+96l0Hn7PiC2fE6fgqzNRDxC/
+				5adBsOFLNOnlq9EiEq5mJJpCmRFvhGYLUinb0QQeHmd5
+				K6r032bh3uilVbWXVW/aWe28ucSVR/Qvhn4B7qfOmdBq
+				FfgQ3gm0apGEwzpgPlyYM0IoHqgDWIaOqjj2qKPjCh1n
+				PATVY/OE0StQ5sZbUtZJPWxXZhQfMe2aYQ== )
+
+;; Query time: 14 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 367
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 com DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 24516
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;com.			IN DNSKEY
+
+;; ANSWER SECTION:
+com.			818 IN DNSKEY 256 3 13 (
+				o6onp+t66olg3PFhuIXaaatogT3OrqHrqt48IkYGuxwW
+				8tSnQVMGyO+TSmp8sTRtkD9km+N/VQvvtqVM8ra9/Q==
+				) ; ZSK; alg = ECDSAP256SHA256 ; key id = 41446
+com.			818 IN DNSKEY 257 3 13 (
+				tx8EZRAd2+K/DJRV0S+hbBzaRPS/G6JVNBitHzqpsGlz
+				8huE61Ms9ANe6NSDLKJtiTBqfTJWDAywEp1FCsEINQ==
+				) ; KSK; alg = ECDSAP256SHA256 ; key id = 19718
+com.			818 IN RRSIG DNSKEY 13 1 86400 (
+				20261009140235 20260924135735 19718 com.
+				P/KPj3jnoiFUa4iYnB/ENiRwaaUO34K78Da96VFHXLn9
+				p9BCyX0Wh8s4nek955T+6KSY95NuNB3S19P/ULBMqA== )
+
+;; Query time: 11 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 291
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 llamanodes.com DS +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 36253
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;llamanodes.com.		IN DS
+
+;; ANSWER SECTION:
+llamanodes.com.		86400 IN DS 38329 8 2 (
+				A9BA09490D15EEE6665873F7B159664F0DE0DF066C66
+				8E31A4C1669716D5303D )
+llamanodes.com.		86400 IN RRSIG DS 13 2 86400 (
+				20261002011945 20260925000945 41446 com.
+				PcqAxOEglgLcn0Jakc9QpsAfLCP221k1ITwNzLAqq+YX
+				22HNl5JijVpr2t1ct9Asuh/bQGgb9s6cDLfSYQ2nww== )
+
+;; Query time: 10 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 190
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 llamanodes.com DNSKEY +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 56200
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;llamanodes.com.		IN DNSKEY
+
+;; ANSWER SECTION:
+llamanodes.com.		300 IN DNSKEY 256 3 8 (
+				AwEAAarVIxFkxZM9f/vkss8BIOqzEGcOUmdCk6JVtTlT
+				Pcaesg1SHdUAgC5XVAsACTDVfT4UVqXqCwck3JMs8+X0
+				3Sjx6CypcT7yMtZs3b32HL5ivxkipzBsh7eLis1Nvdd6
+				OItB7SXG4krD8tRRNJAkwyenL1z7MPfICG8dWIFYonaf
+				) ; ZSK; alg = RSASHA256 ; key id = 63975
+llamanodes.com.		300 IN DNSKEY 257 3 8 (
+				AwEAAZt3g2Bko/OjSegy/q7X1KCkEBfdJlGD8NU0uarU
+				0ooMne5jbNBMN68kG7yePfcc0mK4W3O/jpI3m+9KLuZW
+				ojC2WUDjlHSLOgEfsb4v1q+G7j7/ZP+xR5XUxV+EWGZS
+				ALXu80RgQnU6k5nL2GKjwOSkrYpkF4aLGDxhcStLP8zE
+				7ydKnsvr531pp1abbG14xPomXZuQmWCuvGyJUS5GthEp
+				UdQnammsGF4cDnaFTSve8IgVsvWQQJP3PsYY+Zwg2V8c
+				kR8saVGuma6FKBD+Gfp+pwWuUyDjnPJ2JZ5jnhASFdSe
+				drEE7w8cPszBk85EVTv7DTKDYjofyeA83xlLIz0=
+				) ; KSK; alg = RSASHA256 ; key id = 38329
+llamanodes.com.		300 IN RRSIG DNSKEY 8 2 300 (
+				20261018143445 20260926143445 38329 llamanodes.com.
+				O09ccKpp3RSjAkhRVuY/zgBdqfXBxgD3NxpbA5X4/8zg
+				EraXiZ8MrLjX3Z1EufE7bi6uQwHExrTAwd1AyOwmARc7
+				BeDWu3C17mBgzkvSSp40cuhfFK6rd3du3d3KeCHkGx7X
+				ekhHnN9piQ9i5lfQKhERarJJhHlZqm2+k0eTEkWWhjna
+				1TKi5WCLT8Trt1Yb+JJEbdBuoZXt0WnTCVGMelx7ukCB
+				V24spktDVQHEzfqXLdkwZA3R9urkeU/rlmWk+WxfQTsG
+				0KjO07qbBtc4uFXc+gNBwmFpyL+lRatIc2ZhU44qEE7L
+				H2hIfydt/Ayk7TlKkzJ24cVM9G4P8464JQ== )
+
+;; Query time: 33 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 769
+
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.7-Ubuntu <<>> @1.1.1.1 llamanodes.com TXT +dnssec +tcp +multi
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 59641
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags: do; udp: 1232
+;; QUESTION SECTION:
+;llamanodes.com.		IN TXT
+
+;; ANSWER SECTION:
+llamanodes.com.		14400 IN TXT "wallet-connect-dns-verification=ae9fd0cd3475cfdf9d31e148e5b341e00e326efd2bf2a1b8792e7d442d8a118a"
+llamanodes.com.		14400 IN RRSIG TXT 8 2 14400 (
+				20261018143445 20260926143445 63975 llamanodes.com.
+				ena7cN7Piw1KBjQGkQ4SwJwSmRDnmgA7rg7xOBlZFKLJ
+				t8fSanjbYOAkcXfvVcvevNo1FPGrLkQZIUsbe7OiuWFd
+				tovHtBB3GGzIp2nZR54iSe2UziEB32iPAoRqTSBnCRmv
+				i2RzM78CDbvjsKfWzgfed6RC/gfwYnxWQ5wJ0y0= )
+
+;; Query time: 21 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (TCP)
+;; WHEN: Tue Sep 29 03:17:03 CEST 2026
+;; MSG SIZE  rcvd: 326
+

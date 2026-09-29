@@ -1,0 +1,39 @@
+{
+  "name": "dnssec-oracle-cli",
+  "version": "0.0.1",
+  "description": "Command-line operator for the DNSSEC oracle on Algorand",
+  "license": "MIT",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "dnssec-oracle": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "pnpm run build:ts && pnpm run build:executables",
+    "build:ts": "tsc",
+    "build:executables": "bun run build-executables.ts",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.2",
+    "algosdk": "^3.8.0",
+    "dnssec-oracle-sdk": "workspace:*",
+    "dotenv": "^16.4.7",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/yargs": "^17.0.33",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
