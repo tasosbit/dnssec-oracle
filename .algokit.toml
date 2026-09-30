@@ -8,4 +8,4 @@ projects_root_path = 'projects'
 [project.run]
 build = ['dnssec-oracle', 'dnssec-oracle-sdk', 'cli']
 # contract last: its tests run against the built SDK
-test = ['cli', 'dnssec-oracle']
+test = ['cli', 'dnssec-oracle-sdk', 'dnssec-oracle']

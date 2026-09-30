@@ -1,5 +1,5 @@
 import { connect } from 'node:net'
-import { concat, lowercaseName, readU16, readU32, RR, RRType, u16 } from './wire.js'
+import { concat, lowercaseName, readU16, readU32, requireBytes, RR, RRType, u16 } from './wire.js'
 
 /** Answers a query with a raw DNS response message. */
 export type Resolver = (name: Uint8Array, type: number) => Promise<Uint8Array>
@@ -17,16 +17,23 @@ export function buildQuery(name: Uint8Array, type: number, { recursion = true } 
 function readName(msg: Uint8Array, at: number): [Uint8Array, number] {
   const parts: Uint8Array[] = []
   let end = -1
+  let nameBytes = 1 // terminating zero
   for (let hops = 0; ; hops++) {
     if (hops > 128) throw new Error('DNS name compression loop')
+    requireBytes(msg, at, 1)
     const length = msg[at]
     if (length >= 0xc0) {
+      requireBytes(msg, at, 2)
       if (end < 0) end = at + 2
       at = ((length & 0x3f) << 8) | msg[at + 1]
     } else if (length === 0) {
       parts.push(new Uint8Array([0]))
       return [lowercaseName(concat(...parts)), end < 0 ? at + 1 : end]
     } else {
+      if (length >= 0x40) throw new Error('extended label in a DNS name')
+      requireBytes(msg, at + 1, length)
+      nameBytes += length + 1
+      if (nameBytes > 255) throw new Error('DNS name over 255 bytes')
       parts.push(msg.slice(at, at + 1 + length))
       at += 1 + length
     }
@@ -35,15 +42,22 @@ function readName(msg: Uint8Array, at: number): [Uint8Array, number] {
 
 /** The answer section of a response, RDATA raw (none of the types we read compress it). */
 export function parseResponse(msg: Uint8Array): { rcode: number; answers: RR[] } {
+  requireBytes(msg, 0, 12)
   const rcode = msg[3] & 0x0f
   const questions = readU16(msg, 4)
   const answerCount = readU16(msg, 6)
   let at = 12
-  for (let i = 0; i < questions; i++) at = readName(msg, at)[1] + 4
+  for (let i = 0; i < questions; i++) {
+    at = readName(msg, at)[1]
+    requireBytes(msg, at, 4)
+    at += 4
+  }
   const answers: RR[] = []
   for (let i = 0; i < answerCount; i++) {
     const [owner, next] = readName(msg, at)
+    requireBytes(msg, next, 10)
     const length = readU16(msg, next + 8)
+    requireBytes(msg, next + 10, length)
     answers.push({
       owner,
       type: readU16(msg, next),

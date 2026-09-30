@@ -9,3 +9,4 @@ artifacts = "src/"
 [project.run]
 build = { commands = ['pnpm run build'], description = 'Build SDK' }
 typecheck = { commands = ['pnpm run typecheck'], description = 'Typecheck SDK' }
+test = { commands = ['pnpm run test'], description = 'SDK regression tests (build first)' }

@@ -60,8 +60,21 @@ export const concat = (...parts: Uint8Array[]) => {
 
 export const u16 = (n: number) => new Uint8Array([n >> 8, n & 0xff])
 export const u32 = (n: number) => new Uint8Array([n >>> 24, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff])
-export const readU16 = (b: Uint8Array, at: number) => (b[at] << 8) | b[at + 1]
-export const readU32 = (b: Uint8Array, at: number) => ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >>> 0
+/** Reject truncated wire fields before indexed reads can produce undefined/NaN. */
+export function requireBytes(b: Uint8Array, at: number, length: number): void {
+  if (!Number.isInteger(at) || at < 0 || length < 0 || at + length > b.length) {
+    throw new Error('truncated DNS wire data')
+  }
+}
+
+export const readU16 = (b: Uint8Array, at: number) => {
+  requireBytes(b, at, 2)
+  return (b[at] << 8) | b[at + 1]
+}
+export const readU32 = (b: Uint8Array, at: number) => {
+  requireBytes(b, at, 4)
+  return ((b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3]) >>> 0
+}
 
 export const toHex = (b: Uint8Array) => Buffer.from(b).toString('hex')
 export const fromHex = (h: string) => new Uint8Array(Buffer.from(h, 'hex'))
@@ -85,6 +98,7 @@ export function nameToWire(name: string): Uint8Array {
 
 /** Wire format to presentation, with the trailing dot. */
 export function nameFromWire(wire: Uint8Array): string {
+  checkWireName(wire)
   const labels: string[] = []
   for (let at = 0; wire[at] !== 0; at += 1 + wire[at]) {
     labels.push(new TextDecoder().decode(wire.slice(at + 1, at + 1 + wire[at])))
@@ -94,6 +108,7 @@ export function nameFromWire(wire: Uint8Array): string {
 
 /** Lowercase an uncompressed wire-format name (ASCII only, as DNS canonical form does). */
 export function lowercaseName(wire: Uint8Array): Uint8Array {
+  checkWireName(wire)
   const out = wire.slice()
   for (let at = 0; out[at] !== 0; at += 1 + out[at]) {
     for (let i = at + 1; i <= at + out[at]; i++) if (out[i] >= 0x41 && out[i] <= 0x5a) out[i] |= 0x20
@@ -104,14 +119,23 @@ export function lowercaseName(wire: Uint8Array): Uint8Array {
 /** Length of the uncompressed name starting at `at`. */
 export function nameLength(b: Uint8Array, at: number): number {
   let end = at
-  while (b[end] !== 0) {
-    if (b[end] >= 0x40) throw new Error('compressed or extended label in a name')
-    end += 1 + b[end]
+  for (;;) {
+    requireBytes(b, end, 1)
+    const length = b[end]
+    if (length >= 0x40) throw new Error('compressed or extended label in a name')
+    requireBytes(b, end + 1, length)
+    end += 1 + length
+    if (end - at > 255) throw new Error('DNS name over 255 bytes')
+    if (length === 0) return end - at
   }
-  return end + 1 - at
+}
+
+function checkWireName(wire: Uint8Array): void {
+  if (nameLength(wire, 0) !== wire.length) throw new Error('trailing bytes after DNS name')
 }
 
 export function labelCount(wire: Uint8Array): number {
+  checkWireName(wire)
   let n = 0
   for (let at = 0; wire[at] !== 0; at += 1 + wire[at]) n++
   return n
@@ -119,6 +143,7 @@ export function labelCount(wire: Uint8Array): number {
 
 /** The label boundaries of `wire`, root last: `a.b.` → [`a.b.`, `b.`, `.`]. */
 export function ancestors(wire: Uint8Array): Uint8Array[] {
+  checkWireName(wire)
   const out: Uint8Array[] = []
   let at = 0
   for (; wire[at] !== 0; at += 1 + wire[at]) out.push(wire.slice(at))
@@ -127,6 +152,7 @@ export function ancestors(wire: Uint8Array): Uint8Array[] {
 }
 
 export function parseRrsig(rdata: Uint8Array): Rrsig {
+  requireBytes(rdata, 0, 18)
   const signerLength = nameLength(rdata, 18)
   const headerLength = 18 + signerLength
   return {
@@ -144,21 +170,26 @@ export function parseRrsig(rdata: Uint8Array): Rrsig {
 }
 
 export function parseDnskey(rdata: Uint8Array): Dnskey {
+  requireBytes(rdata, 0, 4)
   return { flags: readU16(rdata, 0), protocol: rdata[2], algorithm: rdata[3], publicKey: rdata.slice(4) }
 }
 
 export function parseDs(rdata: Uint8Array): Ds {
+  requireBytes(rdata, 0, 4)
   return { keyTag: readU16(rdata, 0), algorithm: rdata[2], digestType: rdata[3], digest: rdata.slice(4) }
 }
 
 /** RFC 3110: `[exponent, modulus]` of an RSA DNSKEY public key field. */
 export function rsaKeyParts(publicKey: Uint8Array): { exponent: Uint8Array; modulus: Uint8Array } {
+  requireBytes(publicKey, 0, 1)
   let offset = 1
   let exponentLength = publicKey[0]
   if (exponentLength === 0) {
     exponentLength = readU16(publicKey, 1)
     offset = 3
   }
+  if (exponentLength === 0) throw new Error('empty RSA exponent')
+  requireBytes(publicKey, offset, exponentLength + 1)
   return {
     exponent: publicKey.slice(offset, offset + exponentLength),
     modulus: publicKey.slice(offset + exponentLength),
@@ -213,6 +244,7 @@ export function rdataOf(rrset: Uint8Array): Uint8Array[] {
   for (let at = 0; at < rrset.length; ) {
     at += nameLength(rrset, at) + 8
     const length = readU16(rrset, at)
+    requireBytes(rrset, at + 2, length)
     out.push(rrset.slice(at + 2, at + 2 + length))
     at += 2 + length
   }
@@ -223,6 +255,7 @@ export function rdataOf(rrset: Uint8Array): Uint8Array[] {
 export function txtStrings(rdata: Uint8Array): string[] {
   const out: string[] = []
   for (let at = 0; at < rdata.length; at += 1 + rdata[at]) {
+    requireBytes(rdata, at + 1, rdata[at])
     out.push(new TextDecoder().decode(rdata.slice(at + 1, at + 1 + rdata[at])))
   }
   return out
