@@ -13,7 +13,7 @@ import {
   isTrusted,
 } from './boxes.js'
 import { APP_SPEC, DnssecOracleClient, DnssecOracleComposer } from './generated/DnssecOracleClient.js'
-import { ancestors, nameToWire, RRType, sha256, toHex } from './prover/wire.js'
+import { ancestors, concat, nameToWire, sha256, toHex, u16 } from './prover/wire.js'
 import { ReaderConstructorArgs } from './types.js'
 import { chunk } from './util/chunk.js'
 import { chunked } from './util/chunked.js'
@@ -30,6 +30,9 @@ const NAMES_PER_GROUP = 128
 /** Accounts per logCredits call and group: the same resource math, one credit box each. */
 const ACCOUNTS_PER_CALL = 8
 const ACCOUNTS_PER_GROUP = 128
+/** Cache keys per logCaches call and group: the same resource math, one cache box each. */
+const KEYS_PER_CALL = 8
+const KEYS_PER_GROUP = 128
 
 /** A name as wire bytes, or in presentation form (`example.com`). */
 export type NameLike = string | Uint8Array
@@ -131,13 +134,16 @@ export class DnssecOracleReaderSDK {
    */
   @wrapErrors()
   async chainLive(attestation: Attestation, zones: NameLike[]): Promise<boolean> {
+    const [entries, { rootEpoch }] = await Promise.all([
+      this.getCaches(chainLinks(zones.map(toWire))),
+      this.getState(),
+    ])
     let epoch = attestation.parentEpoch
-    for (const [name, type] of chainLinks(zones.map(toWire))) {
-      const entry = await this.getCache(name, type)
+    for (const entry of entries) {
       if (entry?.epoch !== epoch) return false
       epoch = entry.parentEpoch
     }
-    return BigInt(epoch) === (await this.getState()).rootEpoch
+    return BigInt(epoch) === rootEpoch
   }
 
   /**
@@ -147,22 +153,52 @@ export class DnssecOracleReaderSDK {
    */
   @wrapErrors()
   async attestationZones(name: NameLike, attestation: Attestation): Promise<Uint8Array[] | undefined> {
+    const all = ancestors(toWire(name))
+    // every ancestor's DNSKEY then DS, the root's DNSKEY last, in one read: entries[2i] is
+    // all[i]'s DNSKEY, entries[2i + 1] its DS
+    const [entries, { rootEpoch }] = await Promise.all([this.getCaches(chainLinks(all.slice(0, -1))), this.getState()])
     const zones: Uint8Array[] = []
     let epoch = attestation.parentEpoch
-    for (const zone of ancestors(toWire(name)).slice(0, -1)) {
+    // the same walk as chainLive, in one pass: each box is read once
+    for (const [i, zone] of all.entries()) {
+      const keys = entries[2 * i]
       // epochs are unique: only the zone that signed the link below matches
-      if ((await this.getCache(zone, RRType.DNSKEY))?.epoch !== epoch) continue
+      if (keys?.epoch !== epoch) continue
+      if (zone.length === 1) return BigInt(keys.parentEpoch) === rootEpoch ? zones : undefined
+      const ds = entries[2 * i + 1]
+      if (ds?.epoch !== keys.parentEpoch) return undefined
       zones.push(zone)
-      epoch = (await this.getCache(zone, RRType.DS))?.parentEpoch ?? 0
+      epoch = ds.parentEpoch
     }
-    return (await this.chainLive(attestation, zones)) ? zones : undefined
+    return undefined
   }
 
   /** The cache entry for `name type`, or undefined. */
   @wrapErrors()
   async getCache(name: NameLike, type: number): Promise<CacheEntry | undefined> {
-    const value = await this.getBox(boxNames.cache(toWire(name), type))
-    return value && decodeCache(value)
+    const [entry] = await this.getCaches([[name, type]])
+    return entry
+  }
+
+  /** Batch getCache, index-aligned with the input, through the contract's logCaches logger. */
+  @wrapErrors()
+  async getCaches(links: [NameLike, number][]): Promise<(CacheEntry | undefined)[]> {
+    const raw = await this._logCachesChunked(links.map(([name, type]) => concat(toWire(name), u16(type))))
+    return raw.map((value) => value && decodeCache(value))
+  }
+
+  /** Raw cache box values through the logger, by `name ‖ uint16 type`: undefined where there is none. */
+  @chunked(KEYS_PER_GROUP)
+  async _logCachesChunked(keys: Uint8Array[]): Promise<(Uint8Array | undefined)[]> {
+    if (keys.length === 0) return []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
+    for (const call of chunk(keys, KEYS_PER_CALL)) {
+      builder = builder.logCaches({ args: { keys: call } })
+    }
+    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
+    return logs.map((log) => (log.length === 0 ? undefined : new Uint8Array(log)))
   }
 
   /** Every cache entry, keyed by `sha256(name ‖ type)` hex. */

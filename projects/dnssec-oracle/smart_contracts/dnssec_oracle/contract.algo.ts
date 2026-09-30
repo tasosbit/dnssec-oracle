@@ -460,6 +460,19 @@ export class DnssecOracle extends BaseContract {
     }
   }
 
+  /**
+   * Log each cache entry, in input order, as its raw box value; an empty line if there is
+   * none. `keys` are `name ‖ uint16 type`. Expired and stale ones included.
+   */
+  @readonly
+  public logCaches(keys: bytes[]): void {
+    for (const key of keys) {
+      // raw, not box.value: algorand-typescript-testing 1.2.0 misdecodes a struct .maybe()
+      const [value, exists] = op.Box.get(this.caches.keyPrefix.concat(op.sha256(key)))
+      log(exists ? value : Bytes())
+    }
+  }
+
   // ── Internals ───────────────────────────────────────────────────
 
   /**

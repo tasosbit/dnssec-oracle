@@ -244,7 +244,19 @@ describe('DnssecOracle e2e', () => {
       const admin = localnet.context.testAccount.toString()
       expect(await sdk.getCredits(admin)).toBe((await sdk.listCredits()).get(admin))
       // root, then DS and DNSKEY for com, io, example.com, example.io
-      expect((await sdk.listCaches()).size).toBe(9)
+      const caches = await sdk.listCaches()
+      expect(caches.size).toBe(9)
+      const links: [string, number][] = [
+        ['.', RRType.DNSKEY],
+        ['com', RRType.DS],
+        ['example.io', RRType.DNSKEY],
+        ['missing.com', RRType.DNSKEY],
+      ]
+      const viaLogger = await sdk.getCaches(links)
+      expect(viaLogger[3]).toBeUndefined()
+      for (const [i, [name, type]] of links.slice(0, 3).entries()) {
+        expect(viaLogger[i]).toEqual(caches.get(toHex(sha256(concat(nameToWire(name), u16(type))))))
+      }
       expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n, rollInception: 0n, rootEpoch: 1n })
     })
   })
