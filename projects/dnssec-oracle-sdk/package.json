@@ -20,7 +20,8 @@
     "prebuild": "cp ../dnssec-oracle/smart_contracts/artifacts/dnssec_oracle/DnssecOracleClient.ts src/generated/DnssecOracleClient.ts && cp node_modules/@d13co/puya-ts-utils/src/rsaHint.ts src/generated/rsaHint.ts && tsx scripts/generate-errors.ts .",
     "build": "rm -rf dist && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "capture": "tsx scripts/capture.mts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.cjs"
   },
   "peerDependencies": {
     "@algorandfoundation/algokit-utils": "^9.0.0",
