@@ -63,16 +63,27 @@ export function tcpResolver(server = '1.1.1.1', { port = 53, recursion = true, t
       const query = buildQuery(name, type, { recursion })
       const socket = connect({ host: server, port })
       let buffer = new Uint8Array(0)
-      socket.setTimeout(timeoutMs, () => socket.destroy(new Error(`DNS timeout from ${server}`)))
+      let settled = false
+      const finish = (error?: Error, message?: Uint8Array) => {
+        if (settled) return
+        settled = true
+        clearTimeout(deadline)
+        socket.destroy()
+        if (error) reject(error)
+        else resolve(message!)
+      }
+      // A total deadline also bounds peers that trickle bytes without completing a frame.
+      const deadline = setTimeout(() => finish(new Error(`DNS timeout from ${server}`)), timeoutMs)
       socket.on('connect', () => socket.write(concat(u16(query.length), query)))
       socket.on('data', (chunk) => {
         buffer = concat(buffer, chunk)
         if (buffer.length >= 2 && buffer.length >= 2 + readU16(buffer, 0)) {
-          socket.end()
-          resolve(buffer.slice(2, 2 + readU16(buffer, 0)))
+          finish(undefined, buffer.slice(2, 2 + readU16(buffer, 0)))
         }
       })
-      socket.on('error', reject)
+      socket.once('error', (error) => finish(error))
+      socket.once('end', () => finish(new Error(`Incomplete DNS response from ${server}`)))
+      socket.once('close', () => finish(new Error(`DNS connection closed before a complete response from ${server}`)))
     })
 }
 
