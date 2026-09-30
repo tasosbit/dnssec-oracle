@@ -27,25 +27,31 @@ import {
   errEcKey,
   errExponent,
   errHint,
+  errHoldDown,
   errKeyFlags,
-  errListed,
   errMissing,
   errModulus,
   errOld,
   errParent,
   errProtocol,
   errPrune,
+  errRevoke,
+  errRoll,
   errRoot,
   errSigLength,
   errSignature,
   errSigner,
   errStale,
-  errTld,
-  errTldExists,
   errTooBig,
   errWorse,
 } from './errors.algo'
-import { ATTESTATION_HEADER } from './reader.algo'
+import {
+  ATTESTATION_HEADER,
+  attestationEpoch,
+  attestationExpiration,
+  attestationInception,
+  attestationPayer,
+} from './reader.algo'
 import {
   checkName,
   isAncestor,
@@ -53,7 +59,6 @@ import {
   nameType,
   parseSignedData,
   SignedData,
-  tldOf,
   TYPE_DNSKEY,
   TYPE_DS,
   TYPE_TXT,
@@ -66,6 +71,15 @@ const FLAG_ZONE: uint64 = 0x0100
 const FLAG_REVOKE: uint64 = 0x0080
 /** Anchors are KSKs: Zone and Secure Entry Point, nothing else. */
 const ANCHOR_FLAGS: uint64 = 257
+/** An anchor revoking itself: ANCHOR_FLAGS plus REVOKE. */
+const REVOKED_FLAGS: uint64 = 385
+/** RFC 5011 anchor states. A key with no box is in Start, or Removed. */
+const ANCHOR_ADDPEND: uint64 = 1
+const ANCHOR_VALID: uint64 = 2
+const ANCHOR_MISSING: uint64 = 3
+const ANCHOR_REVOKED: uint64 = 4
+/** RFC 5011 add and remove hold-down. */
+const HOLD_DOWN_SECONDS: uint64 = 30 * 24 * 60 * 60
 const RSA_MIN_BITS: uint64 = 1024
 const RSA_MAX_BITS: uint64 = 2048
 /** P-256 counts as this many RSA bits in `weakestKeyBits`. Keep in sync with the SDK's ECDSA_P256_KEY_BITS. */
@@ -82,6 +96,12 @@ const P256_HALF_N = BigUint(0x7fffffff800000007fffffffffffffffde737d56d38bcf4279
 /** The root's owner name. */
 const ROOT = Bytes.fromHex('00')
 
+/** Root trust anchor, keyed by `sha256(alg ‖ pubkey)`: RFC 5011 state and when it was entered. */
+export type AnchorEntry = Readonly<{
+  state: uint64
+  since: uint64
+}>
+
 /** Cache entry for a proven RRset, keyed by `sha256(name ‖ type)`. Fixed size. */
 export type CacheEntry = Readonly<{
   hash: bytes<32>
@@ -89,23 +109,32 @@ export type CacheEntry = Readonly<{
   /** min(this RRSIG's expiration, expiry of the entry it was verified against) */
   expiry: uint64
   weakestKeyBits: uint64
+  /** `rootEpoch` when proven: an entry from an earlier epoch is stale. */
+  epoch: uint64
 }>
 
 /**
  * Proves that a TXT RRset exists at a DNS name by verifying the DNSSEC chain from the root
  * down, one signature per call. Root, DS and DNSKEY RRsets are cached as hashes and shared
- * by every name below them; TXT RRsets are stored as attestations.
+ * by every name below them; TXT RRsets are stored as attestations. Root anchors roll over
+ * by RFC 5011: `updateAnchor` and `revokeRoot`.
  *
  * No update or delete: the code is fixed once created.
  */
 export class DnssecOracle extends BaseContract {
   admin = GlobalState<Account>({ key: 'admin' })
+  /** Initial anchors uploaded: 0 until `addAnchors`, which runs once. */
   anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
+  /** Inception of the newest root DNSKEY RRset a rollover step used: no step may use an older one. */
+  rollInception = GlobalState<uint64>({ key: 'rollInception' })
+  /**
+   * Revocations so far. Each one stales every cache entry and attestation proven before it:
+   * the revoked key may have signed a forged root RRset that they chain from.
+   */
+  rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
 
-  /** `a ‖ sha256(alg ‖ pubkey)`: root trust anchors, empty value. */
-  anchors = BoxMap<bytes<32>, bytes>({ keyPrefix: 'a' })
-  /** `w ‖ TLD label`: whitelisted TLDs, empty value. */
-  whitelist = BoxMap<bytes, bytes>({ keyPrefix: 'w' })
+  /** `a ‖ sha256(alg ‖ pubkey)`: root trust anchors and rollover candidates. */
+  anchors = BoxMap<bytes<32>, AnchorEntry>({ keyPrefix: 'a' })
   /** `r ‖ sha256(name ‖ type)`: proven root DNSKEY, DS and DNSKEY RRsets. */
   caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
   /** `t ‖ sha256(name)`: header, then `uint16 rdlen ‖ rdata` per TXT RR. See reader.algo.ts. */
@@ -113,12 +142,14 @@ export class DnssecOracle extends BaseContract {
 
   /**
    * Step one of two: the app account is not funded yet, so no boxes. The admin then funds
-   * it, deposits credits and calls `addAnchor`, in one group.
+   * it, deposits credits and calls `addAnchors`, in one group.
    */
   @baremethod({ onCreate: 'require' })
   public createApplication(): void {
     this.admin.value = Txn.sender
     this.anchorCount.value = 0
+    this.rollInception.value = 0
+    this.rootEpoch.value = 0
     // consumers read attestation boxes directly
     op.AppParamsSet.appForeignBoxReads(true)
   }
@@ -130,47 +161,29 @@ export class DnssecOracle extends BaseContract {
   }
 
   /**
-   * Upload the one root trust anchor, as DNSKEY RDATA. Once only: no method can add,
-   * change or remove an anchor afterwards. Box rent comes from the admin's credits.
+   * Upload the initial root trust anchors, as DNSKEY RDATA, all Valid. Once only: after
+   * this the anchor set changes only by RFC 5011 rollover. Box rent comes from the admin's
+   * credits.
    */
-  public addAnchor(dnskeyRdata: bytes): void {
+  public addAnchors(dnskeys: bytes[]): void {
     this.onlyAdmin()
+    // once only: afterwards the admin has no say over anchors
     loggedAssert(this.anchorCount.value === 0, errAnchorSet)
-    loggedAssert(op.extractUint16(dnskeyRdata, 0) === ANCHOR_FLAGS, errAnchorFlags)
-    const algorithm = op.getByte(dnskeyRdata, 3)
-    const [publicKey] = checkKey(dnskeyRdata, algorithm)
     const mbrBefore = Global.currentApplicationAddress.minBalance
-    this.anchors(anchorKey(algorithm, publicKey)).value = Bytes()
-    this.anchorCount.value = 1
-    this.manageMbrCredits(mbrBefore)
-  }
-
-  /** Whitelist a TLD, e.g. `com`, lowercase. Box rent comes from the admin's credits. */
-  public addTld(label: bytes): void {
-    this.onlyAdmin()
-    loggedAssert(label.length > 0 && label.length < 64, errTld)
-    // owners are matched byte for byte: an uppercase label would whitelist nothing
-    for (let i: uint64 = 0; i < label.length; i++) {
-      const c = op.getByte(label, i)
-      loggedAssert(c < 0x41 || c > 0x5a, errTld)
+    for (const rdata of dnskeys) {
+      // KSKs only: Zone and SEP set, REVOKE clear
+      loggedAssert(op.extractUint16(rdata, 0) === ANCHOR_FLAGS, errAnchorFlags)
+      // the checks a signing key gets, so every anchor can actually prove the root
+      const algorithm = op.getByte(rdata, 3)
+      const [publicKey] = checkKey(rdata, algorithm)
+      const box = this.anchors(anchorKey(algorithm, publicKey))
+      // a duplicate would be counted twice in anchorCount
+      loggedAssert(!box.exists, errAnchorSet)
+      box.value = { state: ANCHOR_VALID, since: Global.latestTimestamp }
     }
-    loggedAssert(!this.whitelist(label).exists, errTldExists)
-    const mbrBefore = Global.currentApplicationAddress.minBalance
-    this.whitelist(label).value = Bytes()
+    this.anchorCount.value = dnskeys.length
+    // the admin pays for the anchor boxes
     this.manageMbrCredits(mbrBefore)
-  }
-
-  /**
-   * Remove a TLD: blocks its proofs and lets its attestations be pruned. Refund to the
-   * admin's credits, or to the app if they have no credit box, so de-listing never waits
-   * on a deposit.
-   */
-  public removeTld(label: bytes): void {
-    this.onlyAdmin()
-    loggedAssert(this.whitelist(label).exists, errMissing)
-    const mbrBefore = Global.currentApplicationAddress.minBalance
-    this.whitelist(label).delete()
-    if (this.userCredits(Txn.sender).exists) this.manageMbrCredits(mbrBefore)
   }
 
   /** Hand over the admin role. The zero address renounces it for good. */
@@ -182,7 +195,7 @@ export class DnssecOracle extends BaseContract {
   // ── Proofs ──────────────────────────────────────────────────────
 
   /**
-   * Prove the root DNSKEY RRset, signed by one of its own keys that is an anchor.
+   * Prove the root DNSKEY RRset, signed by one of its own keys that is a Valid or Missing anchor.
    * @param signedData RRSIG RDATA without the signature, then the RRset
    * @param signature RRSIG signature
    * @param hint Montgomery hint for RSA keys, empty for ECDSA
@@ -190,12 +203,20 @@ export class DnssecOracle extends BaseContract {
    */
   public proveRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
     const mbrBefore = Global.currentApplicationAddress.minBalance
+    // the signing key sits in the RRset it signs, at keyIndex
     const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
     loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
     const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
-    loggedAssert(this.anchors(anchorKey(s.algorithm, publicKey)).exists, errAnchor)
+    // AddPend keys are not trusted yet and Revoked ones never again; Missing still are
+    const anchor = this.anchors(anchorKey(s.algorithm, publicKey))
+    loggedAssert(
+      anchor.exists && (anchor.value.state === ANCHOR_VALID || anchor.value.state === ANCHOR_MISSING),
+      errAnchor,
+    )
     verify(signedData, signature, hint, s.algorithm, publicKey)
+    // the top of the chain: expiry and strength are this signature's own
     this.writeCache(s, TYPE_DNSKEY, s.expiration, bits)
+    // the first prover pays for the cache box; a replacement is the same size
     this.manageMbrCredits(mbrBefore)
   }
 
@@ -206,13 +227,17 @@ export class DnssecOracle extends BaseContract {
    */
   public proveDs(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
     const mbrBefore = Global.currentApplicationAddress.minBalance
+    // the signing key is not in a DS RRset: index 0 only has to exist
     const s = parseSignedData(signedData, TYPE_DS, 0, Global.latestTimestamp)
+    // a DS lives in the parent zone: signed by a proper ancestor, never the zone itself
     loggedAssert(isAncestor(s.signer, s.owner, true), errSigner)
-    this.checkListed(s.owner)
+    loggedAssert(s.owner.length > 1, errRoot)
+    // the signer's DNSKEY RRset, handed back in and matched against its cached hash
     const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
     const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
     const [publicKey, bits] = checkKey(key, s.algorithm)
     verify(signedData, signature, hint, s.algorithm, publicKey)
+    // an entry never outlives or outranks the chain above it
     this.writeCache(s, TYPE_DS, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits))
     this.manageMbrCredits(mbrBefore)
   }
@@ -232,9 +257,12 @@ export class DnssecOracle extends BaseContract {
     parent: bytes,
   ): void {
     const mbrBefore = Global.currentApplicationAddress.minBalance
+    // self-signed: the signing key sits in the RRset it signs, at keyIndex
     const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
     loggedAssert(s.signer === s.owner, errSigner)
-    this.checkListed(s.owner)
+    // the root's DNSKEY RRset goes through proveRoot
+    loggedAssert(s.owner.length > 1, errRoot)
+    // the link to the parent zone: a DS in the zone's cached DS RRset digests the signing key
     const cached = this.parentEntry(s.owner, TYPE_DS, parent)
     const [, , ds] = walkRRset(parent, 0, TYPE_DS, dsIndex, false)
     checkDs(ds, s.owner, s.indexed)
@@ -251,57 +279,156 @@ export class DnssecOracle extends BaseContract {
    * @param parent The signer's DNSKEY RRset, as cached
    */
   public proveTxt(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
+    // parsing also checks each TXT RDATA and collects the records to store
     const s = parseSignedData(signedData, TYPE_TXT, 0, Global.latestTimestamp)
+    // the owner's zone or any zone above it (plan trust point 2)
     loggedAssert(isAncestor(s.signer, s.owner, false), errSigner)
-    this.checkListed(s.owner)
+    loggedAssert(s.owner.length > 1, errRoot)
     const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
     const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
     const [publicKey, bits] = checkKey(key, s.algorithm)
     verify(signedData, signature, hint, s.algorithm, publicKey)
 
     loggedAssert(ATTESTATION_HEADER + s.records.length <= MAX_VALUE, errTooBig)
+    // newest inception wins, ties replace; the old box's rent goes back to its payer
     const box = this.attestations(op.sha256(s.owner))
     if (box.exists) {
-      loggedAssert(s.inception >= op.extractUint64(box.extract(0, 8), 0), errOld)
+      // a stale one is replaced whatever its inception: a forged one may be the newer
+      const old = box.value
+      if (attestationEpoch(old) === this.rootEpoch.value) loggedAssert(s.inception >= attestationInception(old), errOld)
       this.deleteAttestation(s.owner)
     }
+    // header (see reader.algo.ts), then the records; the sender pays and becomes the payer
     const mbrBefore = Global.currentApplicationAddress.minBalance
     box.value = op
       .itob(s.inception)
       .concat(op.itob(min(s.expiration, cached.expiry)))
       .concat(op.itob(min(bits, cached.weakestKeyBits)))
+      .concat(op.itob(this.rootEpoch.value))
       .concat(Txn.sender.bytes)
       .concat(s.records)
     this.manageMbrCredits(mbrBefore)
   }
 
+  // ── Root rollover (RFC 5011) ────────────────────────────────────
+
+  /**
+   * Apply the one RFC 5011 event that the cached root DNSKEY RRset implies for one key.
+   * The key is present if the RRset holds it without REVOKE:
+   *
+   * | State   | Present | Event   | Becomes                                   |
+   * |---------|---------|---------|-------------------------------------------|
+   * | none    | yes     | Add     | AddPend; flags 257 and a usable key only  |
+   * | AddPend | yes     | Promote | Valid, 30 days after Add                  |
+   * | AddPend | no      | Reset   | box deleted                               |
+   * | Valid   | no      | Miss    | Missing, still trusted                    |
+   * | Missing | yes     | Return  | Valid                                     |
+   * | Revoked | either  | Retire  | box deleted, 30 days after Revoke         |
+   *
+   * Anything else fails with ROL. A new box is paid from the sender's credits, a deleted
+   * one refunded to them.
+   * @param rrset The root DNSKEY RRset, as cached
+   * @param keyHash `sha256(alg ‖ pubkey)` of the key: its anchor box key
+   */
+  public updateAnchor(rrset: bytes, keyHash: bytes<32>): void {
+    const mbrBefore = Global.currentApplicationAddress.minBalance
+    // no signature here: the cached root RRset was verified under a trusted anchor when proven
+    const cached = this.parentEntry(ROOT, TYPE_DNSKEY, rrset)
+    // an older RRset, still valid and proven again after a prune, must not undo a step
+    loggedAssert(cached.inception >= this.rollInception.value, errOld)
+    this.rollInception.value = cached.inception
+    // by hash, not index, so a key that has left the RRset can be named too
+    const [key, found] = findKey(rrset, keyHash)
+    // a key listed with REVOKE counts as absent: revoking takes revokeRoot's self-signature
+    const present = found && (op.extractUint16(key, 0) & FLAG_REVOKE) === 0
+    const now = Global.latestTimestamp
+    const box = this.anchors(keyHash)
+    if (!box.exists) {
+      // Add: a usable KSK starts its hold-down
+      loggedAssert(present && op.extractUint16(key, 0) === ANCHOR_FLAGS, errRoll)
+      checkKey(key, op.getByte(key, 3))
+      box.value = { state: ANCHOR_ADDPEND, since: now }
+    } else {
+      const anchor = box.value
+      if (anchor.state === ANCHOR_REVOKED) {
+        // Retire, whether the RRset still lists the key or not
+        loggedAssert(now >= anchor.since + HOLD_DOWN_SECONDS, errHoldDown)
+        box.delete()
+      } else if (anchor.state === ANCHOR_ADDPEND && !present) {
+        // Reset: gone before its hold-down ended; a return starts it over
+        box.delete()
+      } else if (anchor.state === ANCHOR_ADDPEND) {
+        // Promote
+        loggedAssert(now >= anchor.since + HOLD_DOWN_SECONDS, errHoldDown)
+        box.value = { state: ANCHOR_VALID, since: now }
+      } else {
+        // Miss (Valid and absent) or Return (Missing and present)
+        loggedAssert(present === (anchor.state === ANCHOR_MISSING), errRoll)
+        box.value = { state: present ? ANCHOR_VALID : ANCHOR_MISSING, since: now }
+      }
+    }
+    // charges the sender for an Add, refunds them for a Reset or Retire
+    this.manageMbrCredits(mbrBefore)
+  }
+
+  /**
+   * RFC 5011 revocation: the root DNSKEY RRset, signed by an anchor key in any state but
+   * Revoked, which the RRset holds with flags 385. Only the key itself can revoke itself,
+   * and for good: it can no longer prove the root, and `updateAnchor` retires it 30 days
+   * later. Revoking a Valid or Missing key bumps `rootEpoch`, so everything proven before must
+   * be proven again; an AddPend key never proved anything, so its revocation does not. No
+   * inception rule: a replayed revocation changes nothing.
+   * @param keyIndex Index of the revoked, signing key in the RRset
+   */
+  public revokeRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
+    // the revoking key signs the RRset that lists it, at keyIndex
+    const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
+    loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
+    loggedAssert(op.extractUint16(s.indexed, 0) === REVOKED_FLAGS, errRevoke)
+    // checkKey rejects REVOKE: check the key as it was before
+    const [publicKey] = checkKey(op.replace(s.indexed, 0, Bytes.fromHex('0101')), s.algorithm)
+    // the box is keyed without flags, so the revoked form finds the anchor; AddPend counts
+    const box = this.anchors(anchorKey(s.algorithm, publicKey))
+    loggedAssert(box.exists && box.value.state !== ANCHOR_REVOKED, errAnchor)
+    verify(signedData, signature, hint, s.algorithm, publicKey)
+    const trusted = box.value.state !== ANCHOR_ADDPEND
+    // `since` starts the 30 days to Retire; same box size, so no rent moves
+    box.value = { state: ANCHOR_REVOKED, since: Global.latestTimestamp }
+    // a trusted key may have signed a forged root RRset: stale everything that could chain from it
+    if (trusted) this.rootEpoch.value += 1
+  }
+
   // ── Rent ────────────────────────────────────────────────────────
 
   /**
-   * Delete an expired box. `rrtype` 16 names an attestation: its payer may prune it once
-   * expired, anyone 30 days after, or anyone at all once its TLD is unlisted; the refund
-   * goes to the payer. Any other type names a cache entry, which anyone may prune once
-   * expired, for a refund to their own credits.
+   * Delete an expired or stale box. `rrtype` 16 names an attestation: its payer may prune it
+   * once expired, anyone 30 days after or once stale; the refund goes to the payer. Any other
+   * type names a cache entry, which anyone may prune once expired or stale, for a refund to
+   * their own credits.
    */
   public prune(name: bytes, rrtype: uint64): void {
+    // box keys are only ever derived from valid names
     checkName(name)
     const now = Global.latestTimestamp
     if (rrtype === TYPE_TXT) {
       const box = this.attestations(op.sha256(name))
       loggedAssert(box.exists, errMissing)
-      const expiration = op.extractUint64(box.extract(8, 8), 0)
-      const payer = Account(box.extract(24, 32))
+      const value = box.value
+      const expiration = attestationExpiration(value)
       loggedAssert(
-        (Txn.sender === payer && now > expiration) ||
+        (Txn.sender === attestationPayer(value) && now > expiration) ||
           now > expiration + PRUNE_GRACE_SECONDS ||
-          !this.whitelist(tldOf(name)).exists,
+          attestationEpoch(value) !== this.rootEpoch.value,
         errPrune,
       )
+      // the refund goes to the payer, not the pruner
       this.deleteAttestation(name)
     } else {
+      // a cache entry: anyone, once expired, refunded to the pruner
       const box = this.caches(op.sha256(nameType(name, rrtype)))
       loggedAssert(box.exists, errMissing)
-      loggedAssert(now > box.value.expiry, errPrune)
+      const entry = box.value
+      loggedAssert(now > entry.expiry || entry.epoch !== this.rootEpoch.value, errPrune)
       const mbrBefore = Global.currentApplicationAddress.minBalance
       box.delete()
       this.manageMbrCredits(mbrBefore)
@@ -310,30 +437,24 @@ export class DnssecOracle extends BaseContract {
 
   // ── Reads ───────────────────────────────────────────────────────
 
-  /** Log each name's attestation box, in input order; an empty line if there is none. */
+  /** Log each name's attestation box, in input order; an empty line if there is none or it is stale. */
   @readonly
   public logAttestations(names: bytes[]): void {
     for (const name of names) {
       const [value, exists] = this.attestations(op.sha256(name)).maybe()
-      log(exists ? value : Bytes())
+      log(exists && attestationEpoch(value) === this.rootEpoch.value ? value : Bytes())
     }
   }
 
   // ── Internals ───────────────────────────────────────────────────
 
-  /** The owner's TLD must be whitelisted; the root has none. */
-  private checkListed(owner: bytes): void {
-    loggedAssert(owner.length > 1, errRoot)
-    loggedAssert(this.whitelist(tldOf(owner)).exists, errListed)
-  }
-
-  /** The cache entry `parent` must match: present, unexpired, same hash. */
+  /** The cache entry `parent` must match: present, unexpired, this epoch, same hash. */
   private parentEntry(name: bytes, rrtype: uint64, parent: bytes): CacheEntry {
     // not .maybe(): algorand-typescript-testing 1.2.0 misdecodes a struct read that way
     const box = this.caches(op.sha256(nameType(name, rrtype)))
     loggedAssert(box.exists, errParent)
     const entry = box.value
-    loggedAssert(Global.latestTimestamp <= entry.expiry, errStale)
+    loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch === this.rootEpoch.value, errStale)
     loggedAssert(op.sha256(parent) === entry.hash, errParent)
     return entry
   }
@@ -341,12 +462,14 @@ export class DnssecOracle extends BaseContract {
   /**
    * Newest inception wins. A tie replaces only if expiry and key bits get no worse, so a
    * second signature at the same inception cannot shorten or weaken the entry, while a
-   * re-proof after its parent was refreshed still extends it. Fixed size, so a replacement
-   * moves no credit.
+   * re-proof after its parent was refreshed still extends it. A stale entry is replaced
+   * whatever its inception: a forged one may be newer than any real RRSIG. Fixed size, so a
+   * replacement moves no credit.
    */
   private writeCache(s: SignedData, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64): void {
     const box = this.caches(op.sha256(nameType(s.owner, rrtype)))
-    if (box.exists) {
+    const epoch = this.rootEpoch.value
+    if (box.exists && box.value.epoch === epoch) {
       const old = box.value
       loggedAssert(s.inception >= old.inception, errOld)
       loggedAssert(
@@ -354,7 +477,7 @@ export class DnssecOracle extends BaseContract {
         errWorse,
       )
     }
-    box.value = { hash: op.sha256(s.rrset), inception: s.inception, expiry: expiry, weakestKeyBits: weakestKeyBits }
+    box.value = { hash: op.sha256(s.rrset), inception: s.inception, expiry: expiry, weakestKeyBits: weakestKeyBits, epoch: epoch }
   }
 
   /**
@@ -364,7 +487,7 @@ export class DnssecOracle extends BaseContract {
    */
   private deleteAttestation(name: bytes): void {
     const box = this.attestations(op.sha256(name))
-    const payer = Account(box.extract(24, 32))
+    const payer = attestationPayer(box.value)
     const mbrBefore = Global.currentApplicationAddress.minBalance
     box.delete()
     if (this.userCredits(payer).exists) this.settleMbrCredits(payer, mbrBefore)
@@ -373,6 +496,24 @@ export class DnssecOracle extends BaseContract {
 
 function min(a: uint64, b: uint64): uint64 {
   return a < b ? a : b
+}
+
+/**
+ * The DNSKEY in a cached root DNSKEY RRset whose anchor box key is `keyHash`: `[rdata,
+ * found]`. The RRset was parsed when it was proven, so each RR is the one-byte root name,
+ * 10 fixed bytes, then the RDATA.
+ */
+function findKey(rrset: bytes, keyHash: bytes<32>): readonly [bytes, boolean] {
+  let at: uint64 = 0
+  while (at < rrset.length) {
+    // owner (1), type (2), class (2), TTL (4), then RDLENGTH
+    const rdlength = op.extractUint16(rrset, at + 9)
+    const rdata = op.extract(rrset, at + 11, rdlength)
+    // DNSKEY RDATA: flags (2), protocol (1), algorithm (1), public key
+    if (anchorKey(op.getByte(rdata, 3), op.extract(rdata, 4, rdlength - 4)) === keyHash) return [rdata, true]
+    at += 11 + rdlength
+  }
+  return [Bytes(), false]
 }
 
 /** Anchor box key: the public key field and algorithm only, so the REVOKE flag does not move it. */
@@ -397,7 +538,9 @@ function checkKey(rdata: bytes, algorithm: uint64): readonly [bytes, uint64] {
     return [publicKey, ECDSA_P256_KEY_BITS]
   }
   loggedAssert(algorithm === ALG_RSASHA256, errAlgorithm)
+  // RFC 3110 public key: exponent length (1 byte), exponent, modulus. Only `03 010001` passes.
   loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
+  // real modulus size: the first byte's significant bits, plus 8 per byte after it
   const first = op.getByte(publicKey, 4)
   const bits: uint64 = (publicKey.length - 5) * 8 + op.bitLength(first)
   loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
@@ -409,8 +552,11 @@ function verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uin
   const digest = op.sha256(signedData)
   if (algorithm === ALG_ECDSAP256SHA256) {
     loggedAssert(signature.length === 64, errSigLength)
+    // signature is r ‖ s. The AVM rejects high-S; DNSSEC signers may produce either, and
+    // n − s is an equally valid signature. s > n underflows and fails the program.
     let s = BigUint(op.extract(signature, 32, 32))
     if (s > P256_HALF_N) s = P256_N - s
+    // Bytes(s) drops leading zeros: left-pad back to 32 bytes
     const low = op.bzero(32).bitwiseOr(Bytes(s))
     const valid = op.ecdsaVerify(
       op.Ecdsa.Secp256r1,
@@ -423,8 +569,10 @@ function verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uin
     loggedAssert(valid, errSignature)
     return
   }
+  // after the `03 010001` prefix checkKey enforced
   const modulus = op.extract(publicKey, 4, publicKey.length - 4)
   loggedAssert(signature.length === modulus.length, errSigLength)
+  // the hint makes the modular exponentiation affordable; a wrong one can only fail
   loggedAssert(hint.length > 0, errHint)
   loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
 }

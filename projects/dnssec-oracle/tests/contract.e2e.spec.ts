@@ -3,6 +3,8 @@ import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
 import { Address, TransactionSigner } from 'algosdk'
 import {
   ANCHOR_BOX_MBR_MICROALGOS,
+  anchorHash,
+  AnchorState,
   attestationBoxMbrMicroAlgos,
   attestationKey,
   boxNames,
@@ -22,8 +24,8 @@ import {
   rdataOf,
   ROOT_KSK_2017,
   RRType,
+  sha256,
   SIMULATE_PARAMS,
-  tldBoxMbrMicroAlgos,
   toHex,
   u16,
   u32,
@@ -34,7 +36,7 @@ import { join } from 'node:path'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { AttestationConsumerFactory } from '../smart_contracts/artifacts/consumer/AttestationConsumerClient'
 import { sendMutated } from './helpers'
-import { Alg, dnskeyRdata, dsRdata, ecKey, rawSign, rsaKey, standardWorld, txt, withFlags } from './zone'
+import { Alg, dnskeyRdata, dsRdata, ecKey, rawSign, rsaKey, standardWorld, TestKey, txt, withFlags } from './zone'
 
 const P256_N = BigInt('0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551')
 
@@ -60,19 +62,19 @@ describe('DnssecOracle e2e', () => {
 
   const accountSigner = (a: { addr: Address; signer: TransactionSigner }) => ({ sender: a.addr, signer: a.signer })
 
-  /** Create, then (unless `anchor` is false) fund, deposit, anchor and whitelist in one group. */
+  /** Create, then (unless `anchor` is false) fund, deposit and anchor in one group. */
   const deploy = async ({
     rootAlg = 'ecdsa' as Alg,
-    tlds = ['com', 'io'],
     credits = 5_000_000,
     anchor = true,
+    extraAnchors = [] as Uint8Array[],
   } = {}) => {
     // the world signs from two hours back
     await waitPast(Math.floor(Date.now() / 1000) - 3600)
     const w = standardWorld({ rootAlg })
     const { testAccount } = localnet.context
     const sdk = await DnssecOracleSDK.create({ algorand: localnet.algorand, admin: accountSigner(testAccount) })
-    if (anchor) await sdk.setup({ anchor: w.root.ksk.rdata, tlds, credits })
+    if (anchor) await sdk.setup({ anchors: [w.root.ksk.rdata, ...extraAnchors], credits })
     const anchors = [w.root.ksk.rdata]
     const chain = (name: string) => buildTxtChain(name, w.world.resolver, { anchors })
     const prove = (name: string) => sdk.proveTxt(name, { resolver: w.world.resolver, anchors })
@@ -181,10 +183,7 @@ describe('DnssecOracle e2e', () => {
           await consumer.send.hasTxt({
             args: { name, text: new TextEncoder().encode(text), maxAge, minKeyBits },
             appReferences: [sdk.appId],
-            boxReferences: [
-              { appId: sdk.appId, name: boxNames.attestation(name) },
-              { appId: sdk.appId, name: boxNames.tld('com') },
-            ],
+            boxReferences: [{ appId: sdk.appId, name: boxNames.attestation(name) }],
             note: `${Math.random()}`,
           })
         ).return
@@ -192,15 +191,11 @@ describe('DnssecOracle e2e', () => {
       expect(await ask('hello')).toBe(false) // a substring is not a record
       expect(await ask('hello com', 60)).toBe(false) // signed too long ago
       expect(await ask('hello com', undefined, 4096)).toBe(false) // weaker than asked: P-256 counts as 3072
-      // de-listed: the attestation is still there until pruned, but no longer usable
-      await sdk.removeTld({ label: 'com' })
-      expect(await sdk.getAttestation('_tag.example.com')).toBeDefined()
-      expect(await ask('hello com')).toBe(false)
     })
 
     test('setup charges exactly the MBR constants the SDK mirrors', async () => {
       const { sdk } = await deploy({ credits: 1_000_000 })
-      const needed = CREDIT_BOX_MBR_MICROALGOS + ANCHOR_BOX_MBR_MICROALGOS + tldBoxMbrMicroAlgos('com') + tldBoxMbrMicroAlgos('io')
+      const needed = CREDIT_BOX_MBR_MICROALGOS + ANCHOR_BOX_MBR_MICROALGOS
       expect(await sdk.getCredits(localnet.context.testAccount.toString())).toBe(BigInt(1_000_000 - needed))
     })
 
@@ -220,10 +215,9 @@ describe('DnssecOracle e2e', () => {
 
       const admin = localnet.context.testAccount.toString()
       expect(await sdk.getCredits(admin)).toBe((await sdk.listCredits()).get(admin))
-      expect(await sdk.getTlds()).toEqual(['com', 'io'])
       // root, then DS and DNSKEY for com, io, example.com, example.io
       expect((await sdk.listCaches()).size).toBe(9)
-      expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n })
+      expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n, rollInception: 0n, rootEpoch: 0n })
     })
   })
 
@@ -247,27 +241,33 @@ describe('DnssecOracle e2e', () => {
       await expect(sdk.proveStep({ step: root })).rejects.toThrow(code('ANC'))
     })
 
-    test('addAnchor: admin only, once, KSK flags only', async () => {
+    test('addAnchors: admin only, once, KSK flags only', async () => {
       const { sdk, root } = await unanchored()
       const { account } = await otherSdk(sdk)
       await expect(
-        sendMutated(sdk, sdk['makeAddAnchorTxns']({ anchor: root.ksk.rdata }), ([call]) => {
+        sendMutated(sdk, sdk['makeAddAnchorsTxns']({ anchors: [root.ksk.rdata] }), ([call]) => {
           // @ts-expect-error readonly
           call.txn.sender = account.addr
           call.signer = account.signer
         }),
       ).rejects.toThrow(code('ADM'))
-      await expect(sdk.addAnchor({ anchor: withFlags(root.ksk, 256).rdata })).rejects.toThrow(code('AFL'))
-      await expect(sdk.addAnchor({ anchor: withFlags(root.ksk, 385).rdata })).rejects.toThrow(code('AFL'))
-      await sdk.addAnchor({ anchor: root.ksk.rdata })
-      expect(await sdk.isAnchor(root.ksk.rdata)).toBe(true)
-      await expect(sdk.addAnchor({ anchor: root.ksk.rdata })).rejects.toThrow(code('AST'))
+      await expect(sdk.addAnchors({ anchors: [withFlags(root.ksk, 256).rdata] })).rejects.toThrow(code('AFL'))
+      await expect(sdk.addAnchors({ anchors: [root.ksk.rdata, withFlags(root.ksk, 385).rdata] })).rejects.toThrow(
+        code('AFL'),
+      )
+      await expect(sdk.addAnchors({ anchors: [root.ksk.rdata, root.ksk.rdata] })).rejects.toThrow(code('AST'))
+      const second = ecKey()
+      await sdk.addAnchors({ anchors: [root.ksk.rdata, second.rdata] })
+      expect((await sdk.getAnchor(root.ksk.rdata))?.state).toBe(AnchorState.Valid)
+      expect((await sdk.getAnchor(second.rdata))?.state).toBe(AnchorState.Valid)
+      expect((await sdk.getState()).anchorCount).toBe(2n)
+      await expect(sdk.addAnchors({ anchors: [ecKey().rdata] })).rejects.toThrow(code('AST'))
     })
 
     test('the anchor is keyed by public key: a REVOKE flag does not move it', async () => {
       const { sdk, root } = await deploy()
-      expect(await sdk.isAnchor(withFlags(root.ksk, 385).rdata)).toBe(true)
-      expect(await sdk.isAnchor(ecKey().rdata)).toBe(false)
+      expect((await sdk.getAnchor(withFlags(root.ksk, 385).rdata))?.state).toBe(AnchorState.Valid)
+      expect(await sdk.getAnchor(ecKey().rdata)).toBeUndefined()
     })
   })
 
@@ -640,23 +640,17 @@ describe('DnssecOracle e2e', () => {
     test('an attestation over 4096 bytes', async () => {
       const { sdk, world, exampleCom, chain } = await deploy()
       await sdk.proveChain((await chain('_tag.example.com')).slice(0, 5))
-      // stored: 56 header + 2 rdlen + RDATA. Signed data is 54 + RDATA at the apex, and an
+      // stored: 64 header + 2 rdlen + RDATA. Signed data is 54 + RDATA at the apex, and an
       // argument caps at 4096 bytes: only names this short can reach the limit at all.
       // A group this large owes a usage fee over one per transaction: proveStep prices it
       const send = async () => sdk.proveStep({ step: find(await chain('example.com'), 'txt') })
-      world.txt(exampleCom, 'example.com', [bigRdata(4039)])
+      world.txt(exampleCom, 'example.com', [bigRdata(4031)])
       await expect(send()).rejects.toThrow(code('BIG'))
-      world.txt(exampleCom, 'example.com', [bigRdata(4038)])
+      world.txt(exampleCom, 'example.com', [bigRdata(4030)])
       await send()
       expect((await sdk.scanRaw('t')).get(attestationKey('example.com'))?.length).toBe(4096)
     })
 
-    test('a TLD off the whitelist cannot prove', async () => {
-      const { sdk, chain } = await deploy({ tlds: ['com'] })
-      const io = await chain('_tag.example.io')
-      await sdk.proveStep({ step: find(io, 'root') })
-      await expect(sdk.proveStep({ step: find(io, 'ds', 'io') })).rejects.toThrow(code('WLS'))
-    })
   })
 
   // ── Phase 3/6: a real chain, captured the same day ───────────────
@@ -680,13 +674,102 @@ describe('DnssecOracle e2e', () => {
 
     const { testAccount } = localnet.context
     const sdk = await DnssecOracleSDK.create({ algorand: localnet.algorand, admin: accountSigner(testAccount) })
-    await sdk.setup({ anchor: ROOT_KSK_2017, tlds: ['com', 'io', 'finance', 'co'], credits: 5_000_000 })
+    await sdk.setup({ anchors: [ROOT_KSK_2017], credits: 5_000_000 })
     for (const { name, steps } of valid) {
       await sdk.proveChain(steps)
       const attestation = await sdk.getAttestation(name)
       expect(attestation?.texts.length).toBeGreaterThan(0)
       console.log(`${name}: ${attestation?.texts[0].slice(0, 60)}… weakest ${attestation?.weakestKeyBits} bits`)
     }
+  })
+
+  // ── Second pass: root rollover (RFC 5011) ───────────────────────
+  // Hold-downs need a 30-day clock: Promote and Retire run in rollover.algo.spec.ts.
+
+  describe('second pass: root rollover', () => {
+    const rootKeys = (w: Awaited<ReturnType<typeof deploy>>, keys: Uint8Array[], signers: TestKey[], inceptionDelta = 0) =>
+      w.world.publish(w.root.name, RRType.DNSKEY, keys, signers, w.root.name, { inception: w.world.inception + inceptionDelta })
+
+    test('maintainAnchors: Add a new KSK, then Reset it when it leaves, credits round-trip', async () => {
+      const d = await deploy()
+      const { sdk, root, world } = d
+      const admin = localnet.context.testAccount.toString()
+      const next = ecKey()
+      rootKeys(d, [root.ksk.rdata, root.zsk.rdata, next.rdata], [root.ksk])
+      const before = await sdk.getCredits(admin)
+
+      const added = await sdk.maintainAnchors({ resolver: world.resolver })
+      expect(added.events).toEqual([{ event: 'Add', keyHash: toHex(anchorHash(next.rdata)), keyTag: keyTag(next.rdata) }])
+      expect((await sdk.getAnchor(next.rdata))?.state).toBe(AnchorState.AddPend)
+      // the root's cache box, then the new anchor's
+      const rootCache = BigInt(CACHE_BOX_MBR_MICROALGOS)
+      expect(await sdk.getCredits(admin)).toBe(before! - rootCache - BigInt(ANCHOR_BOX_MBR_MICROALGOS))
+      // an AddPend key does not sign for the root
+      expect((await sdk.trustedAnchors())(next.rdata)).toBe(false)
+      // nothing more to do until the hold-down passes
+      expect((await sdk.maintainAnchors({ resolver: world.resolver })).events).toEqual([])
+
+      rootKeys(d, [root.ksk.rdata, root.zsk.rdata], [root.ksk], 60)
+      const reset = await sdk.maintainAnchors({ resolver: world.resolver })
+      expect(reset.events.map((e) => e.event)).toEqual(['Reset'])
+      expect(await sdk.getAnchor(next.rdata)).toBeUndefined()
+      expect(await sdk.getCredits(admin)).toBe(before! - rootCache)
+      expect((await sdk.getState()).rollInception).toBe(BigInt(world.inception + 60))
+    })
+
+    test('maintainAnchors: a self-signed revocation stales what came before, then proofs go on under the other anchor', async () => {
+      const second = ecKey()
+      const d = await deploy({ extraAnchors: [second.rdata] })
+      const { sdk, root, world, prove } = d
+      await prove('_tag.example.com')
+      const { testAccount } = localnet.context
+      const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
+      const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
+      const name = nameToWire('_tag.example.com')
+      const ask = async () =>
+        (
+          await consumer.send.hasTxt({
+            args: { name, text: new TextEncoder().encode('hello com'), maxAge: 86_400 * 3, minKeyBits: 2048 },
+            appReferences: [sdk.appId],
+            boxReferences: [{ appId: sdk.appId, name: boxNames.attestation(name) }],
+            note: `${Math.random()}`,
+          })
+        ).return
+      expect(await ask()).toBe(true)
+
+      const revoked = withFlags(root.ksk, 385)
+      const signed = rootKeys(d, [revoked.rdata, second.rdata, root.zsk.rdata], [revoked, second])
+      const { events } = await sdk.maintainAnchors({ resolver: world.resolver })
+      expect(events.map((e) => [e.event, e.keyTag])).toEqual([['Revoke', keyTag(revoked.rdata)]])
+      expect((await sdk.getAnchor(root.ksk.rdata))?.state).toBe(AnchorState.Revoked)
+      expect(toHex((await sdk.getCache('.', RRType.DNSKEY))!.hash)).toBe(toHex(sha256(signed.rrset)))
+      expect((await sdk.getState()).rootEpoch).toBe(1n)
+
+      // proven before the revocation: stale to the SDK's reader and to consumers
+      expect(await sdk.getAttestation('_tag.example.com')).toBeUndefined()
+      expect(await ask()).toBe(false)
+
+      // the SDK's default anchors are now read from the app: the revoked KSK is not among them.
+      // Every stale cache entry is proven again, over its newer-or-equal inception
+      const { proven } = await sdk.proveTxt('_tag.example.com', { resolver: world.resolver })
+      expect(proven.map((s) => s.kind)).toEqual(['ds', 'dnskey', 'ds', 'dnskey', 'txt'])
+      expect((await sdk.getAttestation('_tag.example.com'))?.texts).toEqual(['hello com'])
+      expect(await ask()).toBe(true)
+      expect((await sdk.maintainAnchors({ resolver: world.resolver })).events).toEqual([])
+    })
+
+    test('updateAnchor needs the cached root RRset and a key with an event', async () => {
+      const d = await deploy()
+      const { sdk, root, chain } = d
+      const rootStep = find(await chain('_tag.example.com'), 'root')
+      await sdk.proveStep({ step: rootStep })
+      const stranger = ecKey()
+      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(stranger.rdata) })).rejects.toThrow(code('ROL'))
+      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('ROL'))
+      const tampered = rootStep.rrset.slice()
+      tampered[tampered.length - 1] ^= 1
+      await expect(sdk.updateAnchor({ rrset: tampered, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('PAR'))
+    })
   })
 
   // ── Phase 4: credits and prune ───────────────────────────────────
@@ -763,73 +846,20 @@ describe('DnssecOracle e2e', () => {
       await expect(sdk.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('MIS'))
     })
 
-    test('an unlisted TLD lets anyone prune its attestations, refunding the payer', async () => {
-      const { sdk, prove } = await deploy()
-      await prove('_tag.example.io')
-      const payer = localnet.context.testAccount.toString()
-      const { other } = await otherSdk(sdk)
-      await expect(other.prune({ name: '_tag.example.io', type: RRType.TXT })).rejects.toThrow(code('PRN'))
-      await sdk.removeTld({ label: 'io' })
-      const before = await sdk.getCredits(payer)
-      await other.prune({ name: '_tag.example.io', type: RRType.TXT })
-      expect(await sdk.getCredits(payer)).toBe(before! + BigInt(attestationBoxMbrMicroAlgos(txt('hello io').length, 1)))
-    })
   })
 
-  // ── Phase 5: whitelist admin ─────────────────────────────────────
+  // ── Phase 5: admin ───────────────────────────────────────────────
 
   describe('phase 5: admin', () => {
-    test('non-admins are rejected', async () => {
-      const { sdk } = await deploy()
-      const { other, account } = await otherSdk(sdk)
-      await expect(other.addTld({ label: 'net' })).rejects.toThrow(code('ADM'))
-      await expect(other.removeTld({ label: 'com' })).rejects.toThrow(code('ADM'))
-      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('ADM'))
-      await expect(
-        sendMutated(sdk, sdk['makeAddTldTxns']({ label: 'net' }), ([call]) => {
-          // @ts-expect-error readonly
-          call.txn.sender = account.addr
-          call.signer = account.signer
-        }),
-      ).rejects.toThrow(code('ADM'))
-      await expect(sdk.addTld({ label: 'com' })).rejects.toThrow(code('TLX'))
-      await expect(sdk.addTld({ label: '' })).rejects.toThrow(code('TLD'))
-    })
-
-    test('removing a TLD blocks its proofs and refunds the admin', async () => {
-      const { sdk, chain } = await deploy()
-      const steps = await chain('_tag.example.io')
-      await sdk.proveStep({ step: find(steps, 'root') })
-      const admin = localnet.context.testAccount.toString()
-      const before = await sdk.getCredits(admin)
-      await sdk.removeTld({ label: 'io' })
-      expect(await sdk.getCredits(admin)).toBeGreaterThan(before!)
-      await expect(sdk.proveStep({ step: find(steps, 'ds', 'io') })).rejects.toThrow(code('WLS'))
-      await expect(sdk.removeTld({ label: 'io' })).rejects.toThrow(code('MIS'))
-
-      // an admin with no credit box can still de-list: the refund stays with the app
-      await sdk.withdrawCredits({})
-      await sdk.removeTld({ label: 'com' })
-      expect(await sdk.getTlds()).toEqual([])
-    })
-
-    test('TLD labels must be lowercase; the SDK lowercases them', async () => {
-      const { sdk } = await deploy()
-      await expect(
-        sdk.writeClient!.send.addTld({ args: { label: new TextEncoder().encode('Net') }, note: `${Math.random()}` }),
-      ).rejects.toThrow(code('TLD'))
-      await sdk.addTld({ label: 'NET' })
-      expect(await sdk.getTlds()).toEqual(['com', 'io', 'net'])
-    })
-
     test('the admin role can be handed over and renounced', async () => {
       const { sdk } = await deploy()
       const { other, account } = await otherSdk(sdk)
+      const admin = localnet.context.testAccount.toString()
+      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('ADM'))
       await sdk.setAdmin({ admin: account.toString() })
-      await expect(sdk.addTld({ label: 'net' })).rejects.toThrow(code('ADM'))
-      await other.addTld({ label: 'net' })
+      await expect(sdk.setAdmin({ admin })).rejects.toThrow(code('ADM'))
       await other.setAdmin({ admin: Address.zeroAddress().toString() })
-      await expect(other.addTld({ label: 'org' })).rejects.toThrow(code('ADM'))
+      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('ADM'))
       expect((await sdk.getState()).admin).toBe(Address.zeroAddress().toString())
     })
   })

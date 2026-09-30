@@ -1,0 +1,127 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "DNSSEC oracle contract",
+  "description": "How the contract proves a TXT record from the DNS root down, one signature per call, and how the root trust anchors roll over under RFC 5011.",
+  "steps": [
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "^export class DnssecOracle",
+      "title": "What the oracle does",
+      "description": "The contract proves that a TXT RRset exists at a DNS name by checking the DNSSEC chain from the root down. Each call checks **one signature**. A proof walks these calls in order:\n\n1. `proveRoot`: the root DNSKEY RRset, signed by a trust anchor.\n2. `proveDs`: a child zone's DS RRset, signed by a key in its parent's DNSKEY RRset.\n3. `proveDnskey`: the child's DNSKEY RRset, whose signing key matches that DS.\n4. Repeat steps 2 and 3 down the tree, then `proveTxt`.\n\nEach step caches what it proved. Later calls pass the parent RRset back in full, and the contract checks it against the cached hash.\n\nThe contract has no update or delete methods, so the code can't change once it's created."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "^const ALG_RSASHA256",
+      "title": "Policy constants",
+      "description": "These constants set the policy:\n\n- Only two algorithms are accepted: RSA/SHA-256 (8) and ECDSA P-256 (13).\n- RSA keys must be 1024 to 2048 bits. A P-256 key counts as 3072 bits when the contract records the weakest key on a path.\n- Anchors must be KSKs with flags `257`. A key that revokes itself sets REVOKE and has flags `385`.\n- The RFC 5011 hold-down is 30 days."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "^export type AnchorEntry",
+      "title": "Stored types",
+      "description": "Anchors and cache entries are two fixed-size structs:\n\n- `AnchorEntry` holds an anchor's RFC 5011 state and when it entered that state.\n- `CacheEntry` stores a hash of the RRset, not the RRset itself. Callers pass the full RRset back and the contract re-hashes it.\n\n`expiry` and `weakestKeyBits` carry down the chain. A child entry is never trusted for longer, or at a stronger key size, than the entries above it."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "anchors = BoxMap",
+      "title": "Storage: three box maps",
+      "description": "Each box map has a one-letter key prefix:\n\n- `a`: trust anchors, keyed by `sha256(alg ‖ pubkey)`. The key leaves out the flags, so setting REVOKE doesn't change which box a key maps to.\n- `r`: cached root DNSKEY, DS and DNSKEY RRsets. Zones share these, so proving one name under `.com` caches steps that other `.com` names reuse.\n- `t`: attestations, which are the proven TXT RRsets. The layout is a public API, documented in `reader.algo.ts`.\n\nThe box rent comes from the caller's MBR credits (`manageMbrCredits`, from `BaseContract`)."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public createApplication",
+      "title": "Create, then add anchors",
+      "description": "Setup takes two steps, because the app account has no funds at creation and so can't hold boxes yet.\n\nThe create call sets the admin and turns on `appForeignBoxReads`. With that on, other contracts can read the attestation boxes directly, without calling the oracle."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public addAnchors",
+      "title": "addAnchors: set the initial trust once",
+      "description": "The admin uploads the initial root KSKs as DNSKEY RDATA. Each one starts in state `Valid`.\n\nThis runs **only once**, guarded by `anchorCount === 0`. After that, the admin has no way to change the anchor set. It changes only through the RFC 5011 rollover methods later in this file."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/wire.algo.ts",
+      "pattern": "^export function parseSignedData",
+      "title": "Detour: parseSignedData",
+      "description": "Every proof method starts here. `signedData` is exactly the bytes the RRSIG signs: its RDATA without the signature, followed by the RRset.\n\nBefore any cryptography runs, this function checks:\n\n- The type covered matches the method.\n- The time window: `inception <= now <= expiration`.\n- The RRSIG's `labels` field equals the owner's label count. Together with the wildcard ban, this rules out wildcard expansion.\n- The RRset rules enforced by `walkRRset`.\n\nOwner and signer names come only from these signed bytes, never from method arguments."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/wire.algo.ts",
+      "pattern": "^export function readName",
+      "title": "Detour: strict name parsing",
+      "description": "Names must be uncompressed. Any label length byte of `0x40` or above fails, which rejects compression pointers. A `*` label also fails, since wildcards aren't supported.\n\nThe prover must send canonical, lowercase wire format. That is already how RFC 4034 defines the signed form."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public proveRoot",
+      "title": "proveRoot",
+      "description": "This is where the chain starts. The root DNSKEY RRset must be signed by one of its own keys. That key's anchor box must be `Valid` or `Missing`. Both states still count as trusted under RFC 5011.\n\nThe result is cached with the RRSIG's own expiration, since the root has nothing above it."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public proveDs",
+      "title": "proveDs",
+      "description": "A DS RRset must be signed by a **proper** ancestor. `parent` is the signer's cached DNSKEY RRset, and `parentEntry` checks it is present, unexpired, and matches the cached hash.\n\nThe new entry takes `min(expiration)` and `min(key bits)` of itself and its parent."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public proveDnskey",
+      "title": "proveDnskey",
+      "description": "A zone's DNSKEY RRset is self-signed. The signing key must match one DS record in the zone's cached DS RRset. `checkDs` accepts only SHA-256 digests (type 2) and checks the key tag, the algorithm and the digest."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public proveTxt",
+      "title": "proveTxt: the attestation",
+      "description": "This is the last step. The signer may be the owner itself or any ancestor (`proper = false`). The TXT records are stored under `t ‖ sha256(owner)` with a 56-byte header: inception, expiration, weakest key bits, and payer.\n\nA newer inception replaces the old attestation, and the previous payer gets the rent back. An older inception fails with `OLD`, so no one can replay stale records over fresh ones."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "private writeCache",
+      "title": "writeCache: newest wins",
+      "description": "Every cache write goes through here:\n\n- An older inception fails with `OLD`.\n- An equal inception replaces the entry only if expiry and key bits don't get worse. Otherwise it fails with `WRS`. A second valid signature can't shorten or weaken an entry.\n- A newer inception always replaces it.\n\nEntries are fixed size, so a replacement doesn't change the box rent."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "private parentEntry",
+      "title": "parentEntry: the link between steps",
+      "description": "This is how one proof step trusts the one above it. The contract never trusts an argument directly. It hashes the `parent` bytes the caller passed and compares them with the cached hash, then checks the entry hasn't expired."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "^function checkKey",
+      "title": "checkKey: which DNSKEYs are acceptable",
+      "description": "Every key the contract uses passes these checks:\n\n- The zone flag is set and REVOKE is clear.\n- The protocol is 3, and the algorithm matches the RRSIG's.\n- RSA keys need exponent 65537 and a modulus of 1024 to 2048 bits with no leading zero byte.\n- ECDSA keys must be a 64-byte P-256 point.\n\nThe function returns the key's strength in bits, which feeds `weakestKeyBits`."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "^function verify",
+      "title": "verify: the cryptography",
+      "description": "ECDSA uses the AVM's `ecdsa_verify` on Secp256r1. The contract first normalizes `s` to its low form, because the opcode rejects high-S signatures that DNS signers may still produce.\n\nRSA uses `verifyRsaSha256` from `@d13co/puya-ts-utils`. The caller must supply a Montgomery `hint`, precomputed off-chain, to keep the modular exponentiation within the opcode budget."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public updateAnchor",
+      "title": "updateAnchor: RFC 5011 rollover",
+      "description": "Anyone can call this. It applies the one event the **cached** root RRset implies for one key. The table in the doc comment lists them all.\n\n`rollInception` is a ratchet. Once a rollover step uses one root RRset, no later step may use an older one. Without it, an older RRset that is still valid could be proven again after a prune and undo a step.\n\nAdd and Retire wait 30 days (`HLD`). Miss and Return take effect right away, because a missing key stays trusted."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public prune",
+      "title": "prune: recovering rent",
+      "description": "Boxes are removed only after they expire:\n\n- **Attestations:** the payer may prune once expired, and anyone may 30 days after that. The refund always goes to the payer.\n- **Cache entries:** anyone may prune once expired, and the refund goes to the caller. This pays keepers to clean up."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
+      "pattern": "public revokeRoot",
+      "title": "revokeRoot: a key revokes itself",
+      "description": "Only the key itself can revoke itself. It signs the root RRset while listing itself with flags `385`. The contract clears the REVOKE bit in a copy before calling `checkKey`, so the copy maps to the same anchor box.\n\nOnce revoked, the key can't prove the root. `updateAnchor` retires it 30 days later.\n\n⚠️ An open review finding applies here. Revoking a key doesn't clear the root cache entry or `rollInception` that the key may already have set, so a compromised key can still push its own rollover through."
+    },
+    {
+      "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/reader.algo.ts",
+      "pattern": "^export function attestationUsable",
+      "title": "Consuming an attestation",
+      "description": "This is the reference reader for other contracts. A consumer should:\n\n1. Pin the oracle's app ID. Never read from an app ID the caller supplies.\n2. Decide which names, and so which TLD registries, it trusts. The oracle proves any TLD.\n3. Call `attestationUsable` with its own `maxAge` and `minKeyBits`. An attestation proves the record was signed, not that it still exists.\n4. Use `attestationHasRecord` for an exact RDATA match. Never substring-match the record bytes.\n\nThat's the whole contract. The error codes and their meanings are in `errors.algo.ts`."
+    }
+  ]
+}

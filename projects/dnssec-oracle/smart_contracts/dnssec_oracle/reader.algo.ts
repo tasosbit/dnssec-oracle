@@ -1,5 +1,4 @@
 import { Account, Application, Bytes, bytes, Global, op, uint64 } from '@algorandfoundation/algorand-typescript'
-import { tldOf } from './wire.algo'
 
 /*
  * Reference reader for attestation boxes, for contracts that consume the oracle. The
@@ -14,27 +13,22 @@ import { tldOf } from './wire.algo'
  *   0       8     inception       uint64, the TXT RRSIG's inception
  *   8       8     expiration      uint64, min over the chain of RRSIG expirations
  *   16      8     weakestKeyBits  uint64, weakest key on the path; P-256 counts as 3072
- *   24      32    payer           who paid the box rent
- *   56      ...   records         per TXT RR: uint16 rdlen ‖ rdata
+ *   24      8     epoch           uint64, the oracle's `rootEpoch` when proven
+ *   32      32    payer           who paid the box rent
+ *   64      ...   records         per TXT RR: uint16 rdlen ‖ rdata
+ *
+ * An attestation whose epoch is not the oracle's current `rootEpoch` global predates a root
+ * key revocation and may chain from a forged root: attestationUsable rejects it.
  *
  * Each rdata is one or more character-strings (length byte ‖ bytes). Walk the records from
- * offset 56: never substring-match the value, or a record's contents can pass for another.
+ * offset 64: never substring-match the value, or a record's contents can pass for another.
  */
 
-export const ATTESTATION_HEADER: uint64 = 56
+export const ATTESTATION_HEADER: uint64 = 64
 
 /** The attestation value for `name`, and whether it exists. */
 export function readAttestation(oracle: Application, name: bytes): readonly [bytes, boolean] {
   return op.AppBox.get(oracle, Bytes('t').concat(op.sha256(name)))
-}
-
-/**
- * Whether `name`'s TLD is still whitelisted, from box `w ‖ TLD label`. After `removeTld` an
- * attestation stays readable until someone prunes it: check this too.
- */
-export function tldListed(oracle: Application, name: bytes): boolean {
-  const [, exists] = op.AppBox.length(oracle, Bytes('w').concat(tldOf(name)))
-  return exists
 }
 
 export function attestationInception(value: bytes): uint64 {
@@ -49,18 +43,29 @@ export function attestationWeakestKeyBits(value: bytes): uint64 {
   return op.extractUint64(value, 16)
 }
 
+export function attestationEpoch(value: bytes): uint64 {
+  return op.extractUint64(value, 24)
+}
+
 export function attestationPayer(value: bytes): Account {
-  return Account(op.extract(value, 24, 32))
+  return Account(op.extract(value, 32, 32))
+}
+
+/** The oracle's current `rootEpoch`. */
+export function oracleRootEpoch(oracle: Application): uint64 {
+  const [epoch] = op.AppGlobal.getExUint64(oracle, Bytes('rootEpoch'))
+  return epoch
 }
 
 /**
- * Whether the attestation is usable now: not expired, signed at most `maxAge` seconds ago,
- * and no key on its path weaker than `minKeyBits`. An attestation says a record was
- * signed, not that it still exists: `maxAge` is the consumer's bound on that gap.
+ * Whether `oracle`'s attestation is usable now: not stale, not expired, signed at most
+ * `maxAge` seconds ago, and no key on its path weaker than `minKeyBits`. An attestation says
+ * a record was signed, not that it still exists: `maxAge` is the consumer's bound on that gap.
  */
-export function attestationUsable(value: bytes, maxAge: uint64, minKeyBits: uint64): boolean {
+export function attestationUsable(oracle: Application, value: bytes, maxAge: uint64, minKeyBits: uint64): boolean {
   const now = Global.latestTimestamp
   return (
+    attestationEpoch(value) === oracleRootEpoch(oracle) &&
     now <= attestationExpiration(value) &&
     now <= attestationInception(value) + maxAge &&
     attestationWeakestKeyBits(value) >= minKeyBits

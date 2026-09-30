@@ -2,10 +2,9 @@
   "version": 3,
   "sources": [
     "../../consumer/contract.algo.ts",
-    "../../dnssec_oracle/reader.algo.ts",
-    "../../dnssec_oracle/wire.algo.ts"
+    "../../dnssec_oracle/reader.algo.ts"
   ],
-  "mappings": ";;;;;;;;;;;;;;;;AAKA;;AAAA;AAAA;AAAA;;AAAA;;AAAA;;;;;;AAAA;;;AAAA;;;;AAAA;AAAA;;;;;;AAAA;;;AAAA;;;;AAAA;AAIG;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAFQ;AAIP;AAAA;AAFD;AAAA;;;AAWD;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAES;AAAA;AAAA;;AAAe;;;AAAf;AAAP;AACe;AAhBR;AAgBQ;AAAA;AAAA;AAAA;;AAAA;;AAAA;ACI8B;AAAA;AAAZ;;;AAAN;AAAA;AAAtB;;ADDH;;;AEkJa;AACJ;;AAAiB;AAAjB;AAAA;AACN;AAAA;;AAAA;AAAc;AAAd;AAAkB;;AAAA;AAAlB;AAAP;;AACQ;AAAS;AAAT;AAAN;AAAA;AACS;;AAAA;AAAA;AAAA;;;AAEkB;AAAL;AAAjB;;AAAA;AAAA;;AAAA;AD/I2C;;;AAAN;AAAA;AAAzB;;AAAA;AAAA;;AAAA;;ADTf;;;ACmCQ;;AAAA;AAAA;;AAjBL;;AAAwB;AAAxB;AAmBL;AAAA;;;AAvBK;AAAwB;AAAxB;AAwBE;;AAAA;AAAP;;AAAA;AADA;;;AAfK;AAAwB;;AAAxB;AAiBL;;AAAA;AAFA;;;;ADrCE;;;ACwDc;;AAAA;AAAX;;;AAAA;;AAAA;AAXE;;AACG;;AAAA;AAAL;;AAAA;AAAP;;AACiB;;AAAA;;AAAA;AAAA;AAAA;;AACA;;AAAA;AAAX;AAAA;;AAA6C;AAAK;AAAL;AAAlB;;AAAA;AAAA;;AAAA;AAAA;;AAAA;AAA3B;;;;AAA+E;ADhDjF;;;AANJ;;;AAAA;AAAA;;AAAA;AAAA;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;;;;ACuDQ;AAAS;AAAT;AAAN;;;;;;AAEK;ADhDH;;;",
+  "mappings": ";;;;;;;;;;;;;;;;AAKA;;AAAA;AAAA;AAAA;;AAAA;;AAAA;;;;;;AAAA;;;AAAA;;;;AAAA;AAAA;;;;;;AAAA;;;AAAA;;;;AAAA;AAIG;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAFQ;AAIP;AAAA;AAFD;AAAA;;;AAUD;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAES;AAAA;AAAA;;AAAe;;;AAAf;AAAP;AACe;AAfR;AAeQ;AAAA;AAAA;AAAA;;AAAA;;AAAA;ACQ8B;AAAA;AAAZ;;;AAAN;AAAA;AAAtB;;ADNE;;;ACyCG;;AAAA;;AAnBL;AAAwB;;AAAxB;AASS;;AAAuC;;;;;;;;;;;AAAvC;AAAA;AAYd;AAAA;;;AA7BK;AAAwB;AAAxB;AA8BL;;AAAA;AADA;;;AAjCK;AAAwB;AAAxB;AAmCE;;AAAA;AAAP;;AAAA;AAFA;;;AAzBK;AAAwB;;AAAxB;AA4BL;;AAAA;AAHA;;;;AD3CO;;;AC+DS;;AAAA;AAAX;;;AAAA;;AAAA;AAXE;;AACG;;AAAA;AAAL;;AAAA;AAAP;;AACiB;;AAAA;;AAAA;AAAA;AACA;;AAAA;AAAX;AAAA;;AAA6C;;AAAK;AAAL;AAAlB;;AAAA;AAAA;;AAAA;AAAA;;AAAA;AAA3B;;;;AAA+E;ADvD5E;;;AALT;;;AAAA;AAAA;;AAAA;AAAA;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;;;;AC6DiB;AAAT;AAAN;;;;;;AAEK;AD1DoE;;;",
   "op_pc_offset": 0,
   "pc_events": {
     "1": {
@@ -13,7 +12,7 @@
       "params": {},
       "block": "main",
       "stack_in": [],
-      "op": "intcblock 0 1 2 8"
+      "op": "intcblock 0 1 8 2"
     },
     "7": {
       "op": "bytecblock \"oracle\""
@@ -145,7 +144,7 @@
       ]
     },
     "57": {
-      "op": "intc_3 // 8",
+      "op": "intc_2 // 8",
       "defined_out": [
         "8",
         "len%0#0",
@@ -279,7 +278,7 @@
       ]
     },
     "74": {
-      "op": "intc_2 // 2",
+      "op": "intc_3 // 2",
       "defined_out": [
         "2",
         "aggregate%array_length%0#0",
@@ -358,17 +357,6 @@
       ]
     },
     "84": {
-      "op": "dup",
-      "defined_out": [
-        "name#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "name#0"
-      ]
-    },
-    "85": {
       "op": "txna ApplicationArgs 2",
       "defined_out": [
         "name#0",
@@ -377,11 +365,10 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0"
       ]
     },
-    "88": {
+    "87": {
       "op": "dup",
       "defined_out": [
         "name#0",
@@ -391,23 +378,21 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0",
         "tmp%2#0 (copy)"
       ]
     },
-    "89": {
+    "88": {
       "op": "intc_0 // 0",
       "stack_out": [
         "now#0",
-        "name#0",
         "name#0",
         "tmp%2#0",
         "tmp%2#0 (copy)",
         "0"
       ]
     },
-    "90": {
+    "89": {
       "error": "invalid array length header",
       "op": "extract_uint16 // on error: invalid array length header",
       "defined_out": [
@@ -418,23 +403,21 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0",
         "aggregate%array_length%1#0"
       ]
     },
-    "91": {
-      "op": "intc_2 // 2",
+    "90": {
+      "op": "intc_3 // 2",
       "stack_out": [
         "now#0",
-        "name#0",
         "name#0",
         "tmp%2#0",
         "aggregate%array_length%1#0",
         "2"
       ]
     },
-    "92": {
+    "91": {
       "op": "+",
       "defined_out": [
         "add%1#0",
@@ -444,23 +427,21 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0",
         "add%1#0"
       ]
     },
-    "93": {
+    "92": {
       "op": "dig 1",
       "stack_out": [
         "now#0",
-        "name#0",
         "name#0",
         "tmp%2#0",
         "add%1#0",
         "tmp%2#0 (copy)"
       ]
     },
-    "95": {
+    "94": {
       "op": "len",
       "defined_out": [
         "add%1#0",
@@ -471,13 +452,12 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0",
         "add%1#0",
         "len%1#0"
       ]
     },
-    "96": {
+    "95": {
       "op": "==",
       "defined_out": [
         "eq%1#0",
@@ -487,22 +467,20 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0",
         "eq%1#0"
       ]
     },
-    "97": {
+    "96": {
       "error": "invalid number of bytes for arc4.dynamic_array<arc4.uint8>",
       "op": "assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>",
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "tmp%2#0"
       ]
     },
-    "98": {
+    "97": {
       "op": "extract 2 0",
       "defined_out": [
         "name#0",
@@ -511,21 +489,19 @@
       "stack_out": [
         "now#0",
         "name#0",
-        "name#0",
         "text#0"
       ]
     },
-    "101": {
+    "100": {
       "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "name#0",
         "text#0",
         "text#0"
       ]
     },
-    "102": {
+    "101": {
       "op": "cover 2",
       "defined_out": [
         "name#0",
@@ -533,13 +509,12 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0"
       ]
     },
-    "104": {
+    "103": {
       "op": "txna ApplicationArgs 3",
       "defined_out": [
         "name#0",
@@ -548,14 +523,13 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
         "tmp%4#0"
       ]
     },
-    "107": {
+    "106": {
       "op": "dup",
       "defined_out": [
         "name#0",
@@ -565,7 +539,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
@@ -573,7 +546,7 @@
         "tmp%4#0 (copy)"
       ]
     },
-    "108": {
+    "107": {
       "op": "len",
       "defined_out": [
         "len%2#0",
@@ -583,7 +556,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
@@ -591,8 +563,8 @@
         "len%2#0"
       ]
     },
-    "109": {
-      "op": "intc_3 // 8",
+    "108": {
+      "op": "intc_2 // 8",
       "defined_out": [
         "8",
         "len%2#0",
@@ -602,7 +574,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
@@ -611,7 +582,7 @@
         "8"
       ]
     },
-    "110": {
+    "109": {
       "op": "==",
       "defined_out": [
         "eq%2#0",
@@ -621,7 +592,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
@@ -629,19 +599,18 @@
         "eq%2#0"
       ]
     },
-    "111": {
+    "110": {
       "error": "invalid number of bytes for arc4.uint64",
       "op": "assert // invalid number of bytes for arc4.uint64",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
         "tmp%4#0"
       ]
     },
-    "112": {
+    "111": {
       "op": "btoi",
       "defined_out": [
         "maxAge#0",
@@ -650,14 +619,13 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "name#0",
         "text#0",
         "maxAge#0"
       ]
     },
-    "113": {
+    "112": {
       "op": "cover 2",
       "defined_out": [
         "maxAge#0",
@@ -666,14 +634,13 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
         "text#0"
       ]
     },
-    "115": {
+    "114": {
       "op": "txna ApplicationArgs 4",
       "defined_out": [
         "maxAge#0",
@@ -683,7 +650,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -691,7 +657,7 @@
         "tmp%6#0"
       ]
     },
-    "118": {
+    "117": {
       "op": "dup",
       "defined_out": [
         "maxAge#0",
@@ -702,7 +668,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -711,7 +676,7 @@
         "tmp%6#0 (copy)"
       ]
     },
-    "119": {
+    "118": {
       "op": "len",
       "defined_out": [
         "len%3#0",
@@ -722,7 +687,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -731,11 +695,10 @@
         "len%3#0"
       ]
     },
-    "120": {
-      "op": "intc_3 // 8",
+    "119": {
+      "op": "intc_2 // 8",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -745,7 +708,7 @@
         "8"
       ]
     },
-    "121": {
+    "120": {
       "op": "==",
       "defined_out": [
         "eq%3#0",
@@ -756,7 +719,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -765,12 +727,11 @@
         "eq%3#0"
       ]
     },
-    "122": {
+    "121": {
       "error": "invalid number of bytes for arc4.uint64",
       "op": "assert // invalid number of bytes for arc4.uint64",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -778,7 +739,7 @@
         "tmp%6#0"
       ]
     },
-    "123": {
+    "122": {
       "op": "btoi",
       "defined_out": [
         "maxAge#0",
@@ -788,7 +749,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "name#0",
@@ -796,7 +756,7 @@
         "minKeyBits#0"
       ]
     },
-    "124": {
+    "123": {
       "op": "cover 2",
       "defined_out": [
         "maxAge#0",
@@ -806,7 +766,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -814,7 +773,7 @@
         "text#0"
       ]
     },
-    "126": {
+    "125": {
       "op": "len",
       "defined_out": [
         "maxAge#0",
@@ -825,7 +784,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -833,11 +791,10 @@
         "tmp%0#1"
       ]
     },
-    "127": {
+    "126": {
       "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -846,7 +803,7 @@
         "tmp%0#1"
       ]
     },
-    "128": {
+    "127": {
       "op": "cover 2",
       "defined_out": [
         "maxAge#0",
@@ -857,7 +814,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -866,7 +822,7 @@
         "tmp%0#1"
       ]
     },
-    "130": {
+    "129": {
       "op": "pushint 255",
       "defined_out": [
         "255",
@@ -878,7 +834,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -888,7 +843,7 @@
         "255"
       ]
     },
-    "133": {
+    "132": {
       "op": "<=",
       "defined_out": [
         "maxAge#0",
@@ -900,7 +855,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -909,12 +863,11 @@
         "tmp%1#1"
       ]
     },
-    "134": {
+    "133": {
       "error": "text over 255 bytes",
       "op": "assert // text over 255 bytes",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -922,11 +875,10 @@
         "name#0"
       ]
     },
-    "135": {
+    "134": {
       "op": "intc_0 // 0",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -935,7 +887,7 @@
         "0"
       ]
     },
-    "136": {
+    "135": {
       "op": "bytec_0 // \"oracle\"",
       "defined_out": [
         "\"oracle\"",
@@ -948,7 +900,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -958,7 +909,7 @@
         "\"oracle\""
       ]
     },
-    "137": {
+    "136": {
       "op": "app_global_get_ex",
       "defined_out": [
         "maxAge#0",
@@ -971,7 +922,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -981,11 +931,10 @@
         "maybe_exists%0#0"
       ]
     },
-    "138": {
+    "137": {
       "op": "swap",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -995,11 +944,10 @@
         "oracle#0"
       ]
     },
-    "139": {
+    "138": {
       "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1010,11 +958,10 @@
         "oracle#0 (copy)"
       ]
     },
-    "140": {
+    "139": {
       "op": "cover 2",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1025,7 +972,7 @@
         "oracle#0"
       ]
     },
-    "142": {
+    "141": {
       "op": "cover 3",
       "defined_out": [
         "maxAge#0",
@@ -1038,7 +985,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1049,12 +995,11 @@
         "maybe_exists%0#0"
       ]
     },
-    "144": {
+    "143": {
       "error": "check GlobalState exists",
       "op": "assert // check GlobalState exists",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1064,11 +1009,10 @@
         "oracle#0"
       ]
     },
-    "145": {
+    "144": {
       "op": "swap",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1078,11 +1022,10 @@
         "name#0"
       ]
     },
-    "146": {
+    "145": {
       "op": "sha256",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1092,13 +1035,12 @@
         "tmp%0#0"
       ]
     },
-    "147": {
+    "146": {
       "op": "pushbytes \"t\"",
       "defined_out": [
         "\"t\"",
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
         "oracle#0",
         "text#0",
         "tmp%0#0",
@@ -1106,7 +1048,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1117,11 +1058,10 @@
         "\"t\""
       ]
     },
-    "150": {
+    "149": {
       "op": "swap",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1132,12 +1072,11 @@
         "tmp%0#0"
       ]
     },
-    "151": {
+    "150": {
       "op": "concat",
       "defined_out": [
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
         "oracle#0",
         "text#0",
         "tmp%0#1",
@@ -1145,7 +1084,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1155,13 +1093,12 @@
         "tmp%1#2"
       ]
     },
-    "152": {
+    "151": {
       "op": "app_box_get",
       "defined_out": [
         "exists#0",
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
         "oracle#0",
         "text#0",
         "tmp%0#1",
@@ -1169,7 +1106,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1179,11 +1115,10 @@
         "exists#0"
       ]
     },
-    "154": {
-      "op": "bz hasTxt_bool_false@6",
+    "153": {
+      "op": "bz hasTxt_bool_false@5",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -1192,13 +1127,12 @@
         "value#0"
       ]
     },
-    "157": {
-      "op": "intc_0 // 0",
+    "156": {
+      "op": "global LatestTimestamp",
       "defined_out": [
-        "at#0",
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
+        "now#0",
         "oracle#0",
         "text#0",
         "tmp%0#1",
@@ -1206,55 +1140,56 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "at#0"
+        "now#0"
       ]
     },
     "158": {
-      "op": "dig 7",
+      "op": "bury 7",
+      "defined_out": [
+        "maxAge#0",
+        "minKeyBits#0",
+        "now#0",
+        "oracle#0",
+        "text#0",
+        "tmp%0#1",
+        "value#0"
+      ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
-        "value#0",
-        "at#0",
-        "name#0"
+        "value#0"
       ]
     },
     "160": {
-      "op": "intc_0 // 0",
+      "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "at#0",
-        "name#0",
-        "0"
+        "value#0"
       ]
     },
     "161": {
-      "op": "getbyte",
+      "op": "pushint 24",
       "defined_out": [
-        "at#0",
-        "length#0",
+        "24",
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
+        "now#0",
         "oracle#0",
         "text#0",
         "tmp%0#1",
@@ -1262,792 +1197,147 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "at#0",
-        "length#0"
-      ]
-    },
-    "162": {
-      "op": "swap",
-      "defined_out": [
-        "at#0",
-        "length#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "name#0",
-        "oracle#0",
-        "text#0",
-        "tmp%0#1",
-        "value#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
         "value#0",
-        "length#0",
-        "at#0"
+        "24"
       ]
     },
     "163": {
-      "block": "hasTxt_while_top@26",
-      "stack_in": [
-        "now#0",
-        "name#0",
-        "text#0",
+      "op": "extract_uint64",
+      "defined_out": [
         "maxAge#0",
         "minKeyBits#0",
-        "tmp%0#1",
+        "now#0",
         "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0"
-      ],
-      "op": "dup",
-      "defined_out": [
-        "at#0 (copy)"
+        "text#0",
+        "tmp%0#1",
+        "tmp%0#5",
+        "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "length#0",
-        "at#0",
-        "at#0 (copy)"
+        "tmp%0#5"
       ]
     },
     "164": {
       "op": "dig 2",
-      "defined_out": [
-        "at#0 (copy)",
-        "length#0 (copy)"
-      ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "length#0",
-        "at#0",
-        "at#0 (copy)",
-        "length#0 (copy)"
+        "tmp%0#5",
+        "oracle#0"
       ]
     },
     "166": {
-      "op": "+",
+      "op": "pushbytes \"rootEpoch\"",
       "defined_out": [
-        "tmp%1#5"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
+        "\"rootEpoch\"",
         "maxAge#0",
         "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%1#5"
-      ]
-    },
-    "167": {
-      "op": "intc_2 // 2",
-      "defined_out": [
-        "2",
-        "tmp%1#5"
-      ],
-      "stack_out": [
         "now#0",
-        "name#0",
+        "oracle#0",
         "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
         "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%1#5",
-        "2"
-      ]
-    },
-    "168": {
-      "op": "+",
-      "defined_out": [
-        "tmp%2#4"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%2#4"
-      ]
-    },
-    "169": {
-      "op": "dig 9",
-      "defined_out": [
-        "name#0",
-        "tmp%2#4"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%2#4",
-        "name#0"
-      ]
-    },
-    "171": {
-      "op": "len",
-      "defined_out": [
-        "name#0",
-        "tmp%2#4",
-        "tmp%3#3"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%2#4",
-        "tmp%3#3"
-      ]
-    },
-    "172": {
-      "op": "<",
-      "defined_out": [
-        "name#0",
-        "tmp%4#2"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "tmp%4#2"
-      ]
-    },
-    "173": {
-      "op": "bz hasTxt_after_while@28",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0"
-      ]
-    },
-    "175": {
-      "op": "swap",
-      "defined_out": [
-        "length#0",
-        "name#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "length#0"
-      ]
-    },
-    "176": {
-      "op": "intc_1 // 1",
-      "defined_out": [
-        "1",
-        "length#0",
-        "name#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "length#0",
-        "1"
-      ]
-    },
-    "177": {
-      "op": "+",
-      "defined_out": [
-        "at#0",
-        "name#0",
-        "tmp%5#2"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "tmp%5#2"
-      ]
-    },
-    "178": {
-      "op": "+",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0"
-      ]
-    },
-    "179": {
-      "op": "dup",
-      "defined_out": [
-        "at#0",
-        "name#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "at#0"
-      ]
-    },
-    "180": {
-      "op": "dig 8",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "at#0",
-        "name#0"
-      ]
-    },
-    "182": {
-      "op": "swap",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "name#0",
-        "at#0"
-      ]
-    },
-    "183": {
-      "op": "getbyte",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "at#0",
-        "length#0"
-      ]
-    },
-    "184": {
-      "op": "swap",
-      "defined_out": [
-        "at#0",
-        "length#0",
-        "name#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0"
-      ]
-    },
-    "185": {
-      "op": "b hasTxt_while_top@26"
-    },
-    "187": {
-      "block": "hasTxt_after_while@28",
-      "stack_in": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0"
-      ],
-      "op": "intc_1 // 1",
-      "defined_out": [
-        "1",
-        "at#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "at#0",
-        "1"
-      ]
-    },
-    "188": {
-      "op": "+",
-      "defined_out": [
-        "tmp%8#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "tmp%8#0"
-      ]
-    },
-    "189": {
-      "op": "dig 8",
-      "defined_out": [
-        "name#0",
-        "tmp%8#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "tmp%8#0",
-        "name#0"
-      ]
-    },
-    "191": {
-      "op": "swap",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "length#0",
-        "name#0",
-        "tmp%8#0"
-      ]
-    },
-    "192": {
-      "op": "uncover 2",
-      "defined_out": [
-        "length#0",
-        "name#0",
-        "tmp%8#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "name#0",
-        "tmp%8#0",
-        "length#0"
-      ]
-    },
-    "194": {
-      "op": "extract3",
-      "defined_out": [
-        "name#0",
-        "tmp%9#1"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "tmp%9#1"
-      ]
-    },
-    "195": {
-      "op": "pushbytes \"w\"",
-      "defined_out": [
-        "\"w\"",
-        "name#0",
-        "tmp%9#1"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "tmp%9#1",
-        "\"w\""
-      ]
-    },
-    "198": {
-      "op": "swap",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "\"w\"",
-        "tmp%9#1"
-      ]
-    },
-    "199": {
-      "op": "concat",
-      "defined_out": [
-        "name#0",
-        "tmp%1#2"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "tmp%1#2"
-      ]
-    },
-    "200": {
-      "op": "dig 2",
-      "defined_out": [
-        "name#0",
-        "oracle#0",
-        "tmp%1#2"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "tmp%1#2",
-        "oracle#0"
-      ]
-    },
-    "202": {
-      "op": "swap",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "oracle#0",
-        "tmp%1#2"
-      ]
-    },
-    "203": {
-      "op": "app_box_len",
-      "defined_out": [
-        "awst_tmp%0#0",
-        "exists#0",
-        "name#0",
-        "oracle#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "awst_tmp%0#0",
-        "exists#0"
-      ]
-    },
-    "205": {
-      "op": "bury 1",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "exists#0"
-      ]
-    },
-    "207": {
-      "op": "bz hasTxt_bool_false@6",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0"
-      ]
-    },
-    "210": {
-      "op": "global LatestTimestamp"
-    },
-    "212": {
-      "op": "dup",
-      "defined_out": [
-        "name#0",
-        "now#0",
-        "oracle#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "now#0",
-        "now#0"
-      ]
-    },
-    "213": {
-      "op": "bury 9",
-      "defined_out": [
-        "name#0",
-        "now#0",
-        "oracle#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "now#0"
-      ]
-    },
-    "215": {
-      "op": "dig 1",
-      "defined_out": [
-        "name#0",
-        "now#0",
-        "oracle#0",
-        "value#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "now#0",
-        "value#0"
-      ]
-    },
-    "217": {
-      "op": "intc_3 // 8",
-      "defined_out": [
-        "8",
-        "name#0",
-        "now#0",
-        "oracle#0",
-        "value#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "now#0",
-        "value#0",
-        "8"
-      ]
-    },
-    "218": {
-      "op": "extract_uint64",
-      "defined_out": [
-        "name#0",
-        "now#0",
-        "oracle#0",
         "tmp%0#5",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "now#0",
-        "tmp%0#5"
+        "tmp%0#5",
+        "oracle#0",
+        "\"rootEpoch\""
       ]
     },
-    "219": {
-      "op": "<=",
+    "177": {
+      "op": "app_global_get_ex",
       "defined_out": [
-        "name#0",
+        "awst_tmp%1#0",
+        "epoch#0",
+        "maxAge#0",
+        "minKeyBits#0",
         "now#0",
         "oracle#0",
-        "tmp%2#3",
+        "text#0",
+        "tmp%0#1",
+        "tmp%0#5",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%2#3"
+        "tmp%0#5",
+        "epoch#0",
+        "awst_tmp%1#0"
       ]
     },
-    "220": {
+    "178": {
+      "op": "pop",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "tmp%0#5",
+        "epoch#0"
+      ]
+    },
+    "179": {
+      "op": "==",
+      "defined_out": [
+        "maxAge#0",
+        "minKeyBits#0",
+        "now#0",
+        "oracle#0",
+        "text#0",
+        "tmp%0#1",
+        "tmp%3#4",
+        "value#0"
+      ],
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "tmp%3#4"
+      ]
+    },
+    "180": {
       "op": "bz hasTxt_bool_false@22",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2056,11 +1346,10 @@
         "value#0"
       ]
     },
-    "223": {
+    "183": {
       "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2070,11 +1359,99 @@
         "value#0"
       ]
     },
-    "224": {
+    "184": {
+      "op": "intc_2 // 8",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "value#0",
+        "8"
+      ]
+    },
+    "185": {
+      "op": "extract_uint64",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "tmp%0#5"
+      ]
+    },
+    "186": {
+      "op": "dig 7",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "tmp%0#5",
+        "now#0"
+      ]
+    },
+    "188": {
+      "op": ">=",
+      "defined_out": [
+        "maxAge#0",
+        "minKeyBits#0",
+        "now#0",
+        "oracle#0",
+        "text#0",
+        "tmp%0#1",
+        "tmp%5#1",
+        "value#0"
+      ],
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "tmp%5#1"
+      ]
+    },
+    "189": {
+      "op": "bz hasTxt_bool_false@22",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0"
+      ]
+    },
+    "192": {
+      "op": "dup",
+      "stack_out": [
+        "now#0",
+        "text#0",
+        "maxAge#0",
+        "minKeyBits#0",
+        "tmp%0#1",
+        "oracle#0",
+        "value#0",
+        "value#0"
+      ]
+    },
+    "193": {
       "op": "intc_0 // 0",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2085,11 +1462,10 @@
         "0"
       ]
     },
-    "225": {
+    "194": {
       "op": "extract_uint64",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2099,19 +1475,10 @@
         "tmp%0#5"
       ]
     },
-    "226": {
+    "195": {
       "op": "dig 5",
-      "defined_out": [
-        "maxAge#0",
-        "name#0",
-        "now#0",
-        "oracle#0",
-        "tmp%0#5",
-        "value#0"
-      ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2122,70 +1489,70 @@
         "maxAge#0"
       ]
     },
-    "228": {
+    "197": {
       "op": "+",
       "defined_out": [
         "maxAge#0",
-        "name#0",
+        "minKeyBits#0",
         "now#0",
         "oracle#0",
-        "tmp%4#3",
+        "text#0",
+        "tmp%0#1",
+        "tmp%7#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%4#3"
+        "tmp%7#1"
       ]
     },
-    "229": {
-      "op": "dig 8",
+    "198": {
+      "op": "dig 7",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%4#3",
+        "tmp%7#1",
         "now#0"
       ]
     },
-    "231": {
+    "200": {
       "op": ">=",
       "defined_out": [
         "maxAge#0",
-        "name#0",
+        "minKeyBits#0",
         "now#0",
         "oracle#0",
-        "tmp%5#1",
+        "text#0",
+        "tmp%0#1",
+        "tmp%8#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%5#1"
+        "tmp%8#1"
       ]
     },
-    "232": {
+    "201": {
       "op": "bz hasTxt_bool_false@22",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2194,11 +1561,10 @@
         "value#0"
       ]
     },
-    "235": {
+    "204": {
       "op": "dup",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2208,19 +1574,20 @@
         "value#0"
       ]
     },
-    "236": {
+    "205": {
       "op": "pushint 16",
       "defined_out": [
         "16",
         "maxAge#0",
-        "name#0",
+        "minKeyBits#0",
         "now#0",
         "oracle#0",
+        "text#0",
+        "tmp%0#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2231,11 +1598,10 @@
         "16"
       ]
     },
-    "238": {
+    "207": {
       "op": "extract_uint64",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2245,20 +1611,10 @@
         "tmp%0#5"
       ]
     },
-    "239": {
+    "208": {
       "op": "dig 4",
-      "defined_out": [
-        "maxAge#0",
-        "minKeyBits#0",
-        "name#0",
-        "now#0",
-        "oracle#0",
-        "tmp%0#5",
-        "value#0"
-      ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2269,34 +1625,33 @@
         "minKeyBits#0"
       ]
     },
-    "241": {
+    "210": {
       "op": ">=",
       "defined_out": [
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
         "now#0",
         "oracle#0",
-        "tmp%7#0",
+        "text#0",
+        "tmp%0#1",
+        "tmp%10#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%7#0"
+        "tmp%10#1"
       ]
     },
-    "242": {
+    "211": {
       "op": "bz hasTxt_bool_false@22",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2305,20 +1660,20 @@
         "value#0"
       ]
     },
-    "245": {
+    "214": {
       "op": "intc_1 // 1",
       "defined_out": [
         "and_result%0#0",
         "maxAge#0",
         "minKeyBits#0",
-        "name#0",
         "now#0",
         "oracle#0",
+        "text#0",
+        "tmp%0#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2328,11 +1683,10 @@
         "and_result%0#0"
       ]
     },
-    "246": {
+    "215": {
       "block": "hasTxt_bool_merge@23",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2341,11 +1695,10 @@
         "value#0",
         "and_result%0#0"
       ],
-      "op": "bz hasTxt_bool_false@6",
+      "op": "bz hasTxt_bool_false@5",
       "defined_out": [],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2354,14 +1707,13 @@
         "value#0"
       ]
     },
-    "249": {
+    "218": {
       "op": "dig 2",
       "defined_out": [
         "tmp%0#1"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2371,7 +1723,7 @@
         "tmp%0#1"
       ]
     },
-    "251": {
+    "220": {
       "op": "itob",
       "defined_out": [
         "tmp%0#1",
@@ -2379,7 +1731,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2389,7 +1740,7 @@
         "tmp%1#2"
       ]
     },
-    "252": {
+    "221": {
       "op": "extract 7 1",
       "defined_out": [
         "tmp%0#1",
@@ -2397,7 +1748,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2407,7 +1757,7 @@
         "tmp%2#0"
       ]
     },
-    "255": {
+    "224": {
       "op": "dig 6",
       "defined_out": [
         "text#0",
@@ -2416,7 +1766,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2427,7 +1776,7 @@
         "text#0"
       ]
     },
-    "257": {
+    "226": {
       "op": "concat",
       "defined_out": [
         "rdata#0",
@@ -2436,7 +1785,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2446,8 +1794,8 @@
         "rdata#0"
       ]
     },
-    "258": {
-      "op": "pushint 56",
+    "227": {
+      "op": "pushint 64",
       "defined_out": [
         "at#0",
         "rdata#0",
@@ -2456,7 +1804,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2467,11 +1814,10 @@
         "at#0"
       ]
     },
-    "260": {
-      "block": "hasTxt_while_top@11",
+    "229": {
+      "block": "hasTxt_while_top@10",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2487,7 +1833,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2499,7 +1844,7 @@
         "value#0"
       ]
     },
-    "262": {
+    "231": {
       "op": "len",
       "defined_out": [
         "tmp%0#1",
@@ -2507,7 +1852,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2519,7 +1863,7 @@
         "tmp%0#1"
       ]
     },
-    "263": {
+    "232": {
       "op": "dig 1",
       "defined_out": [
         "at#0 (copy)",
@@ -2528,7 +1872,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2541,7 +1884,7 @@
         "at#0 (copy)"
       ]
     },
-    "265": {
+    "234": {
       "op": ">",
       "defined_out": [
         "tmp%0#1",
@@ -2550,7 +1893,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2562,11 +1904,10 @@
         "tmp%1#1"
       ]
     },
-    "266": {
-      "op": "bz hasTxt_after_while@16",
+    "235": {
+      "op": "bz hasTxt_after_while@15",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2577,11 +1918,10 @@
         "at#0"
       ]
     },
-    "268": {
+    "237": {
       "op": "dig 2",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2593,11 +1933,10 @@
         "value#0"
       ]
     },
-    "270": {
+    "239": {
       "op": "dig 1",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2610,7 +1949,7 @@
         "at#0 (copy)"
       ]
     },
-    "272": {
+    "241": {
       "op": "extract_uint16",
       "defined_out": [
         "length#0",
@@ -2619,7 +1958,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2631,25 +1969,8 @@
         "length#0"
       ]
     },
-    "273": {
+    "242": {
       "op": "dup",
-      "stack_out": [
-        "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "rdata#0",
-        "at#0",
-        "length#0",
-        "length#0"
-      ]
-    },
-    "274": {
-      "op": "cover 2",
       "defined_out": [
         "length#0",
         "tmp%0#1",
@@ -2657,7 +1978,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2665,12 +1985,12 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "length#0"
       ]
     },
-    "276": {
+    "243": {
       "op": "dig 3",
       "defined_out": [
         "length#0",
@@ -2680,7 +2000,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2688,13 +2007,13 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "length#0",
         "rdata#0 (copy)"
       ]
     },
-    "278": {
+    "245": {
       "op": "len",
       "defined_out": [
         "length#0",
@@ -2704,7 +2023,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2712,23 +2030,22 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "length#0",
         "tmp%3#3"
       ]
     },
-    "279": {
+    "246": {
       "op": "==",
       "defined_out": [
         "length#0",
         "tmp%0#1",
-        "tmp%4#2",
+        "tmp%4#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2736,16 +2053,15 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
-        "tmp%4#2"
+        "length#0",
+        "tmp%4#1"
       ]
     },
-    "280": {
-      "op": "bz hasTxt_after_if_else@15",
+    "247": {
+      "op": "bz hasTxt_after_if_else@14",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2753,15 +2069,14 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
-        "at#0"
+        "at#0",
+        "length#0"
       ]
     },
-    "282": {
-      "op": "dup",
+    "249": {
+      "op": "dig 1",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2769,13 +2084,13 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "at#0 (copy)"
       ]
     },
-    "283": {
-      "op": "intc_2 // 2",
+    "251": {
+      "op": "intc_3 // 2",
       "defined_out": [
         "2",
         "at#0 (copy)",
@@ -2785,7 +2100,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2793,23 +2107,22 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "at#0 (copy)",
         "2"
       ]
     },
-    "284": {
+    "252": {
       "op": "+",
       "defined_out": [
         "length#0",
         "tmp%0#1",
-        "tmp%5#2",
+        "tmp%5#0",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2817,16 +2130,15 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
-        "tmp%5#2"
+        "length#0",
+        "tmp%5#0"
       ]
     },
-    "285": {
+    "253": {
       "op": "dig 4",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2834,17 +2146,16 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
-        "tmp%5#2",
+        "length#0",
+        "tmp%5#0",
         "value#0"
       ]
     },
-    "287": {
+    "255": {
       "op": "swap",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2852,24 +2163,23 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "value#0",
-        "tmp%5#2"
+        "tmp%5#0"
       ]
     },
-    "288": {
-      "op": "dig 3",
+    "256": {
+      "op": "dig 2",
       "defined_out": [
         "length#0",
         "length#0 (copy)",
         "tmp%0#1",
-        "tmp%5#2",
+        "tmp%5#0",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2877,14 +2187,14 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "value#0",
-        "tmp%5#2",
+        "tmp%5#0",
         "length#0 (copy)"
       ]
     },
-    "290": {
+    "258": {
       "op": "extract3",
       "defined_out": [
         "length#0",
@@ -2894,7 +2204,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2902,16 +2211,15 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "tmp%6#0"
       ]
     },
-    "291": {
+    "259": {
       "op": "dig 3",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2919,13 +2227,13 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "tmp%6#0",
         "rdata#0 (copy)"
       ]
     },
-    "293": {
+    "261": {
       "op": "==",
       "defined_out": [
         "length#0",
@@ -2935,7 +2243,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2943,16 +2250,15 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
         "at#0",
+        "length#0",
         "tmp%7#0"
       ]
     },
-    "294": {
-      "op": "bz hasTxt_after_if_else@15",
+    "262": {
+      "op": "bz hasTxt_after_if_else@14",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2960,11 +2266,11 @@
         "oracle#0",
         "value#0",
         "rdata#0",
-        "length#0",
-        "at#0"
+        "at#0",
+        "length#0"
       ]
     },
-    "296": {
+    "264": {
       "op": "popn 3",
       "defined_out": [
         "tmp%0#1",
@@ -2972,7 +2278,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -2981,43 +2286,40 @@
         "value#0"
       ]
     },
-    "298": {
+    "266": {
       "op": "intc_1 // 1",
       "defined_out": [
         "tmp%0#1",
-        "tmp%5#1",
+        "tmp%4#1",
         "value#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%5#1"
+        "tmp%4#1"
       ]
     },
-    "299": {
-      "block": "hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@17",
+    "267": {
+      "block": "hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@16",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%5#1"
+        "tmp%4#1"
       ],
-      "op": "bz hasTxt_bool_false@6",
+      "op": "bz hasTxt_bool_false@5",
       "defined_out": [],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3026,14 +2328,13 @@
         "value#0"
       ]
     },
-    "301": {
+    "269": {
       "op": "intc_1 // 1",
       "defined_out": [
         "and_result%0#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3043,11 +2344,10 @@
         "and_result%0#0"
       ]
     },
-    "302": {
-      "block": "hasTxt_bool_merge@7",
+    "270": {
+      "block": "hasTxt_bool_merge@6",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3062,7 +2362,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3073,7 +2372,7 @@
         "0x00"
       ]
     },
-    "305": {
+    "273": {
       "op": "intc_0 // 0",
       "defined_out": [
         "0",
@@ -3081,7 +2380,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3093,7 +2391,7 @@
         "0"
       ]
     },
-    "306": {
+    "274": {
       "op": "uncover 2",
       "defined_out": [
         "0",
@@ -3102,7 +2400,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3114,14 +2411,13 @@
         "and_result%0#0"
       ]
     },
-    "308": {
+    "276": {
       "op": "setbit",
       "defined_out": [
         "aggregate%encoded_bool%0#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3131,7 +2427,7 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "309": {
+    "277": {
       "op": "pushbytes 0x151f7c75",
       "defined_out": [
         "0x151f7c75",
@@ -3139,7 +2435,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3150,11 +2445,10 @@
         "0x151f7c75"
       ]
     },
-    "315": {
+    "283": {
       "op": "swap",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3165,14 +2459,13 @@
         "aggregate%encoded_bool%0#0"
       ]
     },
-    "316": {
+    "284": {
       "op": "concat",
       "defined_out": [
         "tmp%10#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3182,11 +2475,10 @@
         "tmp%10#0"
       ]
     },
-    "317": {
+    "285": {
       "op": "log",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3195,14 +2487,13 @@
         "value#0"
       ]
     },
-    "318": {
+    "286": {
       "op": "intc_1 // 1",
       "defined_out": [
         "1"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3212,11 +2503,10 @@
         "1"
       ]
     },
-    "319": {
+    "287": {
       "op": "return",
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3225,11 +2515,10 @@
         "value#0"
       ]
     },
-    "320": {
-      "block": "hasTxt_bool_false@6",
+    "288": {
+      "block": "hasTxt_bool_false@5",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3243,7 +2532,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3253,31 +2541,13 @@
         "and_result%0#0"
       ]
     },
-    "321": {
-      "op": "b hasTxt_bool_merge@7"
+    "289": {
+      "op": "b hasTxt_bool_merge@6"
     },
-    "323": {
-      "block": "hasTxt_after_if_else@15",
+    "291": {
+      "block": "hasTxt_after_if_else@14",
       "stack_in": [
         "now#0",
-        "name#0",
-        "text#0",
-        "maxAge#0",
-        "minKeyBits#0",
-        "tmp%0#1",
-        "oracle#0",
-        "value#0",
-        "rdata#0",
-        "length#0",
-        "at#0"
-      ],
-      "op": "swap",
-      "defined_out": [
-        "length#0"
-      ],
-      "stack_out": [
-        "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3287,17 +2557,14 @@
         "rdata#0",
         "at#0",
         "length#0"
-      ]
-    },
-    "324": {
-      "op": "intc_2 // 2",
+      ],
+      "op": "intc_3 // 2",
       "defined_out": [
         "2",
         "length#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3310,7 +2577,7 @@
         "2"
       ]
     },
-    "325": {
+    "292": {
       "op": "+",
       "defined_out": [
         "at#0",
@@ -3318,7 +2585,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3330,14 +2596,13 @@
         "tmp%8#0"
       ]
     },
-    "326": {
+    "293": {
       "op": "+",
       "defined_out": [
         "at#0"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3348,14 +2613,13 @@
         "at#0"
       ]
     },
-    "327": {
-      "op": "b hasTxt_while_top@11"
+    "294": {
+      "op": "b hasTxt_while_top@10"
     },
-    "330": {
-      "block": "hasTxt_after_while@16",
+    "297": {
+      "block": "hasTxt_after_while@15",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3369,7 +2633,6 @@
       "defined_out": [],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3378,31 +2641,29 @@
         "value#0"
       ]
     },
-    "332": {
+    "299": {
       "op": "intc_0 // 0",
       "defined_out": [
-        "tmp%5#1"
+        "tmp%4#1"
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
         "tmp%0#1",
         "oracle#0",
         "value#0",
-        "tmp%5#1"
+        "tmp%4#1"
       ]
     },
-    "333": {
-      "op": "b hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@17"
+    "300": {
+      "op": "b hasTxt_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@16"
     },
-    "335": {
+    "302": {
       "block": "hasTxt_bool_false@22",
       "stack_in": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3416,7 +2677,6 @@
       ],
       "stack_out": [
         "now#0",
-        "name#0",
         "text#0",
         "maxAge#0",
         "minKeyBits#0",
@@ -3426,7 +2686,7 @@
         "and_result%0#0"
       ]
     },
-    "336": {
+    "303": {
       "op": "b hasTxt_bool_merge@23"
     }
   }

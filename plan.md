@@ -23,12 +23,12 @@ signature chain from the DNS root down to the TXT RRset on-chain.
 
 | Topic         | Decision                                                       |
 |---------------|----------------------------------------------------------------|
-| Root anchors  | Box storage. Admin uploads the first anchor after creation, only while there is none. |
-| Rollover      | **Not in the first pass.** Anchors are fixed once set; a root KSK roll means a redeploy. |
+| Root anchors  | Box storage. Admin uploads the initial anchor set once, after creation. |
+| Rollover      | RFC 5011, permissionless (second pass, see "Root anchors: rollover"). First pass: fixed anchors, a KSK roll meant a redeploy. |
 | Results       | Stored attestations in boxes, readable on- and off-chain.      |
 | RSA size      | Modulus 1024 to 2048 bits.                                     |
 | Box rent      | `MbrManager` prepaid credits.                                  |
-| Whitelist     | `com`, `io`, `finance`, `co`. Admin can add and remove.        |
+| TLDs          | No whitelist: any TLD whose keys pass the key rules. Consumers pick the names they trust. Target TLDs for testing: `com`, `io`, `finance`, `co`. |
 | Contract code | No update, no delete.                                          |
 | RSA host      | Inside the contract (see "Cost").                              |
 
@@ -45,12 +45,17 @@ has been seen.
 | After 2026-10-11   | signed by KSK-2024 (38696)                          |
 | About 2027-01-11   | KSK-2017 with the REVOKE flag, self-signed          |
 
-Also capture a full chain for one name under each whitelisted TLD.
+Also capture a full chain for one name under each target TLD.
 
 The first-pass anchor is **KSK-2017 (20326)**, for live testing now. It
 stops signing the root DNSKEY RRset on 2026-10-11, so `proveRoot` fails from
 then on and the deployment winds down as its root cache expires. That
-deployment is for testing only; a lasting one needs KSK-2024 or rollover.
+deployment is for testing only.
+
+A second-pass deployment made before 2026-10-11 anchors **both** KSK-2017 and
+KSK-2024, as IANA's trust anchor file does: anchoring KSK-2017 alone and
+letting RFC 5011 add KSK-2024 would leave its 30-day hold-down running past
+the roll. From 2026-10-11, KSK-2024 alone does.
 
 ## What a proof is
 
@@ -65,7 +70,7 @@ For `_tag.example.com TXT`, 6 signatures and 2 digests:
 | 5 | `example.com. DNSKEY`  | example.com KSK  | contains example.com ZSK    |
 | 6 | `_tag.example.com TXT` | example.com ZSK  | the result                  |
 
-Live key material for the whitelist (2026-09-28):
+Live key material for the target TLDs (2026-09-28):
 
 | Zone    | Algorithm      | KSK      | ZSK              |
 |---------|----------------|----------|------------------|
@@ -114,12 +119,14 @@ above it rather than below. Each layer owns one concern.
    enable `ForeignBoxReads` with `app_params_set`. No anchor: boxes cannot be
    written yet, the app account is not funded.
 2. **Anchor**, one group from the admin: fund the app's base MBR,
-   `depositCredits`, `addAnchor(dnskeyRdata)`.
+   `depositCredits`, `addAnchors(dnskeys)`.
 
-`addAnchor` requires sender = `admin` and `anchorCount = 0`. It applies the
-DNSKEY and RSA/ECDSA checks below plus flags exactly 257, writes box
-`a ‖ sha256(alg ‖ pubkey)` and sets `anchorCount = 1`. After that no method
-can add, change or remove an anchor. Until it runs, every proof fails.
+`addAnchors` requires sender = `admin` and `anchorCount = 0`. It applies the
+DNSKEY and RSA/ECDSA checks below plus flags exactly 257 to each key, rejects
+duplicates, writes each box `a ‖ sha256(alg ‖ pubkey)` as Valid and sets
+`anchorCount` to the number of keys. After that only RFC 5011 rollover
+changes the anchor set; the admin has no say in it. Until it runs, every
+proof fails.
 
 No update or delete methods: this overrides the D13 default of creator-gated
 ones, per "Decisions taken".
@@ -158,14 +165,15 @@ compression pointers and extended label types.
 | Where  | Key                          | Value                                                     |
 |--------|------------------------------|-----------------------------------------------------------|
 | Global | `admin`                      | address                                                   |
-| Global | `anchorCount`                | uint64, 0 until `addAnchor`                               |
-| Box    | `a` ‖ `sha256(alg ‖ pubkey)` | empty (anchor)                                            |
-| Box    | `w` ‖ TLD label              | empty (whitelist)                                         |
-| Box    | `r` ‖ `sha256(name ‖ type)`  | cache: `sha256(RRset)`, `inception`, `expiry`, `weakestKeyBits` |
+| Global | `anchorCount`                | uint64, 0 until `addAnchors`, then the initial count      |
+| Global | `rollInception`              | uint64, inception of the newest root RRset a rollover step used |
+| Global | `rootEpoch`                  | uint64, revocations so far; older cache entries and attestations are stale |
+| Box    | `a` ‖ `sha256(alg ‖ pubkey)` | anchor: `state`, `since` (uint64 each), RFC 5011          |
+| Box    | `r` ‖ `sha256(name ‖ type)`  | cache: `sha256(RRset)`, `inception`, `expiry`, `weakestKeyBits`, `epoch` |
 | Box    | `t` ‖ `sha256(name)`         | attestation: header, then `uint16 rdlen ‖ rdata` per RR   |
 | Box    | `c` ‖ address                | MbrManager credits, uint64                                |
 
-Attestation header: `inception`, `expiration`, `weakestKeyBits`, `payer`.
+Attestation header: `inception`, `expiration`, `weakestKeyBits`, `epoch`, `payer`.
 
 - `c` is reserved by `MbrManager` (33-byte keys), which is why the cache
   uses `r`. All prefixes are disjoint.
@@ -186,33 +194,32 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `payer`.
 
 | Method        | Verifies                                                  | Signer must be        |
 |---------------|-----------------------------------------------------------|-----------------------|
-| `addAnchor`   | nothing: admin-supplied, once (see "Lifecycle")           | sender is `admin`     |
-| `proveRoot`   | root DNSKEY RRset under an anchor                         | owner, and owner = root |
+| `addAnchors`  | nothing: admin-supplied, once (see "Lifecycle")           | sender is `admin`     |
+| `proveRoot`   | root DNSKEY RRset under a Valid or Missing anchor         | owner, and owner = root |
+| `revokeRoot`  | root DNSKEY RRset under the anchor it revokes (flags 385) | owner, and owner = root |
+| `updateAnchor` | nothing: applies the RFC 5011 event the cached root RRset implies for one key | |
 | `proveDs`     | DS RRset under a key in the parent's cached DNSKEY RRset  | a proper ancestor of owner |
 | `proveDnskey` | DNSKEY RRset under one of its own keys matching the cached DS | equal to owner    |
 | `proveTxt`    | TXT RRset under a key in a cached DNSKEY RRset            | owner or an ancestor  |
 | `prune`       | see "Box rent"                                            |                       |
-| `addTld` / `removeTld` / `setAdmin` | sender is `admin`                   |                       |
+| `setAdmin`    | sender is `admin`                                         |                       |
 | `logAttestations(names)` | `@readonly`: logs each attestation box, empty line if missing |            |
 | inherited     | `increaseBudget`, `depositCredits`, `withdrawCredits`, `logCredits` |             |
 
 - Proving methods and `prune` are permissionless, but a sender that creates
   boxes needs credits.
-- The whitelist is checked in `proveDs`, `proveDnskey` and `proveTxt`
-  against the owner's rightmost label. `proveRoot` is exempt: the root has no
-  labels.
+- `proveDs`, `proveDnskey` and `proveTxt` reject the root as owner (`ROT`):
+  only `proveRoot` writes the root DNSKEY entry.
 - Ancestry is tested label by label.
 - Newest inception wins, for caches and attestations alike. Ties replace,
   except that a cache entry at the same inception is replaced only if its
   expiry and `weakestKeyBits` get no worse (`WRS`): a second signature cannot
   shorten or weaken it, and a re-proof after its parent is refreshed still
   extends it.
-- `addTld` rejects uppercase labels: owners are matched byte for byte, so one
-  would whitelist nothing.
 - A TXT proof replaces the whole RDATA set, so a removed record disappears as
   soon as anyone submits the newer RRset.
 - `setAdmin` to the zero address renounces the role permanently. Doing it
-  before `addAnchor` bricks the contract.
+  before `addAnchors` bricks the contract.
 
 ### Key and signature checks
 
@@ -240,13 +247,56 @@ Deployment assumptions, not DNSSEC rules: exponent 65537, DS digest type 2,
 RSA 1024 to 2048 bits. A zone moving off any of them silently stops proving,
 so the capture cron also alerts on changes to these values.
 
-### Root anchors: first pass
+### Root anchors: rollover (RFC 5011)
 
-No rollover and no revocation. The anchor set is whatever `addAnchor` wrote.
-When the root KSK next rolls, or the root moves to ECDSA, the contract stops
-proving and is redeployed. The rollover design (Add, Promote, Reset, Miss,
-Return, Retire, Revoke) is deferred to a second pass and will need its own
-contract, since this one cannot be updated.
+Second pass. The first-pass contract cannot be updated, so this ships as a new
+deployment. Each anchor box holds an RFC 5011 state and `since`, the block
+time it was entered. No box means Start (or Removed).
+
+`updateAnchor(rrset, keyHash)` takes the root DNSKEY RRset as cached (hash
+match, unexpired, like `parent`) and one key's `sha256(alg ‖ pubkey)`. The key
+is *present* if the RRset holds it without REVOKE. One event applies:
+
+| State   | Present | Event   | Becomes                                     |
+|---------|---------|---------|---------------------------------------------|
+| none    | yes     | Add     | AddPend; flags 257 and a key `checkKey` takes |
+| AddPend | yes     | Promote | Valid, 30 days after Add (`HLD` before)     |
+| AddPend | no      | Reset   | box deleted                                 |
+| Valid   | no      | Miss    | Missing, still trusted                      |
+| Missing | yes     | Return  | Valid                                       |
+| Revoked | either  | Retire  | box deleted, 30 days after Revoke           |
+
+Anything else fails with `ROL`. `revokeRoot` is the seventh event: the root
+DNSKEY RRset signed by an anchor (any state but Revoked) that the RRset holds
+with flags 385. Only the key can revoke itself, and for good.
+
+- `proveRoot` accepts Valid and Missing anchors only.
+- No hold-down timer checks DNS continuously: it counts on-chain time from the
+  Add call, and a key's absence counts only once someone sends Reset or Miss.
+  Watchers (trust point 11) run `maintainAnchors` daily.
+- Anti-replay: `updateAnchor` requires the cached RRset's inception to be at
+  least `rollInception`, then raises it. An older RRset still in its validity
+  window, proven again after the newer cache entry expired and was pruned,
+  cannot undo a step.
+- Revocation needs no inception rule: replaying it changes nothing.
+- The hold-down is 30 days, RFC 5011's minimum; the root DNSKEY TTL is 2 days.
+- Anchor boxes created by Add are paid from the sender's credits; Reset and
+  Retire refund the sender, as a cache prune does.
+- Revocation stales everything proven before it. `revokeRoot` bumps
+  `rootEpoch` (not for an AddPend key, which never proved anything); cache entries and attestations record the epoch they were
+  proven in. A stale cache entry fails as a parent (`STL`), a stale
+  attestation fails `attestationUsable` and `logAttestations` hides it, and
+  either is overwritten whatever its inception (a forged one may be newer than
+  any real RRSIG) or pruned by anyone. Without this, a compromised key's forged
+  root RRset, and every DS, DNSKEY and TXT proven below it, would outlive the
+  revocation by their attacker-chosen validity, and could still drive
+  `updateAnchor` to promote the attacker's key. A real rollover's revocation
+  costs one early re-proof of the cache, which the root's ~21-day signatures
+  force anyway.
+
+Captured on 2026-09-28: the RRset signed by KSK-2017 and holding KSK-2024
+drives Add in the emulator. Post-roll captures (2026-10-11 on) and the
+revocation (about 2027-01-11) are to be replayed once the cron has them.
 
 ### Box rent
 
@@ -255,9 +305,9 @@ payments, so a closed account can never block a write.
 
 | Box          | Who pays                   | Who can prune, and when                          | Refund credited to |
 |--------------|----------------------------|--------------------------------------------------|--------------------|
-| Anchor, whitelist | admin                 | whitelist: `removeTld`; anchor: never            | admin              |
+| Anchor       | admin (initial), Add sender | Reset and Retire, by anyone (see "Root anchors") | the caller         |
 | Cache        | first prover               | anyone, once expired                             | the pruner         |
-| Attestation  | each prover                | `payer` once expired; anyone 30 days after; anyone if the TLD is unlisted | `payer` |
+| Attestation  | each prover                | `payer` once expired; anyone 30 days after       | `payer`            |
 
 - Cache boxes are fixed size, so replacing one moves no credit.
 - Replacing an attestation deletes the old box and credits the old `payer`
@@ -277,8 +327,7 @@ payments, so a closed account can never block a write.
 - On-chain: the contract enables `ForeignBoxReads` on itself at creation with
   `app_params_set` (AVM v13). Consumers read the `t` box directly with the
   reference reader, from an oracle app ID they pin (the example consumer
-  stores it at create), and check the `w` box too (`tldListed`): after
-  `removeTld`, attestations stay readable until pruned. Fallback, only if PuyaTs 1.3.1 does not expose
+  stores it at create). Fallback, only if PuyaTs 1.3.1 does not expose
   `app_params_set`: consumers call `logAttestations` as an inner call.
 - Off-chain, SDK: point lookups simulate `logAttestations` (batched,
   `@chunked`); listing every attestation or cache uses the algod
@@ -336,12 +385,12 @@ Ordered from unavoidable to self-inflicted.
 | 3 | **Intermediate zones, registrar, registrant account** | Anyone who can change a DS on the path controls everything below it. |
 | 4 | **DNS operator of the domain** | Holds the zone keys; can sign any TXT. Cloudflare uses **one key pair for all customer zones**. |
 | 5 | **Weakest key in the chain** | `io`, `finance` and `co` sign with 1024-bit RSA. Factoring that key forges any name under the TLD. `weakestKeyBits` lets a consumer refuse such proofs. Where one name is provable along paths of different strength (`co`'s 1280 and 1024-bit ZSKs, or any size change mid-roll), a forger can also overwrite the stronger attestation with a weaker one: denial of service to consumers that refuse weak proofs. |
-| 6 | **Admin, at deploy** | Uploads the only anchor. A false anchor forges everything. Checkable once: consumers pin the app ID and compare the anchor box to IANA's trust anchor file. Fixed afterwards. |
-| 7 | **Whitelist admin** | Add a TLD: extends trust to that registry, for names under it only. Remove a TLD: blocks proofs and lets its attestations be pruned. **Cannot forge** under existing TLDs, cannot touch anchors or code. |
+| 6 | **Admin, at deploy** | Uploads the initial anchors. A false anchor forges everything. Checkable once: consumers pin the app ID and compare the anchor boxes to IANA's trust anchor file. Afterwards only RFC 5011 changes them, and any Valid anchor can bring in a new key after 30 days. |
+| 7 | **Admin, after deploy** | Nothing: `addAnchors` runs once and there is no TLD whitelist. A registry can only forge names under its own TLD, so which TLDs to trust is each consumer's choice, made by the names it accepts. |
 | 8 | **Algorand consensus and AVM** | The only clock is the block timestamp, bounded to +25 s per block but not to wall-clock time. Proposers stalling it extend the life of expired signatures. |
 | 9 | **Verification code** | The RSA and MBR libraries, the wire parser, the Puya compiler, the rule list. A bug equals a forged root key, and the contract cannot be patched. Largest avoidable risk. |
 | 10 | **Consumer code** | Must pin the oracle app ID and parse the attestation box by its layout. Reading from an app the caller names, or a substring match, is a forgery at the consumer. |
-| 11 | **Watchers, for liveness** | Someone must submit the root RRset at least every 21 days or every proof below stalls. Cheap, permissionless, should be a cron job. |
+| 11 | **Watchers, for liveness and rollover** | Someone must submit the root RRset at least every 21 days or every proof below stalls. The same cron (`maintainAnchors`) sends revocations and Reset within 30 days, or a key added under a compromised anchor gets promoted. Cheap, permissionless. |
 | — | **Relayer** | **Not trusted for integrity.** Freshness depends on everyone who can submit, below. |
 
 ### What an attestation does not mean
@@ -362,10 +411,12 @@ the TXT value, so a record proven for one purpose cannot be reused for another.
 
 ### End of life
 
-The contract fails closed and must be redeployed when: the root KSK rolls
-(no rollover in the first pass; with the KSK-2017 anchor that is
-2026-10-11), the root moves to an algorithm the AVM lacks or to RSA above
-2048 bits, or in 2106 when DNSSEC's 32-bit timestamps wrap.
+The contract fails closed and must be redeployed when: the root moves to an
+algorithm the AVM lacks or to RSA above 2048 bits (Add rejects such a key, so
+it never becomes an anchor), every anchor is revoked or retired without a
+successor promoted, nobody submits the root for longer than its signatures
+last, or in 2106 when DNSSEC's 32-bit timestamps wrap. The first pass also
+failed at a root KSK roll (with KSK-2017, 2026-10-11).
 
 ## Open in `puya-ts-utils`
 
@@ -407,14 +458,19 @@ regenerates errors → SDK build → contract e2e tests.
 |-------|------|--------|
 | 0 | Start daily capture. Scaffold the D13 monorepo, link `puya-ts-utils`. Spike on LocalNet: `app_params_set` at creation, a foreign box read, RSA-2048 opcode cost and program size in app mode with the SDK's op-up probe, `increaseBudget` base and increment cost, simulated fee of one RSA and one ECDSA `proveTxt`. Confirm the emulator can pin `latestTimestamp`. `generate-errors` picks up the library codes. | The assumptions the design rests on |
 | 1 | Signed-data parser and name rules, as pure functions | Boundary shift, trailing bytes, `ample` vs `example`, `co` vs `co.com`, pointer and extended labels, RRsets holding revoked or unknown keys |
-| 2 | Crypto wrappers, two-step creation with `addAnchor`, `proveRoot` | High-S, `s` with a leading zero, zero-padded modulus, wrong exponent, wrong lengths, RSA-1023 and RSA-2049 rejected; `addAnchor` by non-admin, twice, with flags 256 or 385; proofs before any anchor |
+| 2 | Crypto wrappers, two-step creation with `addAnchors`, `proveRoot` | High-S, `s` with a leading zero, zero-padded modulus, wrong exponent, wrong lengths, RSA-1023 and RSA-2049 rejected; `addAnchors` by non-admin, twice, with duplicates, with flags 256 or 385; proofs before any anchor |
 | 3 | `proveDs`, `proveDnskey`, `proveTxt` | Full chain under each TLD; one negative per rule; `parent` hash mismatch or wrong zone; expiry capping; inception order and ties; self-signed DS rejected |
-| 4 | Credits and `prune` | Proof without credits (`CRD`); replace refunds the old payer's credits; payer who withdrew; pruner without a credit box; grace period; unlisted TLD |
-| 5 | Whitelist admin | Non-admin rejected; removal blocks proofs; renounce |
+| 4 | Credits and `prune` | Proof without credits (`CRD`); replace refunds the old payer's credits; payer who withdrew; pruner without a credit box; grace period |
+| 5 | Admin | Non-admin rejected; hand-over; renounce |
 | 6 | SDK prover and reads, then a TestNet soak across a real root ZSK roll | End to end before MainNet; simulate and algod reads agree |
 
-Second pass, not scheduled: root rollover and `revokeRoot`, tested against the
-captures.
+Second pass: root rollover (`updateAnchor`, `revokeRoot`, SDK `maintainAnchors`,
+CLI `maintain-anchors`). Proves: every event and its hold-down in the emulator
+with a pinned clock; AddPend and Revoked not trusted; revocation self-signed
+only, RSA-2048 included; replay of an older RRset (`OLD`); Add only for usable
+KSKs in the cached RRset; Add from the captured 2026-09-28 root. On LocalNet
+through the SDK: Add, Reset, revocation, credits. Still to do: replay the
+post-roll and revocation captures when the cron has them.
 
 ## Verification
 

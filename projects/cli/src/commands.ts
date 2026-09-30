@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
 import {
+  AnchorState,
   Attestation,
   DnssecOracleSDK,
   ROOT_KSK_2017,
@@ -19,7 +20,7 @@ const ANCHORS: Record<string, Uint8Array> = { '2017': ROOT_KSK_2017, '2024': ROO
 function printAttestation(a: Attestation, indent = '  ') {
   for (const text of a.texts) console.log(`${indent}text: ${text}`)
   console.log(`${indent}inception: ${isoTime(a.inception)}  expiration: ${isoTime(a.expiration)}`)
-  console.log(`${indent}weakestKeyBits: ${a.weakestKeyBits}  payer: ${a.payer}`)
+  console.log(`${indent}weakestKeyBits: ${a.weakestKeyBits}  epoch: ${a.epoch}  payer: ${a.payer}`)
 }
 
 const printTxIds = (txIds: string[]) => txIds.forEach((id) => console.log(`Transaction ID: ${id}`))
@@ -27,9 +28,17 @@ const printTxIds = (txIds: string[]) => txIds.forEach((id) => console.log(`Trans
 // ── Reads ─────────────────────────────────────────────────────────
 
 export async function handleState(argv: Argv) {
-  const { admin, anchorCount } = await makeSdk(argv).getState()
+  const { admin, anchorCount, rollInception, rootEpoch } = await makeSdk(argv).getState()
   console.log(`admin: ${admin}`)
   console.log(`anchorCount: ${anchorCount}`)
+  console.log(`rollInception: ${rollInception ? isoTime(Number(rollInception)) : 'none'}`)
+  console.log(`rootEpoch: ${rootEpoch}`)
+}
+
+export async function handleAnchors(argv: Argv) {
+  for (const [hash, a] of await makeSdk(argv).listAnchors()) {
+    console.log(`${hash} ${AnchorState[a.state]} since ${isoTime(a.since)}`)
+  }
 }
 
 export async function handleGet(argv: Argv) {
@@ -52,12 +61,8 @@ export async function handleList(argv: Argv) {
 
 export async function handleCaches(argv: Argv) {
   for (const [key, c] of await makeSdk(argv).listCaches()) {
-    console.log(`${key} inception=${isoTime(c.inception)} expiry=${isoTime(c.expiry)} weakestKeyBits=${c.weakestKeyBits}`)
+    console.log(`${key} inception=${isoTime(c.inception)} expiry=${isoTime(c.expiry)} weakestKeyBits=${c.weakestKeyBits} epoch=${c.epoch}`)
   }
-}
-
-export async function handleTlds(argv: Argv) {
-  for (const tld of await makeSdk(argv).getTlds()) console.log(tld)
 }
 
 export async function handleCredits(argv: Argv) {
@@ -82,20 +87,21 @@ async function createApp(argv: Argv): Promise<DnssecOracleSDK> {
 }
 
 async function setupApp(sdk: DnssecOracleSDK, argv: Argv) {
-  const tlds = String(argv.tlds).split(',').map((t) => t.trim()).filter(Boolean)
+  const anchors: string[] = String(argv.anchors).split(',').map((a) => a.trim())
+  const unknown = anchors.filter((a) => !ANCHORS[a])
+  if (unknown.length) throw new Error(`Unknown anchor ${unknown.join(', ')}: use 2017 and/or 2024`)
   const { txIds } = await sdk.setup({
-    anchor: ANCHORS[argv.anchor],
-    tlds,
+    anchors: anchors.map((a) => ANCHORS[a]),
     fund: argv.fund,
     credits: argv.credits === undefined ? undefined : Number(parseAlgo(argv.credits)),
   })
-  console.log(`Set up with anchor KSK-${argv.anchor} and TLDs: ${tlds.join(', ')}`)
+  console.log(`Set up with anchors ${anchors.map((a) => `KSK-${a}`).join(', ')}`)
   printTxIds(txIds)
 }
 
 export async function handleCreate(argv: Argv) {
   const sdk = await createApp(argv)
-  console.log(`Next: APP_ID=${sdk.appId} dnssec-oracle setup --anchor 2017 --tlds <tld,...>`)
+  console.log(`Next: APP_ID=${sdk.appId} dnssec-oracle setup --anchors 2017,2024`)
 }
 
 export async function handleSetup(argv: Argv) {
@@ -114,13 +120,6 @@ export async function handleDeploy(argv: Argv) {
   }
 }
 
-export async function handleAddTld(argv: Argv) {
-  printTxIds((await makeSdk(argv, { write: true }).addTld({ label: argv.label })).txIds)
-}
-
-export async function handleRemoveTld(argv: Argv) {
-  printTxIds((await makeSdk(argv, { write: true }).removeTld({ label: argv.label })).txIds)
-}
 
 export async function handleSetAdmin(argv: Argv) {
   if (argv.admin === ALGORAND_ZERO_ADDRESS_STRING && !argv.yes) {
@@ -153,4 +152,11 @@ export async function handleProve(argv: Argv) {
 
 export async function handlePrune(argv: Argv) {
   printTxIds((await makeSdk(argv, { write: true }).prune({ name: argv.name, type: argv.type })).txIds)
+}
+
+export async function handleMaintainAnchors(argv: Argv) {
+  const { events, txIds } = await makeSdk(argv, { write: true }).maintainAnchors({ resolver: tcpResolver(argv.resolver) })
+  for (const e of events) console.log(`${e.event} ${e.keyTag ?? ''} ${e.keyHash}`)
+  if (events.length === 0) console.log('No rollover events')
+  printTxIds(txIds)
 }

@@ -168,17 +168,6 @@ export function isAncestor(ancestor: bytes, name: bytes, proper: boolean): boole
   return name.length - at === ancestor.length && op.extract(name, at, ancestor.length) === ancestor
 }
 
-/** The rightmost label of a non-root name, without its length byte: the TLD. */
-export function tldOf(name: bytes): bytes {
-  let at: uint64 = 0
-  let length = op.getByte(name, 0)
-  while (at + length + 2 < name.length) {
-    at += length + 1
-    length = op.getByte(name, at)
-  }
-  return op.extract(name, at + 1, length)
-}
-
 /** Box key part for an RRset: `name ‖ uint16 type`. */
 export function nameType(name: bytes, rrtype: uint64): bytes {
   return name.concat(op.extract(op.itob(rrtype), 6, 2))

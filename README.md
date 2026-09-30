@@ -45,14 +45,28 @@ const attestation = await sdk.getAttestation('_algorand.example.com')
 ```
 
 Deploying is two steps from the admin: `DnssecOracleSDK.create(...)`, then
-`sdk.setup({ anchor: ROOT_KSK_2017, tlds: ['com', 'io', 'finance', 'co'] })`, which funds
-the app, deposits the admin's credits, uploads the anchor and whitelists in one group.
+`sdk.setup({ anchors: ROOT_ANCHORS })`, which funds the app, deposits the admin's credits
+and uploads the anchors (KSK-2017 and KSK-2024) in one group. Any TLD can be proven:
+consumers choose which names, and so which registries, they trust.
+
+## Root KSK rollover
+
+Anchors follow RFC 5011 on-chain: `updateAnchor` applies Add, Promote (after a 30-day
+hold-down), Reset, Miss, Return and Retire from the cached root DNSKEY RRset, and
+`revokeRoot` takes an anchor's self-signed revocation. All permissionless. Run the watcher
+daily next to the capture cron:
+
+```ts
+await sdk.maintainAnchors() // revocations, then the root proof, then every event it implies
+```
+
+or `dnssec-oracle maintain-anchors`. Design: plan.md, "Root anchors: rollover".
 
 ## Daily capture
 
 Installed in the user crontab at 03:17 local time, logging to `captures/cron.log`. Keep it
 running until KSK-2017 is seen revoked, about 2027-01-11. Each run writes the root DNSKEY
-RRset straight from a root server and a full chain for one name per whitelisted TLD, and
+RRset straight from a root server and a full chain for one name under each of `com`, `io`, `finance` and `co`, and
 writes `alerts.txt` (exit code 2) when a zone moves off the contract's deployment
 assumptions or the root DNSKEY RRset is signed by a key other than 20326.
 

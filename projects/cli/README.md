@@ -24,17 +24,17 @@ pnpm run build:executables linux-x64   # one target
 ### Deploy
 
 ```sh
-dnssec-oracle deploy --anchor 2017 --tlds com,io,finance,co
+dnssec-oracle deploy --anchors 2017,2024
 ```
 
 `deploy` runs the two steps below one after the other from the same admin account. If setup fails, the app is already created: finish it with `APP_ID=<id> dnssec-oracle setup ...` instead of deploying again.
 
 ```sh
 dnssec-oracle create                                   # prints the App ID
-dnssec-oracle setup --anchor 2017 --tlds com,io,finance,co
+dnssec-oracle setup --anchors 2017,2024
 ```
 
-`setup` funds the app, deposits exactly the credits the anchor and TLD boxes need, and adds the anchor and TLDs, all in one group. Every later box (TLDs, caches, attestations) is paid from the sender's credits, so run `deposit-credits` before proving.
+`setup` funds the app, deposits exactly the credits the anchor boxes need, and adds the anchors, all in one group. Until the root KSK roll of 2026-10-11 completes, set up with both 2017 and 2024; after it, 2024 alone does. Every later box (caches, attestations) is paid from the sender's credits, so run `deposit-credits` before proving.
 
 ### Prove
 
@@ -46,22 +46,28 @@ dnssec-oracle prove _dmarc.nodely.io --captured ../../captures/2026-09-29/chains
 
 This proves the root, then the DS and DNSKEY for each zone, then the TXT. Cache entries already stored and more than `--refresh-margin` seconds (default 3600) from expiry are skipped. Running any `prove` from cron keeps the root DNSKEY entry fresh (plan.md trust point 11).
 
+### Root rollover
+
+```sh
+dnssec-oracle maintain-anchors      # daily from cron: RFC 5011 events for the root KSKs
+```
+
+Revokes anchors that sign their own revocation, proves the current root DNSKEY RRset, then applies every event it implies: Add a new KSK (AddPend), Promote it after 30 days, Reset or Miss a key that left, Return one that came back, Retire a revoked one after 30 days. New anchor boxes are paid from the signer's credits and deleted ones refunded to them.
+
 ### Read
 
 ```sh
-dnssec-oracle state                 # admin, anchorCount
+dnssec-oracle state                 # admin, anchorCount, rollInception
+dnssec-oracle anchors               # root anchors: AddPend, Valid, Missing or Revoked
 dnssec-oracle get <name>...         # attestations: TXT text, validity, key strength, payer
 dnssec-oracle list                  # every attestation, by sha256(wire name)
 dnssec-oracle caches                # every DNSKEY/DS cache entry
-dnssec-oracle tlds
 dnssec-oracle credits [address]
 ```
 
 ### Admin
 
 ```sh
-dnssec-oracle add-tld <label>
-dnssec-oracle remove-tld <label>
 dnssec-oracle set-admin <address>   # the zero address renounces; needs --yes
 ```
 

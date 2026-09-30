@@ -4,7 +4,7 @@ import yargs, { Argv } from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { getConfig } from './config'
 import {
-  handleAddTld,
+  handleAnchors,
   handleCaches,
   handleCreate,
   handleDeploy,
@@ -12,13 +12,12 @@ import {
   handleDepositCredits,
   handleGet,
   handleList,
+  handleMaintainAnchors,
   handleProve,
   handlePrune,
-  handleRemoveTld,
   handleSetAdmin,
   handleSetup,
   handleState,
-  handleTlds,
   handleWithdrawCredits,
 } from './commands'
 
@@ -38,8 +37,7 @@ const config = getConfig()
 // shared by deploy and setup
 const setupOptions = (y: Argv) =>
   y
-    .option('anchor', { type: 'string', choices: ['2017', '2024'], demandOption: true, description: 'Root KSK trust anchor' })
-    .option('tlds', { type: 'string', demandOption: true, description: 'Comma-separated TLDs to whitelist' })
+    .option('anchors', { type: 'string', demandOption: true, description: 'Root KSK trust anchors: 2017, 2024 or 2017,2024' })
     .option('fund', { type: 'number', description: 'µAlgo sent to the app account (SDK default: 200000)' })
     .option('credits', { type: 'string', description: 'ALGO of credits to deposit (default: the exact rent needed)' })
 
@@ -69,7 +67,8 @@ yargs(hideBin(process.argv))
   .option('debug', { type: 'boolean', default: config.debug, description: 'Verbose SDK output and stack traces' })
 
   // reads
-  .command('state', 'Show admin and anchor count', {}, run(handleState))
+  .command('state', 'Show admin, initial anchor count and rollover inception', {}, run(handleState))
+  .command('anchors', 'List root anchors and their RFC 5011 states', {}, run(handleAnchors))
   .command(
     'get <names..>',
     'Show the TXT attestations for one or more names',
@@ -78,7 +77,6 @@ yargs(hideBin(process.argv))
   )
   .command('list', 'List every attestation box', {}, run(handleList))
   .command('caches', 'List every cached DNSKEY/DS entry', {}, run(handleCaches))
-  .command('tlds', 'List whitelisted TLDs', {}, run(handleTlds))
   .command(
     'credits [account]',
     "Show an account's MBR credits, or every account's",
@@ -96,21 +94,9 @@ yargs(hideBin(process.argv))
   .command('create', 'Create the oracle app, with the signer as admin (step 1 of 2)', {}, run(handleCreate))
   .command(
     'setup',
-    'Fund the app, deposit credits, add the root anchor and TLDs (step 2 of 2, admin)',
+    'Fund the app, deposit credits, add the root anchors (step 2 of 2, admin)',
     setupOptions,
     run(handleSetup),
-  )
-  .command(
-    'add-tld <label>',
-    'Whitelist a TLD (admin)',
-    (y) => y.positional('label', { type: 'string', demandOption: true }),
-    run(handleAddTld),
-  )
-  .command(
-    'remove-tld <label>',
-    'Remove a TLD from the whitelist (admin)',
-    (y) => y.positional('label', { type: 'string', demandOption: true }),
-    run(handleRemoveTld),
   )
   .command(
     'set-admin <admin>',
@@ -145,6 +131,12 @@ yargs(hideBin(process.argv))
         .option('captured', { type: 'string', description: 'Replay a captures/<date>/chains.json instead of querying DNS' })
         .option('refresh-margin', { type: 'number', description: 'Re-prove cache entries this close to expiry, seconds (SDK default: 3600)' }),
     run(handleProve),
+  )
+  .command(
+    'maintain-anchors',
+    'Root KSK rollover watcher (RFC 5011): revoke, prove the root, add/promote/retire anchors. Run daily',
+    (y) => y.option('resolver', { type: 'string', default: '1.1.1.1', description: 'DNS server, queried over TCP' }),
+    run(handleMaintainAnchors),
   )
   .command(
     'prune <name>',

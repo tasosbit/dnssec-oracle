@@ -1,6 +1,16 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { encodeAddress, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
-import { Attestation, boxNames, CacheEntry, decodeAttestation, decodeCache } from './boxes.js'
+import {
+  anchorHash,
+  AnchorEntry,
+  Attestation,
+  boxNames,
+  CacheEntry,
+  decodeAnchor,
+  decodeAttestation,
+  decodeCache,
+  isTrusted,
+} from './boxes.js'
 import { APP_SPEC, DnssecOracleClient, DnssecOracleComposer } from './generated/DnssecOracleClient.js'
 import { nameToWire, sha256, toHex } from './prover/wire.js'
 import { ReaderConstructorArgs } from './types.js'
@@ -49,14 +59,22 @@ export class DnssecOracleReaderSDK {
     })
   }
 
-  /** Admin and anchor count from global state. */
+  /**
+   * Global state: admin, initial anchor count, the newest root inception a rollover step
+   * used, and the revocation count that stales older cache entries and attestations.
+   */
   @wrapErrors()
-  async getState(): Promise<{ admin: string; anchorCount: bigint }> {
-    const { admin, anchorCount } = await this.readClient.state.global.getAll()
-    return { admin: admin ?? '', anchorCount: anchorCount ?? 0n }
+  async getState(): Promise<{ admin: string; anchorCount: bigint; rollInception: bigint; rootEpoch: bigint }> {
+    const { admin, anchorCount, rollInception, rootEpoch } = await this.readClient.state.global.getAll()
+    return {
+      admin: admin ?? '',
+      anchorCount: anchorCount ?? 0n,
+      rollInception: rollInception ?? 0n,
+      rootEpoch: rootEpoch ?? 0n,
+    }
   }
 
-  /** The attestation for `name`, through the contract's logAttestations logger, or undefined. */
+  /** The attestation for `name`, through the contract's logAttestations logger, or undefined if none or stale. */
   @wrapErrors()
   async getAttestation(name: NameLike): Promise<Attestation | undefined> {
     const [attestation] = await this.getAttestations([name])
@@ -87,7 +105,8 @@ export class DnssecOracleReaderSDK {
 
   /**
    * Every attestation, by the algod prefix scan, keyed by `sha256(name)` hex: box names
-   * hold only the hash, so names are for the caller to match.
+   * hold only the hash, so names are for the caller to match. Stale ones included: compare
+   * `epoch` with getState's `rootEpoch`.
    */
   @wrapErrors()
   async listAttestations(): Promise<Map<string, Attestation>> {
@@ -116,17 +135,25 @@ export class DnssecOracleReaderSDK {
     return new Map([...boxes].map(([hash, value]) => [hash, decodeCache(value)]))
   }
 
-  /** Whether `dnskeyRdata`'s public key is the anchor. */
+  /** The anchor entry for `dnskeyRdata`'s public key, whatever its flags, or undefined. */
   @wrapErrors()
-  async isAnchor(dnskeyRdata: Uint8Array): Promise<boolean> {
-    return (await this.getBox(boxNames.anchor(dnskeyRdata))) !== undefined
+  async getAnchor(dnskeyRdata: Uint8Array): Promise<AnchorEntry | undefined> {
+    const value = await this.getBox(boxNames.anchor(dnskeyRdata))
+    return value && decodeAnchor(value)
   }
 
-  /** Whitelisted TLD labels. */
+  /** Every anchor entry, keyed by `sha256(alg ‖ pubkey)` hex (see anchorHash). */
   @wrapErrors()
-  async getTlds(): Promise<string[]> {
-    const boxes = await scanBoxes(this.algorand.client.algod, this.appId, new TextEncoder().encode('w'))
-    return boxes.map(({ name }) => new TextDecoder().decode(name.slice(1))).sort()
+  async listAnchors(): Promise<Map<string, AnchorEntry>> {
+    const boxes = await this.scanRaw('a')
+    return new Map([...boxes].map(([hash, value]) => [hash, decodeAnchor(value)]))
+  }
+
+  /** A predicate for the prover: whether a root DNSKEY is a Valid or Missing anchor now. */
+  @wrapErrors()
+  async trustedAnchors(): Promise<(dnskeyRdata: Uint8Array) => boolean> {
+    const anchors = await this.listAnchors()
+    return (dnskeyRdata) => isTrusted(anchors.get(toHex(anchorHash(dnskeyRdata))))
   }
 
   /** MBR credit balance (µAlgo), or undefined without a credit box. */

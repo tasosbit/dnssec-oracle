@@ -2,9 +2,14 @@
 
 // Access and lifecycle
 export const errAdmin = 'ADM' // Sender is not the admin
-export const errAnchorSet = 'AST' // An anchor is already set
-export const errAnchor = 'ANC' // Signing key is not an anchor
+export const errAnchorSet = 'AST' // Anchors are already set, or one is listed twice
+export const errAnchor = 'ANC' // Key is not an anchor, or not in a state this call accepts
 export const errAnchorFlags = 'AFL' // Anchor flags must be exactly 257
+
+// Root rollover (RFC 5011)
+export const errRoll = 'ROL' // No rollover event applies to this key now
+export const errHoldDown = 'HLD' // The 30-day hold-down has not passed
+export const errRevoke = 'RVK' // Revoking key's flags must be exactly 385
 
 // Wire format
 export const errWire = 'WIR' // Malformed wire data: label, name length or cursor
@@ -21,9 +26,8 @@ export const errTooBig = 'BIG' // Attestation would exceed 4096 bytes
 export const errSigner = 'SGN' // Signer name has the wrong relation to the owner
 export const errRoot = 'ROT' // Owner must not be the root here
 export const errTime = 'TIM' // RRSIG is not valid now
-export const errListed = 'WLS' // TLD is not whitelisted
 export const errParent = 'PAR' // Parent RRset is not cached, or its hash differs
-export const errStale = 'STL' // Parent cache entry has expired
+export const errStale = 'STL' // Parent cache entry has expired, or predates a revocation
 export const errOld = 'OLD' // A newer inception is already stored
 export const errWorse = 'WRS' // Same inception as stored, but a shorter expiry or weaker key
 
@@ -40,8 +44,6 @@ export const errSignature = 'SIG' // Signature does not verify
 export const errDsDigest = 'DSD' // DS digest type is not 2 or not 32 bytes
 export const errDsMatch = 'DSM' // DS key tag, algorithm or digest does not match the DNSKEY
 
-// Admin and rent
-export const errTld = 'TLD' // TLD label must be 1 to 63 bytes, lowercase
-export const errTldExists = 'TLX' // TLD already whitelisted
+// Rent
 export const errMissing = 'MIS' // Box does not exist
 export const errPrune = 'PRN' // Not prunable yet

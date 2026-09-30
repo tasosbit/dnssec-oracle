@@ -42,9 +42,10 @@ function deploy() {
   // the emulator lacks AVM 13's app_params_set: initialise what createApplication would
   contract.admin.value = ctx.defaultSender
   contract.anchorCount.value = 0
+  contract.rollInception.value = 0
+  contract.rootEpoch.value = 0
   at(fixture.capturedAt)
-  contract.addAnchor(B(ROOT_KSK_2017))
-  for (const tld of ['com', 'io', 'finance', 'co']) contract.addTld(Bytes(tld))
+  contract.addAnchors([B(ROOT_KSK_2017)])
   return contract
 }
 

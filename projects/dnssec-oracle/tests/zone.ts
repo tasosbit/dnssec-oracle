@@ -122,20 +122,27 @@ export class World {
     this.publishKeys(root)
   }
 
-  /** Publish `rdatas` at `owner`, signed by `key` of `signer`. Replaces what was there. */
-  publish(owner: Uint8Array, type: number, rdatas: Uint8Array[], key: TestKey, signer: Uint8Array, o: Partial<SignOptions> = {}) {
-    const signed = signRRset(key, owner, type, rdatas, {
-      signer,
-      inception: this.inception,
-      expiration: this.expiration,
-      ...o,
-    })
+  /**
+   * Publish `rdatas` at `owner`, signed by `key` of `signer`, or by each of several keys.
+   * Replaces what was there. Returns the first key's signature.
+   */
+  publish(
+    owner: Uint8Array,
+    type: number,
+    rdatas: Uint8Array[],
+    key: TestKey | TestKey[],
+    signer: Uint8Array,
+    o: Partial<SignOptions> = {},
+  ) {
+    const signed = [key].flat().map((k) =>
+      signRRset(k, owner, type, rdatas, { signer, inception: this.inception, expiration: this.expiration, ...o }),
+    )
     const ttl = o.ttl ?? 3600
     this.answers.set(captureKey(owner, type), [
       ...rdatas.map((rdata) => ({ owner, type, class: CLASS_IN, ttl, rdata })),
-      { owner, type: RRType.RRSIG, class: CLASS_IN, ttl, rdata: signed.rrsig },
+      ...signed.map((s) => ({ owner, type: RRType.RRSIG, class: CLASS_IN, ttl, rdata: s.rrsig })),
     ])
-    return signed
+    return signed[0]
   }
 
   /** A zone's DNSKEY RRset, signed by its KSK. */

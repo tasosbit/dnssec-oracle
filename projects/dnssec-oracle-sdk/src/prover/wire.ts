@@ -126,14 +126,6 @@ export function ancestors(wire: Uint8Array): Uint8Array[] {
   return out
 }
 
-/** Rightmost label of a name, without its length byte: the TLD. */
-export function tldOf(wire: Uint8Array): Uint8Array {
-  const all = ancestors(wire)
-  if (all.length < 2) throw new Error('the root has no TLD')
-  const tld = all[all.length - 2]
-  return tld.slice(1, 1 + tld[0])
-}
-
 export function parseRrsig(rdata: Uint8Array): Rrsig {
   const signerLength = nameLength(rdata, 18)
   const headerLength = 18 + signerLength

@@ -1,18 +1,29 @@
 import { AlgorandClient, microAlgo } from '@algorandfoundation/algokit-utils'
 import { TransactionSigner } from 'algosdk'
-import { boxNames } from './boxes.js'
+import { AnchorEntry, anchorHash, AnchorState, boxNames, isTrusted } from './boxes.js'
 import {
   ANCHOR_BOX_MBR_MICROALGOS,
   CREDIT_BOX_MBR_MICROALGOS,
   DEFAULT_REFRESH_MARGIN_SECONDS,
+  HOLD_DOWN_SECONDS,
   MIN_TXN_FEE_MICROALGOS,
-  tldBoxMbrMicroAlgos,
 } from './constants.js'
 import { DnssecOracleClient, DnssecOracleComposer, DnssecOracleFactory } from './generated/DnssecOracleClient.js'
-import { ROOT_ANCHORS } from './prover/anchors.js'
-import { buildTxtChain, ProofStep } from './prover/chain.js'
+import { buildRootSteps, buildTxtChain, keyProblem, ProofStep } from './prover/chain.js'
 import { Resolver, tcpResolver } from './prover/dns.js'
-import { bytesEqual, nameFromWire, nameToWire, rdataOf, RRType, sha256, tldOf } from './prover/wire.js'
+import {
+  bytesEqual,
+  DNSKEY_REVOKE,
+  fromHex,
+  keyTag,
+  nameFromWire,
+  nameToWire,
+  parseDnskey,
+  rdataOf,
+  RRType,
+  sha256,
+  toHex,
+} from './prover/wire.js'
 import { DnssecOracleReaderSDK, NameLike } from './sdkReader.js'
 import { ConstructorArgs, SenderWithSigner } from './types.js'
 import { noteNonce } from './util/noteNonce.js'
@@ -34,10 +45,39 @@ export interface ProveChainResult {
 export interface ProveTxtOptions {
   /** DNS source; defaults to 1.1.1.1 over TCP. */
   resolver?: Resolver
-  /** Root trust anchors the chain may start from; defaults to KSK-2017 and KSK-2024. */
-  anchors?: Uint8Array[]
+  /** Root trust anchors the chain may start from; defaults to the app's Valid and Missing anchors. */
+  anchors?: Uint8Array[] | ((dnskeyRdata: Uint8Array) => boolean)
   /** Refresh cache entries this close to expiry, in seconds. */
   refreshMarginSeconds?: number
+}
+
+/** An RFC 5011 event, as `updateAnchor` or `revokeRoot` applies it. */
+export type AnchorEvent = 'Add' | 'Promote' | 'Reset' | 'Miss' | 'Return' | 'Retire' | 'Revoke'
+
+export interface MaintainAnchorsResult {
+  /** Events sent, in order, with the key's anchorHash hex and key tag (undefined once the key left the RRset). */
+  events: { event: AnchorEvent; keyHash: string; keyTag?: number }[]
+  txIds: string[]
+}
+
+/**
+ * The event `updateAnchor` would apply, mirroring the contract, or undefined for none.
+ * @param key The key as the root DNSKEY RRset holds it, or undefined if it does not
+ */
+export function anchorEvent(anchor: AnchorEntry | undefined, key: Uint8Array | undefined, now: number): AnchorEvent | undefined {
+  const flags = key && parseDnskey(key).flags
+  const present = flags !== undefined && !(flags & DNSKEY_REVOKE)
+  if (!anchor) return flags === 257 && !keyProblem(key!, parseDnskey(key!).algorithm) ? 'Add' : undefined
+  switch (anchor.state) {
+    case AnchorState.AddPend:
+      return !present ? 'Reset' : now >= anchor.since + HOLD_DOWN_SECONDS ? 'Promote' : undefined
+    case AnchorState.Valid:
+      return present ? undefined : 'Miss'
+    case AnchorState.Missing:
+      return present ? 'Return' : undefined
+    case AnchorState.Revoked:
+      return now >= anchor.since + HOLD_DOWN_SECONDS ? 'Retire' : undefined
+  }
 }
 
 export class DnssecOracleSDK extends DnssecOracleReaderSDK {
@@ -96,69 +136,39 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
 
   /**
    * Maker for step two of creation, one group from the admin: fund the app account's
-   * base MBR and fee slack, deposit the admin's credits, upload the anchor, whitelist TLDs.
+   * base MBR and fee slack, deposit the admin's credits, upload the anchors.
    */
   private async makeSetupTxns({
-    anchor,
-    tlds,
+    anchors,
     fund = 200_000,
     credits,
     builder,
-  }: { anchor: Uint8Array; tlds: string[]; fund?: number; credits?: number } & BuilderArgs) {
+  }: { anchors: Uint8Array[]; fund?: number; credits?: number } & BuilderArgs) {
     const { sender, signer } = this.writer
     const appAddress = this.writeClient!.appAddress.toString()
-    const needed =
-      CREDIT_BOX_MBR_MICROALGOS + ANCHOR_BOX_MBR_MICROALGOS + tlds.reduce((n, t) => n + tldBoxMbrMicroAlgos(t), 0)
+    const needed = CREDIT_BOX_MBR_MICROALGOS + anchors.length * ANCHOR_BOX_MBR_MICROALGOS
     const pay = (amount: number) =>
       this.algorand.createTransaction.payment({ sender, receiver: appAddress, amount: microAlgo(amount), note: `${noteNonce()}` })
     let group = (builder ?? this.writeClient!.newGroup()).addTransaction(await pay(fund), signer)
     group = await this.makeDepositCreditsTxns({ amount: credits ?? needed, builder: group })
-    group = this.makeAddAnchorTxns({ anchor, builder: group })
-    for (const label of tlds) group = this.makeAddTldTxns({ label, builder: group })
-    return group
+    return this.makeAddAnchorsTxns({ anchors, builder: group })
   }
 
   /** Step two of creation. See makeSetupTxns. */
   setup = this.makeTxnExecutor({ maker: this.makeSetupTxns })
 
-  private makeAddAnchorTxns({ anchor, builder }: { anchor: Uint8Array } & BuilderArgs) {
+  private makeAddAnchorsTxns({ anchors, builder }: { anchors: Uint8Array[] } & BuilderArgs) {
     const { sender, signer } = this.writer
-    return (builder ?? this.writeClient!.newGroup()).addAnchor({
-      args: { dnskeyRdata: anchor },
-      boxReferences: [boxNames.anchor(anchor), boxNames.credit(sender)],
+    return (builder ?? this.writeClient!.newGroup()).addAnchors({
+      args: { dnskeys: anchors },
+      boxReferences: [...anchors.map(boxNames.anchor), boxNames.credit(sender)],
       sender,
       signer,
     })
   }
 
-  /** Upload the one root anchor (DNSKEY RDATA). Admin only, once. */
-  addAnchor = this.makeTxnExecutor({ maker: this.makeAddAnchorTxns })
-
-  private makeAddTldTxns({ label, builder }: { label: string } & BuilderArgs) {
-    const { sender, signer } = this.writer
-    return (builder ?? this.writeClient!.newGroup()).addTld({
-      args: { label: new TextEncoder().encode(label.toLowerCase()) },
-      boxReferences: [boxNames.tld(label), boxNames.credit(sender)],
-      sender,
-      signer,
-    })
-  }
-
-  /** Whitelist a TLD, lowercased. Admin only. */
-  addTld = this.makeTxnExecutor({ maker: this.makeAddTldTxns })
-
-  private makeRemoveTldTxns({ label, builder }: { label: string } & BuilderArgs) {
-    const { sender, signer } = this.writer
-    return (builder ?? this.writeClient!.newGroup()).removeTld({
-      args: { label: new TextEncoder().encode(label.toLowerCase()) },
-      boxReferences: [boxNames.tld(label), boxNames.credit(sender)],
-      sender,
-      signer,
-    })
-  }
-
-  /** Remove a TLD from the whitelist. Admin only. */
-  removeTld = this.makeTxnExecutor({ maker: this.makeRemoveTldTxns })
+  /** Upload the initial root anchors (DNSKEY RDATA), all Valid. Admin only, once. */
+  addAnchors = this.makeTxnExecutor({ maker: this.makeAddAnchorsTxns })
 
   private makeSetAdminTxns({ admin, builder }: { admin: string } & BuilderArgs) {
     const { sender, signer } = this.writer
@@ -237,7 +247,6 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
         return group.proveDs({
           args: { ...base, parent: step.parent },
           boxReferences: [
-            ...tldBox(step.owner),
             boxNames.cache(signerOf(step), RRType.DNSKEY),
             boxNames.cache(step.owner, RRType.DS),
             credit,
@@ -248,7 +257,6 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
         return group.proveDnskey({
           args: { ...base, dsIndex: step.dsIndex, parent: step.parent },
           boxReferences: [
-            ...tldBox(step.owner),
             boxNames.cache(step.owner, RRType.DS),
             boxNames.cache(step.owner, RRType.DNSKEY),
             credit,
@@ -259,7 +267,6 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
         return group.proveTxt({
           args: { ...base, parent: step.parent },
           boxReferences: [
-            ...tldBox(step.owner),
             boxNames.cache(signerOf(step), RRType.DNSKEY),
             boxNames.attestation(step.owner),
             credit,
@@ -275,7 +282,8 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
   /**
    * Prove a chain from buildTxtChain, parents before children. Cache steps whose RRset is
    * already stored and fresh are skipped; an expired entry with a newer inception is pruned
-   * first. The TXT step is always sent.
+   * first. A stale entry, from before a revocation, is simply overwritten. The TXT step is
+   * always sent.
    */
   @wrapErrors()
   async proveChain(
@@ -284,9 +292,11 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
   ): Promise<ProveChainResult> {
     const result: ProveChainResult = { proven: [], cached: [], txIds: [] }
     const now = Math.floor(Date.now() / 1000)
+    const rootEpoch = Number((await this.getState()).rootEpoch)
     for (const step of steps) {
       if (step.kind !== 'txt') {
-        const cached = await this.getCache(step.owner, step.type)
+        const found = await this.getCache(step.owner, step.type)
+        const cached = found?.epoch === rootEpoch ? found : undefined
         if (cached && bytesEqual(cached.hash, sha256(step.rrset)) && cached.expiry > now + refreshMarginSeconds) {
           result.cached.push(step)
           continue
@@ -315,9 +325,88 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
   @wrapErrors()
   async proveTxt(name: string, options: ProveTxtOptions = {}): Promise<ProveChainResult> {
     const steps = await buildTxtChain(name, options.resolver ?? tcpResolver(), {
-      anchors: options.anchors ?? ROOT_ANCHORS,
+      anchors: options.anchors ?? (await this.trustedAnchors()),
     })
     return this.proveChain(steps, options)
+  }
+
+  // ── Root rollover (RFC 5011) ────────────────────────────────────
+
+  private makeUpdateAnchorTxns({ rrset, keyHash, builder }: { rrset: Uint8Array; keyHash: Uint8Array } & BuilderArgs) {
+    const { sender, signer } = this.writer
+    return (builder ?? this.writeClient!.newGroup()).updateAnchor({
+      args: { rrset, keyHash },
+      boxReferences: [
+        boxNames.anchorByHash(keyHash),
+        boxNames.cache(new Uint8Array([0]), RRType.DNSKEY),
+        boxNames.credit(sender),
+      ],
+      sender,
+      signer,
+      note: `${noteNonce()}`,
+    })
+  }
+
+  /** Apply the RFC 5011 event the cached root DNSKEY RRset `rrset` implies for one key (see anchorEvent). */
+  updateAnchor = this.makeTxnExecutor({ maker: this.makeUpdateAnchorTxns })
+
+  private makeRevokeRootTxns({ step, builder }: { step: ProofStep } & BuilderArgs) {
+    const { sender, signer } = this.writer
+    return (builder ?? this.writeClient!.newGroup()).revokeRoot({
+      args: { signedData: step.signedData, signature: step.signature, hint: step.hint, keyIndex: step.keyIndex },
+      boxReferences: [boxNames.anchor(rdataOf(step.rrset)[step.keyIndex])],
+      sender,
+      signer,
+      note: `${noteNonce()}`,
+    })
+  }
+
+  /** Revoke an anchor with a root step (from buildRootSteps) signed by the anchor itself, flags 385. */
+  revokeRoot = this.makeTxnExecutor({ maker: this.makeRevokeRootTxns })
+
+  /**
+   * The rollover watcher; run it daily. From the root DNSKEY RRset in DNS: send every
+   * self-signed revocation of an anchor, prove the RRset under a trusted anchor unless the
+   * cache holds it, then send every event it implies for the keys in it and the anchors
+   * stored (see anchorEvent). Adds are paid from the sender's credits, deletions refunded
+   * to them.
+   */
+  @wrapErrors()
+  async maintainAnchors({
+    resolver = tcpResolver(),
+    now = Math.floor(Date.now() / 1000),
+  }: { resolver?: Resolver; now?: number } = {}): Promise<MaintainAnchorsResult> {
+    const result: MaintainAnchorsResult = { events: [], txIds: [] }
+    const anchors = await this.listAnchors()
+    const steps = await buildRootSteps(resolver, { now })
+    const keyOf = (step: ProofStep) => rdataOf(step.rrset)[step.keyIndex]
+
+    for (const step of steps) {
+      const key = keyOf(step)
+      const hash = toHex(anchorHash(key))
+      const anchor = anchors.get(hash)
+      if (parseDnskey(key).flags !== 385 || !anchor || anchor.state === AnchorState.Revoked) continue
+      result.txIds.push(...(await this.revokeRoot({ step })).txIds)
+      result.events.push({ event: 'Revoke', keyHash: hash, keyTag: keyTag(key) })
+      anchors.set(hash, { state: AnchorState.Revoked, since: now })
+    }
+
+    const trusted = steps.find((step) => {
+      const key = keyOf(step)
+      return isTrusted(anchors.get(toHex(anchorHash(key)))) && !keyProblem(key, parseDnskey(key).algorithm)
+    })
+    if (!trusted) throw new Error('root DNSKEY: no signature by a trusted anchor')
+    result.txIds.push(...(await this.proveChain([trusted])).txIds)
+
+    const inRRset = new Map(rdataOf(trusted.rrset).map((key) => [toHex(anchorHash(key)), key]))
+    for (const hash of new Set([...anchors.keys(), ...inRRset.keys()])) {
+      const key = inRRset.get(hash)
+      const event = anchorEvent(anchors.get(hash), key, now)
+      if (!event) continue
+      result.txIds.push(...(await this.updateAnchor({ rrset: trusted.rrset, keyHash: fromHex(hash) })).txIds)
+      result.events.push({ event, keyHash: hash, keyTag: key && keyTag(key) })
+    }
+    return result
   }
 
   // ── Rent ────────────────────────────────────────────────────────
@@ -328,7 +417,7 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
     const box = type === RRType.TXT ? boxNames.attestation(wire) : boxNames.cache(wire, type)
     return (builder ?? this.writeClient!.newGroup()).prune({
       args: { name: wire, rrtype: type },
-      boxReferences: [box, ...(type === RRType.TXT ? tldBox(wire) : []), boxNames.credit(sender)],
+      boxReferences: [box, boxNames.credit(sender)],
       sender,
       signer,
     })
@@ -342,9 +431,6 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
 function signerOf(step: ProofStep): Uint8Array {
   return step.signedData.slice(18, step.signedData.length - step.rrset.length)
 }
-
-/** The owner's whitelist box; none for the root, which the contract rejects itself. */
-const tldBox = (owner: Uint8Array) => (owner.length > 1 ? [boxNames.tld(new TextDecoder().decode(tldOf(owner)))] : [])
 
 function toSigner(signer: SenderWithSigner['signer']): TransactionSigner {
   return typeof signer === 'function' ? signer : signer.signer

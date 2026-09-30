@@ -19,7 +19,6 @@ import {
   keyTag,
   parseSignedData,
   readName,
-  tldOf,
   walkRRset,
 } from '../smart_contracts/dnssec_oracle/wire.algo'
 import { txt } from './zone'
@@ -89,10 +88,7 @@ describe('names', () => {
     expect(isAncestor(b('x.example.com'), b('example.com'), false)).toBe(false)
   })
 
-  test('co is not co.com: the TLD is the rightmost label', () => {
-    expect(hex(tldOf(b('co.com')))).toBe(Buffer.from('com').toString('hex'))
-    expect(hex(tldOf(b('x.co')))).toBe(Buffer.from('co').toString('hex'))
-    expect(hex(tldOf(b('com')))).toBe(Buffer.from('com').toString('hex'))
+  test('co is not co.com: ancestors match label by label', () => {
     expect(isAncestor(b('co'), b('co.com'), true)).toBe(false)
     expect(isAncestor(b('com'), b('co.com'), true)).toBe(true)
   })
