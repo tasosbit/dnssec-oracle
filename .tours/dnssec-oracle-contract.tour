@@ -73,7 +73,7 @@
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
       "pattern": "public proveTxt",
       "title": "proveTxt: the attestation",
-      "description": "This is the last step. The signer may be the owner itself or any ancestor (`proper = false`). The TXT records are stored under `t ‖ sha256(owner)` with a 56-byte header: inception, expiration, weakest key bits, and payer.\n\nA newer inception replaces the old attestation, and the previous payer gets the rent back. An older inception fails with `OLD`, so no one can replay stale records over fresh ones."
+      "description": "This is the last step. The signer may be the owner itself or any ancestor (`proper = false`). The TXT records are stored under `t ‖ sha256(owner)` with a 64-byte header: inception, expiration, weakest key bits, parent epoch, and payer.\n\nA newer inception replaces the old attestation, and the previous payer gets the rent back. An older inception fails with `OLD`, so no one can replay stale records over fresh ones, unless the old one was proven under another generation of the signer's keys: then any proof replaces it."
     },
     {
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
@@ -121,7 +121,7 @@
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/reader.algo.ts",
       "pattern": "^export function attestationUsable",
       "title": "Consuming an attestation",
-      "description": "This is the reference reader for other contracts. A consumer should:\n\n1. Pin the oracle's app ID. Never read from an app ID the caller supplies.\n2. Decide which names, and so which TLD registries, it trusts. The oracle proves any TLD.\n3. Call `attestationUsable` with its own `maxAge` and `minKeyBits`. An attestation proves the record was signed, not that it still exists.\n4. Use `attestationHasRecord` for an exact RDATA match. Never substring-match the record bytes.\n\nThat's the whole contract. The error codes and their meanings are in `errors.algo.ts`."
+      "description": "This is the reference reader for other contracts. A consumer should:\n\n1. Pin the oracle's app ID. Never read from an app ID the caller supplies.\n2. Decide which names, and so which TLD registries, it trusts. The oracle proves any TLD.\n3. Call `attestationUsable` with its own `maxAge`, `minKeyBits` and the zones from the signer up to the TLD. It walks the cache boxes above the attestation and checks each epoch matches, so a key set changed anywhere above stales it. An attestation proves the record was signed, not that it still exists.\n4. Use `attestationHasRecord` for an exact RDATA match. Never substring-match the record bytes.\n\nThat's the whole contract. The error codes and their meanings are in `errors.algo.ts`."
     }
   ]
 }

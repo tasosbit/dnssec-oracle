@@ -19,6 +19,7 @@ import {
   keyProblem,
   keyTag,
   labelCount,
+  nameFromWire,
   nameToWire,
   ProofStep,
   rdataOf,
@@ -87,6 +88,29 @@ describe('DnssecOracle e2e', () => {
     const other = new DnssecOracleSDK({ algorand: sdk.algorand, appId: sdk.appId, writerAccount: accountSigner(account) })
     if (credits) await other.depositCredits({ amount: credits })
     return { other, account }
+  }
+
+  /**
+   * An example consumer pinned to `sdk`'s app, asking whether `_tag.example.com` holds `text`.
+   * Box references: the attestation and its chain walk, 6 boxes.
+   */
+  const consumerAsk = async (sdk: DnssecOracleSDK) => {
+    const { testAccount } = localnet.context
+    const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
+    // the consumer pins the oracle at create: callers cannot point it at an app of their own
+    const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
+    const name = nameToWire('_tag.example.com')
+    return async (text: string, { maxAge = 86_400 * 3, minKeyBits = 2048, zones = ['example.com', 'com'] } = {}) => {
+      const wireZones = zones.map((z) => nameToWire(z))
+      const boxes = [boxNames.attestation(name), ...boxNames.chain(wireZones)]
+      const { return: ok } = await consumer.send.hasTxt({
+        args: { name, text: new TextEncoder().encode(text), maxAge, minKeyBits, zones: wireZones },
+        appReferences: [sdk.appId],
+        boxReferences: boxes.map((box) => ({ appId: sdk.appId, name: box })),
+        note: `${Math.random()}`,
+      })
+      return ok
+    }
   }
 
   /** App balance that is neither locked by boxes nor owed to anyone as credit. */
@@ -171,26 +195,30 @@ describe('DnssecOracle e2e', () => {
 
   describe('phase 0: lifecycle and reads', () => {
     test('create enables ForeignBoxReads: another contract reads the attestation box through the reference reader', async () => {
-      const { sdk, prove } = await deploy()
+      const { sdk, prove, chain, world, exampleCom } = await deploy()
       await prove('_tag.example.com')
-      const { testAccount } = localnet.context
-      const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
-      // the consumer pins the oracle at create: callers cannot point it at an app of their own
-      const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
-      const name = nameToWire('_tag.example.com')
-      const ask = async (text: string, maxAge = 86_400 * 3, minKeyBits = 2048) =>
-        (
-          await consumer.send.hasTxt({
-            args: { name, text: new TextEncoder().encode(text), maxAge, minKeyBits },
-            appReferences: [sdk.appId],
-            boxReferences: [{ appId: sdk.appId, name: boxNames.attestation(name) }],
-            note: `${Math.random()}`,
-          })
-        ).return
+      const ask = await consumerAsk(sdk)
       expect(await ask('hello com')).toBe(true)
       expect(await ask('hello')).toBe(false) // a substring is not a record
-      expect(await ask('hello com', 60)).toBe(false) // signed too long ago
-      expect(await ask('hello com', undefined, 4096)).toBe(false) // weaker than asked: P-256 counts as 3072
+      expect(await ask('hello com', { maxAge: 60 })).toBe(false) // signed too long ago
+      expect(await ask('hello com', { minKeyBits: 4096 })).toBe(false) // weaker than asked: P-256 counts as 3072
+      // the chain walk takes only the real ancestors
+      expect(await ask('hello com', { zones: ['com'] })).toBe(false)
+      expect(await ask('hello com', { zones: ['example.com', 'io'] })).toBe(false)
+
+      // example.com publishes a new key set: what its old one signed is stale, until proven again
+      world.publishKeys(exampleCom, [ecKey({ flags: 256 }).rdata])
+      await sdk.proveStep({ step: find(await chain('_tag.example.com'), 'dnskey', 'example.com') })
+      const [stale] = await sdk.getAttestations(['_tag.example.com'])
+      expect(await sdk.chainLive(stale!, ['example.com', 'com'])).toBe(false)
+      expect(await sdk.attestationZones('_tag.example.com', stale!)).toBeUndefined()
+      expect(await ask('hello com')).toBe(false)
+      await prove('_tag.example.com')
+      const [fresh] = await sdk.getAttestations(['_tag.example.com'])
+      expect(await sdk.chainLive(fresh!, ['example.com', 'com'])).toBe(true)
+      const zones = await sdk.attestationZones('_tag.example.com', fresh!)
+      expect(zones?.map((z) => nameFromWire(z))).toEqual(['example.com.', 'com.'])
+      expect(await ask('hello com')).toBe(true)
     })
 
     test('setup charges exactly the MBR constants the SDK mirrors', async () => {
@@ -217,7 +245,7 @@ describe('DnssecOracle e2e', () => {
       expect(await sdk.getCredits(admin)).toBe((await sdk.listCredits()).get(admin))
       // root, then DS and DNSKEY for com, io, example.com, example.io
       expect((await sdk.listCaches()).size).toBe(9)
-      expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n, rollInception: 0n, rootEpoch: 0n })
+      expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n, rollInception: 0n, rootEpoch: 1n })
     })
   })
 
@@ -722,20 +750,11 @@ describe('DnssecOracle e2e', () => {
       const d = await deploy({ extraAnchors: [second.rdata] })
       const { sdk, root, world, prove } = d
       await prove('_tag.example.com')
-      const { testAccount } = localnet.context
-      const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
-      const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
-      const name = nameToWire('_tag.example.com')
-      const ask = async () =>
-        (
-          await consumer.send.hasTxt({
-            args: { name, text: new TextEncoder().encode('hello com'), maxAge: 86_400 * 3, minKeyBits: 2048 },
-            appReferences: [sdk.appId],
-            boxReferences: [{ appId: sdk.appId, name: boxNames.attestation(name) }],
-            note: `${Math.random()}`,
-          })
-        ).return
+      const consumer = await consumerAsk(sdk)
+      const ask = () => consumer('hello com')
+      const live = async () => sdk.chainLive((await sdk.getAttestation('_tag.example.com'))!, ['example.com', 'com'])
       expect(await ask()).toBe(true)
+      const { rootEpoch } = await sdk.getState()
 
       const revoked = withFlags(root.ksk, 385)
       const signed = rootKeys(d, [revoked.rdata, second.rdata, root.zsk.rdata], [revoked, second])
@@ -743,17 +762,17 @@ describe('DnssecOracle e2e', () => {
       expect(events.map((e) => [e.event, e.keyTag])).toEqual([['Revoke', keyTag(revoked.rdata)]])
       expect((await sdk.getAnchor(root.ksk.rdata))?.state).toBe(AnchorState.Revoked)
       expect(toHex((await sdk.getCache('.', RRType.DNSKEY))!.hash)).toBe(toHex(sha256(signed.rrset)))
-      expect((await sdk.getState()).rootEpoch).toBe(1n)
+      expect((await sdk.getState()).rootEpoch).not.toBe(rootEpoch)
 
       // proven before the revocation: stale to the SDK's reader and to consumers
-      expect(await sdk.getAttestation('_tag.example.com')).toBeUndefined()
+      expect(await live()).toBe(false)
       expect(await ask()).toBe(false)
 
       // the SDK's default anchors are now read from the app: the revoked KSK is not among them.
       // Every stale cache entry is proven again, over its newer-or-equal inception
       const { proven } = await sdk.proveTxt('_tag.example.com', { resolver: world.resolver })
       expect(proven.map((s) => s.kind)).toEqual(['ds', 'dnskey', 'ds', 'dnskey', 'txt'])
-      expect((await sdk.getAttestation('_tag.example.com'))?.texts).toEqual(['hello com'])
+      expect(await live()).toBe(true)
       expect(await ask()).toBe(true)
       expect((await sdk.maintainAnchors({ resolver: world.resolver })).events).toEqual([])
     })

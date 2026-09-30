@@ -1,5 +1,5 @@
 import { Address, encodeAddress } from 'algosdk'
-import { concat, parseDnskey, sha256, txtStrings, u16 } from './prover/wire.js'
+import { concat, parseDnskey, RRType, sha256, txtStrings, u16 } from './prover/wire.js'
 import { ATTESTATION_HEADER_BYTES } from './constants.js'
 
 const prefix = (p: string) => new TextEncoder().encode(p)
@@ -17,7 +17,21 @@ export const boxNames = {
   cache: (name: Uint8Array, type: number) => concat(prefix('r'), sha256(concat(name, u16(type)))),
   attestation: (name: Uint8Array) => concat(prefix('t'), sha256(name)),
   credit: (account: string | Address) => concat(prefix('c'), Address.fromString(account.toString()).publicKey),
+  /** The cache boxes an attestation's chain walk reads: see chainLinks. */
+  chain: (zones: Uint8Array[]) => chainLinks(zones).map(([name, type]) => boxNames.cache(name, type)),
 }
+
+/**
+ * The cache entries above an attestation, child first: each zone's DNSKEY then DS, from the
+ * signer's zone up to the TLD, then the root DNSKEY. `zones` is wire format.
+ */
+export const chainLinks = (zones: Uint8Array[]): [Uint8Array, number][] => [
+  ...zones.flatMap((zone): [Uint8Array, number][] => [
+    [zone, RRType.DNSKEY],
+    [zone, RRType.DS],
+  ]),
+  [new Uint8Array([0]), RRType.DNSKEY],
+]
 
 /** RFC 5011 anchor states, as the contract numbers them. No box: Start, or Removed. */
 export enum AnchorState {
@@ -44,16 +58,18 @@ export interface CacheEntry {
   /** min(this RRSIG's expiration, the parent entry's expiry) */
   expiry: number
   weakestKeyBits: number
-  /** The contract's rootEpoch when proven: an entry from an earlier one is stale. */
+  /** This entry's generation: fresh whenever its hash or its parent's epoch changes. */
   epoch: number
+  /** The epoch of the entry it was verified against, or the contract's rootEpoch for the root. */
+  parentEpoch: number
 }
 
 export interface Attestation {
   inception: number
   expiration: number
   weakestKeyBits: number
-  /** The contract's rootEpoch when proven: an attestation from an earlier one is stale. */
-  epoch: number
+  /** The signer's DNSKEY cache entry epoch when proven: see DnssecOracleReaderSDK.chainLive. */
+  parentEpoch: number
   payer: string
   /** TXT RDATA, one per RR, in stored (canonical) order. */
   records: Uint8Array[]
@@ -75,6 +91,7 @@ export function decodeCache(value: Uint8Array): CacheEntry {
     expiry: u64(value, 40),
     weakestKeyBits: u64(value, 48),
     epoch: u64(value, 56),
+    parentEpoch: u64(value, 64),
   }
 }
 
@@ -93,7 +110,7 @@ export function decodeAttestation(value: Uint8Array): Attestation {
     inception: u64(value, 0),
     expiration: u64(value, 8),
     weakestKeyBits: u64(value, 16),
-    epoch: u64(value, 24),
+    parentEpoch: u64(value, 24),
     payer: encodeAddress(value.slice(32, 64)),
     records,
     texts: records.map((r) => txtStrings(r).join('')),

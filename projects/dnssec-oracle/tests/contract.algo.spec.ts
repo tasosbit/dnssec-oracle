@@ -43,7 +43,8 @@ function deploy() {
   contract.admin.value = ctx.defaultSender
   contract.anchorCount.value = 0
   contract.rollInception.value = 0
-  contract.rootEpoch.value = 0
+  contract.lastEpoch.value = 1
+  contract.rootEpoch.value = 1
   at(fixture.capturedAt)
   contract.addAnchors([B(ROOT_KSK_2017)])
   return contract

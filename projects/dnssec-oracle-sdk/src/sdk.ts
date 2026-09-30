@@ -281,9 +281,9 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
 
   /**
    * Prove a chain from buildTxtChain, parents before children. Cache steps whose RRset is
-   * already stored and fresh are skipped; an expired entry with a newer inception is pruned
-   * first. A stale entry, from before a revocation, is simply overwritten. The TXT step is
-   * always sent.
+   * already stored, fresh and proven under the parent's current entry are skipped; an expired
+   * entry with a newer inception is pruned first. One from before the last revocation is
+   * simply overwritten. The TXT step is always sent.
    */
   @wrapErrors()
   async proveChain(
@@ -296,11 +296,14 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
     for (const step of steps) {
       if (step.kind !== 'txt') {
         const found = await this.getCache(step.owner, step.type)
-        const cached = found?.epoch === rootEpoch ? found : undefined
-        if (cached && bytesEqual(cached.hash, sha256(step.rrset)) && cached.expiry > now + refreshMarginSeconds) {
+        // parents come first, so this reads the parent's entry as this step will see it
+        const live = found && found.parentEpoch === (await this.parentEpoch(step))
+        if (live && bytesEqual(found.hash, sha256(step.rrset)) && found.expiry > now + refreshMarginSeconds) {
           result.cached.push(step)
           continue
         }
+        // the contract overwrites an entry from before the last revocation whatever its inception
+        const cached = found && found.epoch >= rootEpoch ? found : undefined
         if (cached && cached.inception > step.inception) {
           // expired: anyone may prune it, and the older RRset, still valid, proves into a fresh box
           if (cached.expiry < now) {
@@ -319,6 +322,16 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
       result.txIds.push(...sent.txIds)
     }
     return result
+  }
+
+  /** The current epoch of the entry a cache step is verified against; 0 if none. */
+  private async parentEpoch(step: ProofStep): Promise<number> {
+    if (step.kind === 'root') return Number((await this.getState()).rootEpoch)
+    const parent =
+      step.kind === 'ds'
+        ? await this.getCache(signerOf(step), RRType.DNSKEY)
+        : await this.getCache(step.owner, RRType.DS)
+    return parent?.epoch ?? 0
   }
 
   /** Build `name TXT`'s chain from DNS and prove it: see buildTxtChain and proveChain. */

@@ -18,10 +18,10 @@ export const BOX_MBR_PER_BYTE_MICROALGOS = 400
 const boxMbr = (keyLength: number, valueLength: number) =>
   BOX_MBR_BASE_MICROALGOS + BOX_MBR_PER_BYTE_MICROALGOS * (keyLength + valueLength)
 
-/** Attestation header: inception, expiration, weakestKeyBits, epoch (uint64 each), payer (32). */
+/** Attestation header: inception, expiration, weakestKeyBits, parentEpoch (uint64 each), payer (32). */
 export const ATTESTATION_HEADER_BYTES = 64
-/** Cache value: sha256(RRset), inception, expiry, weakestKeyBits, epoch. */
-export const CACHE_VALUE_BYTES = 64
+/** Cache value: sha256(RRset), inception, expiry, weakestKeyBits, epoch, parentEpoch. */
+export const CACHE_VALUE_BYTES = 72
 /** Anchor value: state, since (uint64 each). */
 export const ANCHOR_VALUE_BYTES = 16
 

@@ -5,6 +5,8 @@ import {
   AnchorState,
   buildRootSteps,
   capturedResolver,
+  chainLinks,
+  concat,
   HOLD_DOWN_SECONDS,
   montgomeryHint,
   nameToWire,
@@ -14,10 +16,11 @@ import {
   RRType,
   sha256,
   toHex,
+  u16,
 } from 'dnssec-oracle-sdk'
 import { afterEach, describe, expect, test } from 'vitest'
 import { DnssecOracle } from '../smart_contracts/dnssec_oracle/contract.algo'
-import { attestationEpoch } from '../smart_contracts/dnssec_oracle/reader.algo'
+import { attestationParentEpoch } from '../smart_contracts/dnssec_oracle/reader.algo'
 import fixture from './fixtures/2026-09-28.json'
 import { dsRdata, ecKey, rsaKey, signRRset, TestKey, txt, withFlags } from './zone'
 
@@ -45,7 +48,8 @@ function deploy(anchors: (TestKey | Uint8Array)[], now = T0) {
   contract.admin.value = ctx.defaultSender
   contract.anchorCount.value = 0
   contract.rollInception.value = 0
-  contract.rootEpoch.value = 0
+  contract.lastEpoch.value = 1
+  contract.rootEpoch.value = 1
   at(now)
   contract.addAnchors(anchors.map((k) => B(k instanceof Uint8Array ? k : k.rdata)))
   return contract
@@ -192,7 +196,7 @@ describe('root rollover (RFC 5011)', () => {
     expect(anchor(contract, k2).state).toBe(AnchorState.AddPend)
     revokeRoot(contract, rootSet(k2r, [k1, k2r], T0 + DAY))
     expect(anchor(contract, k2)).toEqual({ state: AnchorState.Revoked, since: T0 + DAY })
-    expect(contract.rootEpoch.value).toEqual(0)
+    expect(contract.rootEpoch.value).toEqual(1)
   })
 
   test('revokeRoot: self-signed, flags 385, by an anchor', () => {
@@ -244,23 +248,24 @@ describe('root rollover (RFC 5011)', () => {
     contract.proveDnskey(B(keys.signedData), B(keys.signature), NO_HINT, 0, 0, B(ds.rrset))
     proveTag()
     expect(anchor(contract, rogue).state).toBe(AnchorState.AddPend)
-    const attestation = () => contract.attestations(Bytes(sha256(txtName)) as bytes<32>)
-    expect(attestationEpoch(attestation().value)).toEqual(0)
+    const live = () => chainLive(contract, txtName, [comName])
+    expect(live()).toBe(true)
 
     at(t + DAY)
     revokeRoot(contract, rootSet(k1r, [k1r, k2], t + DAY))
-    expect(contract.rootEpoch.value).toEqual(1)
-    // nothing chains from the forged root any more
+    expect(contract.rootEpoch.value).not.toEqual(1)
+    // nothing chains from the forged root any more: the rollover refuses it, consumers too
     expect(() => update(contract, forged, rogue)).toThrow(code('STL'))
+    expect(live()).toBe(false)
     expect(() => proveDs(forged.rrset)).toThrow(code('STL'))
     expect(() => proveTag()).toThrow(code('STL'))
-    // anyone prunes the stale attestation, unexpired and not their own
+    // anyone prunes what predates the revocation, unexpired and not their own
     const stranger = ctx.any.account()
     const appId = ctx.ledger.getApplicationForContract(contract)
     ctx.txn
       .createScope([ctx.any.txn.applicationCall({ appId, sender: stranger })])
       .execute(() => contract.prune(B(txtName), RRType.TXT))
-    expect(attestation().exists).toBe(false)
+    expect(contract.attestations(Bytes(sha256(txtName)) as bytes<32>).exists).toBe(false)
 
     // k2 overwrites the forged root entry with an older RRset, which then drives nothing
     // until a newer one arrives: rollInception is the forged inception
@@ -291,6 +296,129 @@ describe('root rollover (RFC 5011)', () => {
     contract.prune(B(ROOT), RRType.DNSKEY)
     proveRoot(contract, old)
     expect(() => update(contract, old, k2)).toThrow(code('OLD'))
+  })
+})
+
+/**
+ * reader.algo.ts's attestationChainLive over the contract's own boxes: the emulator lacks
+ * AVM 13's foreign box reads, so the reader itself runs in the LocalNet consumer test.
+ */
+function chainLive(contract: DnssecOracle, owner: Uint8Array, zones: Uint8Array[]) {
+  let epoch = attestationParentEpoch(contract.attestations(Bytes(sha256(owner)) as bytes<32>).value)
+  for (const [name, type] of chainLinks(zones)) {
+    const box = contract.caches(Bytes(sha256(concat(name, u16(type)))) as bytes<32>)
+    if (!box.exists || box.value.epoch !== epoch) return false
+    epoch = box.value.parentEpoch
+  }
+  return epoch === contract.rootEpoch.value
+}
+
+describe('epochs: a change above stales everything below', () => {
+  const k1 = ecKey()
+  const com = ecKey()
+  const comName = nameToWire('com')
+  const tagName = nameToWire('_tag.com')
+  const root = rootSet(k1, [k1], T0, 90 * DAY)
+  const zskIndex = rdataOf(root.rrset).findIndex((r) => toHex(r) === toHex(zsk.rdata))
+  const o = (t: number) => ({ inception: t, expiration: t + 30 * DAY })
+  // outlives com's keys, so they can expire and be pruned under it
+  const ds = signRRset(zsk, comName, RRType.DS, [dsRdata(comName, com.rdata)], {
+    signer: ROOT,
+    inception: T0,
+    expiration: T0 + 60 * DAY,
+  })
+  /** com's DNSKEY RRset: its KSK plus `extra` keys, self-signed at `t`. */
+  const comKeys = (t: number, extra: TestKey[] = []) =>
+    signRRset(com, comName, RRType.DNSKEY, [com.rdata, ...extra.map((k) => k.rdata)], { signer: comName, ...o(t) })
+  const tag = (t: number, text = 'hi') => signRRset(com, tagName, RRType.TXT, [txt(text)], { signer: comName, ...o(t) })
+
+  type S = ReturnType<typeof comKeys>
+  // the RRset is in canonical order: find com's KSK in it
+  const comIndex = (keys: S) => rdataOf(keys.rrset).findIndex((r) => toHex(r) === toHex(com.rdata))
+  const proveKeys = (c: DnssecOracle, s: S, parent = ds) =>
+    c.proveDnskey(B(s.signedData), B(s.signature), NO_HINT, comIndex(s), 0, B(parent.rrset))
+  const proveTag = (c: DnssecOracle, s: S, keys: S) =>
+    c.proveTxt(B(s.signedData), B(s.signature), NO_HINT, comIndex(keys), B(keys.rrset))
+  const epochOf = (c: DnssecOracle, name: Uint8Array, type: number) =>
+    c.caches(Bytes(sha256(concat(name, u16(type)))) as bytes<32>).value.epoch
+
+  function setup() {
+    const contract = deploy([k1])
+    at(T0 + DAY)
+    proveRoot(contract, root)
+    contract.proveDs(B(ds.signedData), B(ds.signature), NO_HINT, zskIndex, B(root.rrset))
+    const keys = comKeys(T0)
+    proveKeys(contract, keys)
+    proveTag(contract, tag(T0), keys)
+    expect(chainLive(contract, tagName, [comName])).toBe(true)
+    return { contract, keys }
+  }
+
+  test('the same RRset, signed again, keeps its epoch: nothing below goes stale', () => {
+    const { contract } = setup()
+    const before = epochOf(contract, comName, RRType.DNSKEY)
+    proveKeys(contract, comKeys(T0 + 1))
+    expect(epochOf(contract, comName, RRType.DNSKEY)).toEqual(before)
+    expect(chainLive(contract, tagName, [comName])).toBe(true)
+  })
+
+  test('a new key set stales what was proven under the old one, until proven again', () => {
+    const { contract } = setup()
+    const newer = comKeys(T0 + 1, [ecKey({ flags: 256 })])
+    proveKeys(contract, newer)
+    expect(chainLive(contract, tagName, [comName])).toBe(false)
+    proveTag(contract, tag(T0 + 1), newer)
+    expect(chainLive(contract, tagName, [comName])).toBe(true)
+  })
+
+  test('only the real ancestors match: a wrong or short zone list fails', () => {
+    const { contract } = setup()
+    expect(chainLive(contract, tagName, [])).toBe(false)
+    expect(chainLive(contract, tagName, [nameToWire('org')])).toBe(false)
+    expect(chainLive(contract, tagName, [comName, comName])).toBe(false)
+  })
+
+  test('no rollback across a change above: an older TXT stays out once the keys change', () => {
+    const { contract, keys } = setup()
+    proveTag(contract, tag(T0 + 2, 'current'), keys)
+    const newer = comKeys(T0 + 1, [ecKey({ flags: 256 })])
+    proveKeys(contract, newer)
+    // the older record, still validly signed, cannot slip in while the stored one is stale
+    expect(() => proveTag(contract, tag(T0 + 1, 'withdrawn'), newer)).toThrow(code('OLD'))
+    proveTag(contract, tag(T0 + 2, 'current'), newer)
+    expect(chainLive(contract, tagName, [comName])).toBe(true)
+  })
+
+  test('no rollback across a change above: a withdrawn key set stays out once the DS changes', () => {
+    const { contract } = setup()
+    const newer = comKeys(T0 + 1, [ecKey({ flags: 256 })])
+    proveKeys(contract, newer)
+    const ds2 = signRRset(zsk, comName, RRType.DS, [dsRdata(comName, com.rdata), dsRdata(comName, ecKey().rdata)], {
+      signer: ROOT,
+      inception: T0 + 1,
+      expiration: T0 + 60 * DAY,
+    })
+    contract.proveDs(B(ds2.signedData), B(ds2.signature), NO_HINT, zskIndex, B(root.rrset))
+    expect(() => proveKeys(contract, comKeys(T0), ds2)).toThrow(code('OLD'))
+    // the same signature re-links under the new DS
+    proveKeys(contract, newer, ds2)
+    proveTag(contract, tag(T0 + 1), newer)
+    expect(chainLive(contract, tagName, [comName])).toBe(true)
+  })
+
+  test('a pruned entry comes back with a fresh epoch', () => {
+    const { contract, keys } = setup()
+    const before = epochOf(contract, comName, RRType.DNSKEY)
+    at(T0 + 31 * DAY)
+    contract.prune(B(comName), RRType.DNSKEY)
+    const again = signRRset(com, comName, RRType.DNSKEY, [com.rdata], {
+      signer: comName,
+      inception: T0 + 30 * DAY,
+      expiration: T0 + 35 * DAY,
+    })
+    proveKeys(contract, again)
+    expect(toHex(again.rrset)).toBe(toHex(keys.rrset))
+    expect(epochOf(contract, comName, RRType.DNSKEY)).not.toEqual(before)
   })
 })
 

@@ -20,7 +20,7 @@ const ANCHORS: Record<string, Uint8Array> = { '2017': ROOT_KSK_2017, '2024': ROO
 function printAttestation(a: Attestation, indent = '  ') {
   for (const text of a.texts) console.log(`${indent}text: ${text}`)
   console.log(`${indent}inception: ${isoTime(a.inception)}  expiration: ${isoTime(a.expiration)}`)
-  console.log(`${indent}weakestKeyBits: ${a.weakestKeyBits}  epoch: ${a.epoch}  payer: ${a.payer}`)
+  console.log(`${indent}weakestKeyBits: ${a.weakestKeyBits}  parentEpoch: ${a.parentEpoch}  payer: ${a.payer}`)
 }
 
 const printTxIds = (txIds: string[]) => txIds.forEach((id) => console.log(`Transaction ID: ${id}`))
@@ -43,25 +43,36 @@ export async function handleAnchors(argv: Argv) {
 
 export async function handleGet(argv: Argv) {
   const names: string[] = argv.names
-  const attestations = await makeSdk(argv).getAttestations(names)
-  names.forEach((name, i) => {
+  const sdk = makeSdk(argv)
+  const attestations = await sdk.getAttestations(names)
+  for (const [i, name] of names.entries()) {
     const a = attestations[i]
-    if (!a) return console.log(`${name} N/A`)
+    if (!a) {
+      console.log(`${name} N/A`)
+      continue
+    }
     console.log(name)
     printAttestation(a)
-  })
+    const zones = await sdk.attestationZones(name, a)
+    const path = zones && [...zones.map((z) => nameFromWire(z)), '.'].join(' → ')
+    console.log(path ? `  chain: live, ${path}` : '  chain: STALE, a key set above changed: prove it again')
+  }
 }
 
 export async function handleList(argv: Argv) {
-  for (const [key, a] of await makeSdk(argv).listAttestations()) {
+  const sdk = makeSdk(argv)
+  const { rootEpoch } = await sdk.getState()
+  for (const [key, a] of await sdk.listAttestations()) {
     console.log(`${key} (sha256 of wire name)`)
     printAttestation(a)
+    // without the name the zones are unknown: only a revocation is visible here; `get` walks the chain
+    if (BigInt(a.parentEpoch) < rootEpoch) console.log('  chain: STALE, predates a root key revocation')
   }
 }
 
 export async function handleCaches(argv: Argv) {
   for (const [key, c] of await makeSdk(argv).listCaches()) {
-    console.log(`${key} inception=${isoTime(c.inception)} expiry=${isoTime(c.expiry)} weakestKeyBits=${c.weakestKeyBits} epoch=${c.epoch}`)
+    console.log(`${key} inception=${isoTime(c.inception)} expiry=${isoTime(c.expiry)} weakestKeyBits=${c.weakestKeyBits} epoch=${c.epoch} parentEpoch=${c.parentEpoch}`)
   }
 }
 

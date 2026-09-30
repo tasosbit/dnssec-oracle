@@ -47,9 +47,9 @@ import {
 } from './errors.algo'
 import {
   ATTESTATION_HEADER,
-  attestationEpoch,
   attestationExpiration,
   attestationInception,
+  attestationParentEpoch,
   attestationPayer,
 } from './reader.algo'
 import {
@@ -109,8 +109,10 @@ export type CacheEntry = Readonly<{
   /** min(this RRSIG's expiration, expiry of the entry it was verified against) */
   expiry: uint64
   weakestKeyBits: uint64
-  /** `rootEpoch` when proven: an entry from an earlier epoch is stale. */
+  /** This entry's generation: fresh whenever its hash or its parent's epoch changes. */
   epoch: uint64
+  /** The epoch of the entry it was verified against, or `rootEpoch` for the root DNSKEY RRset. */
+  parentEpoch: uint64
 }>
 
 /**
@@ -127,9 +129,12 @@ export class DnssecOracle extends BaseContract {
   anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
   /** Inception of the newest root DNSKEY RRset a rollover step used: no step may use an older one. */
   rollInception = GlobalState<uint64>({ key: 'rollInception' })
+  /** The last epoch handed out. Each value names one box generation; 0 is never an epoch. */
+  lastEpoch = GlobalState<uint64>({ key: 'lastEpoch' })
   /**
-   * Revocations so far. Each one stales every cache entry and attestation proven before it:
-   * the revoked key may have signed a forged root RRset that they chain from.
+   * The anchor set's epoch: fresh at each revocation of a trusted key, which stales the root
+   * DNSKEY entry and so everything that chains from it. Epochs only grow, so a box whose epoch
+   * is below it predates the last revocation.
    */
   rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
 
@@ -149,7 +154,8 @@ export class DnssecOracle extends BaseContract {
     this.admin.value = Txn.sender
     this.anchorCount.value = 0
     this.rollInception.value = 0
-    this.rootEpoch.value = 0
+    this.lastEpoch.value = 1
+    this.rootEpoch.value = 1
     // consumers read attestation boxes directly
     op.AppParamsSet.appForeignBoxReads(true)
   }
@@ -215,7 +221,7 @@ export class DnssecOracle extends BaseContract {
     )
     verify(signedData, signature, hint, s.algorithm, publicKey)
     // the top of the chain: expiry and strength are this signature's own
-    this.writeCache(s, TYPE_DNSKEY, s.expiration, bits)
+    this.writeCache(s, TYPE_DNSKEY, s.expiration, bits, this.rootEpoch.value)
     // the first prover pays for the cache box; a replacement is the same size
     this.manageMbrCredits(mbrBefore)
   }
@@ -238,7 +244,7 @@ export class DnssecOracle extends BaseContract {
     const [publicKey, bits] = checkKey(key, s.algorithm)
     verify(signedData, signature, hint, s.algorithm, publicKey)
     // an entry never outlives or outranks the chain above it
-    this.writeCache(s, TYPE_DS, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits))
+    this.writeCache(s, TYPE_DS, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits), cached.epoch)
     this.manageMbrCredits(mbrBefore)
   }
 
@@ -268,7 +274,7 @@ export class DnssecOracle extends BaseContract {
     checkDs(ds, s.owner, s.indexed)
     const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
     verify(signedData, signature, hint, s.algorithm, publicKey)
-    this.writeCache(s, TYPE_DNSKEY, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits))
+    this.writeCache(s, TYPE_DNSKEY, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits), cached.epoch)
     this.manageMbrCredits(mbrBefore)
   }
 
@@ -293,9 +299,12 @@ export class DnssecOracle extends BaseContract {
     // newest inception wins, ties replace; the old box's rent goes back to its payer
     const box = this.attestations(op.sha256(s.owner))
     if (box.exists) {
-      // a stale one is replaced whatever its inception: a forged one may be the newer
+      // one from before the last revocation is replaced whatever its inception: a forged one
+      // may be the newer. Otherwise no rollback, even across a change above.
       const old = box.value
-      if (attestationEpoch(old) === this.rootEpoch.value) loggedAssert(s.inception >= attestationInception(old), errOld)
+      if (attestationParentEpoch(old) >= this.rootEpoch.value) {
+        loggedAssert(s.inception >= attestationInception(old), errOld)
+      }
       this.deleteAttestation(s.owner)
     }
     // header (see reader.algo.ts), then the records; the sender pays and becomes the payer
@@ -304,7 +313,7 @@ export class DnssecOracle extends BaseContract {
       .itob(s.inception)
       .concat(op.itob(min(s.expiration, cached.expiry)))
       .concat(op.itob(min(bits, cached.weakestKeyBits)))
-      .concat(op.itob(this.rootEpoch.value))
+      .concat(op.itob(cached.epoch))
       .concat(Txn.sender.bytes)
       .concat(s.records)
     this.manageMbrCredits(mbrBefore)
@@ -333,6 +342,7 @@ export class DnssecOracle extends BaseContract {
   public updateAnchor(rrset: bytes, keyHash: bytes<32>): void {
     const mbrBefore = Global.currentApplicationAddress.minBalance
     // no signature here: the cached root RRset was verified under a trusted anchor when proven
+    // parentEntry refuses a root entry from before the last revocation: its key may have forged it
     const cached = this.parentEntry(ROOT, TYPE_DNSKEY, rrset)
     // an older RRset, still valid and proven again after a prune, must not undo a step
     loggedAssert(cached.inception >= this.rollInception.value, errOld)
@@ -375,9 +385,9 @@ export class DnssecOracle extends BaseContract {
    * RFC 5011 revocation: the root DNSKEY RRset, signed by an anchor key in any state but
    * Revoked, which the RRset holds with flags 385. Only the key itself can revoke itself,
    * and for good: it can no longer prove the root, and `updateAnchor` retires it 30 days
-   * later. Revoking a Valid or Missing key bumps `rootEpoch`, so everything proven before must
-   * be proven again; an AddPend key never proved anything, so its revocation does not. No
-   * inception rule: a replayed revocation changes nothing.
+   * later. Revoking a Valid or Missing key gives `rootEpoch` a fresh epoch, which stales the
+   * root entry and everything below it; an AddPend key never proved anything, so its
+   * revocation does not. No inception rule: a replayed revocation changes nothing.
    * @param keyIndex Index of the revoked, signing key in the RRset
    */
   public revokeRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
@@ -395,16 +405,17 @@ export class DnssecOracle extends BaseContract {
     // `since` starts the 30 days to Retire; same box size, so no rent moves
     box.value = { state: ANCHOR_REVOKED, since: Global.latestTimestamp }
     // a trusted key may have signed a forged root RRset: stale everything that could chain from it
-    if (trusted) this.rootEpoch.value += 1
+    if (trusted) this.rootEpoch.value = this.nextEpoch()
   }
 
   // ── Rent ────────────────────────────────────────────────────────
 
   /**
-   * Delete an expired or stale box. `rrtype` 16 names an attestation: its payer may prune it
-   * once expired, anyone 30 days after or once stale; the refund goes to the payer. Any other
-   * type names a cache entry, which anyone may prune once expired or stale, for a refund to
-   * their own credits.
+   * Delete an expired box, or one from before the last revocation. `rrtype` 16 names an
+   * attestation: its payer may prune it once expired, anyone 30 days after or once it predates
+   * the revocation; the refund goes to the payer. Any other type names a cache entry, which
+   * anyone may prune once expired or predating it, for a refund to their own credits. Staleness
+   * from a routine change above is not prunable early: a newer proof replaces the box.
    */
   public prune(name: bytes, rrtype: uint64): void {
     // box keys are only ever derived from valid names
@@ -418,7 +429,7 @@ export class DnssecOracle extends BaseContract {
       loggedAssert(
         (Txn.sender === attestationPayer(value) && now > expiration) ||
           now > expiration + PRUNE_GRACE_SECONDS ||
-          attestationEpoch(value) !== this.rootEpoch.value,
+          attestationParentEpoch(value) < this.rootEpoch.value,
         errPrune,
       )
       // the refund goes to the payer, not the pruner
@@ -428,7 +439,7 @@ export class DnssecOracle extends BaseContract {
       const box = this.caches(op.sha256(nameType(name, rrtype)))
       loggedAssert(box.exists, errMissing)
       const entry = box.value
-      loggedAssert(now > entry.expiry || entry.epoch !== this.rootEpoch.value, errPrune)
+      loggedAssert(now > entry.expiry || entry.epoch < this.rootEpoch.value, errPrune)
       const mbrBefore = Global.currentApplicationAddress.minBalance
       box.delete()
       this.manageMbrCredits(mbrBefore)
@@ -437,24 +448,31 @@ export class DnssecOracle extends BaseContract {
 
   // ── Reads ───────────────────────────────────────────────────────
 
-  /** Log each name's attestation box, in input order; an empty line if there is none or it is stale. */
+  /**
+   * Log each name's attestation box, in input order; an empty line if there is none. Stale
+   * ones included: whether the chain above is current takes a walk (reader.algo.ts).
+   */
   @readonly
   public logAttestations(names: bytes[]): void {
     for (const name of names) {
       const [value, exists] = this.attestations(op.sha256(name)).maybe()
-      log(exists && attestationEpoch(value) === this.rootEpoch.value ? value : Bytes())
+      log(exists ? value : Bytes())
     }
   }
 
   // ── Internals ───────────────────────────────────────────────────
 
-  /** The cache entry `parent` must match: present, unexpired, this epoch, same hash. */
+  /**
+   * The cache entry `parent` must match: present, unexpired, not from before the last
+   * revocation, same hash. Staleness from a routine change further up is not checked: a proof
+   * under such a parent is stale too, and consumers walk the chain.
+   */
   private parentEntry(name: bytes, rrtype: uint64, parent: bytes): CacheEntry {
     // not .maybe(): algorand-typescript-testing 1.2.0 misdecodes a struct read that way
     const box = this.caches(op.sha256(nameType(name, rrtype)))
     loggedAssert(box.exists, errParent)
     const entry = box.value
-    loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch === this.rootEpoch.value, errStale)
+    loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch >= this.rootEpoch.value, errStale)
     loggedAssert(op.sha256(parent) === entry.hash, errParent)
     return entry
   }
@@ -462,22 +480,35 @@ export class DnssecOracle extends BaseContract {
   /**
    * Newest inception wins. A tie replaces only if expiry and key bits get no worse, so a
    * second signature at the same inception cannot shorten or weaken the entry, while a
-   * re-proof after its parent was refreshed still extends it. A stale entry is replaced
-   * whatever its inception: a forged one may be newer than any real RRSIG. Fixed size, so a
-   * replacement moves no credit.
+   * re-proof after its parent was refreshed still extends it. Across a change of parent
+   * generation only the inception rule holds, so a tie can re-link. An entry from before the
+   * last revocation is replaced whatever its inception: a forged one may be newer than any
+   * real RRSIG. The epoch stays only if hash and parent epoch do, so any change here stales
+   * everything below. Fixed size, so a replacement moves no credit.
    */
-  private writeCache(s: SignedData, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64): void {
+  private writeCache(s: SignedData, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64, parentEpoch: uint64): void {
     const box = this.caches(op.sha256(nameType(s.owner, rrtype)))
-    const epoch = this.rootEpoch.value
-    if (box.exists && box.value.epoch === epoch) {
+    const hash = op.sha256(s.rrset)
+    let epoch: uint64 = 0
+    if (box.exists && box.value.epoch >= this.rootEpoch.value) {
       const old = box.value
+      // no rollback to a withdrawn RRset, even after a change above
       loggedAssert(s.inception >= old.inception, errOld)
-      loggedAssert(
-        s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
-        errWorse,
-      )
+      if (old.parentEpoch === parentEpoch) {
+        if (old.hash === hash) epoch = old.epoch
+        loggedAssert(
+          s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
+          errWorse,
+        )
+      }
     }
-    box.value = { hash: op.sha256(s.rrset), inception: s.inception, expiry: expiry, weakestKeyBits: weakestKeyBits, epoch: epoch }
+    if (epoch === 0) epoch = this.nextEpoch()
+    box.value = { hash, inception: s.inception, expiry, weakestKeyBits, epoch, parentEpoch }
+  }
+
+  private nextEpoch(): uint64 {
+    this.lastEpoch.value += 1
+    return this.lastEpoch.value
   }
 
   /**

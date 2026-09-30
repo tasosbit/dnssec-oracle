@@ -167,13 +167,14 @@ compression pointers and extended label types.
 | Global | `admin`                      | address                                                   |
 | Global | `anchorCount`                | uint64, 0 until `addAnchors`, then the initial count      |
 | Global | `rollInception`              | uint64, inception of the newest root RRset a rollover step used |
-| Global | `rootEpoch`                  | uint64, revocations so far; older cache entries and attestations are stale |
+| Global | `lastEpoch`                  | uint64, the last epoch handed out (see "Epochs")          |
+| Global | `rootEpoch`                  | uint64, the anchor set's epoch, fresh at each revocation of a trusted key |
 | Box    | `a` ‖ `sha256(alg ‖ pubkey)` | anchor: `state`, `since` (uint64 each), RFC 5011          |
-| Box    | `r` ‖ `sha256(name ‖ type)`  | cache: `sha256(RRset)`, `inception`, `expiry`, `weakestKeyBits`, `epoch` |
+| Box    | `r` ‖ `sha256(name ‖ type)`  | cache: `sha256(RRset)`, `inception`, `expiry`, `weakestKeyBits`, `epoch`, `parentEpoch` |
 | Box    | `t` ‖ `sha256(name)`         | attestation: header, then `uint16 rdlen ‖ rdata` per RR   |
 | Box    | `c` ‖ address                | MbrManager credits, uint64                                |
 
-Attestation header: `inception`, `expiration`, `weakestKeyBits`, `epoch`, `payer`.
+Attestation header: `inception`, `expiration`, `weakestKeyBits`, `parentEpoch`, `payer`.
 
 - `c` is reserved by `MbrManager` (33-byte keys), which is why the cache
   uses `r`. All prefixes are disjoint.
@@ -203,7 +204,7 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `epoch`, `payer
 | `proveTxt`    | TXT RRset under a key in a cached DNSKEY RRset            | owner or an ancestor  |
 | `prune`       | see "Box rent"                                            |                       |
 | `setAdmin`    | sender is `admin`                                         |                       |
-| `logAttestations(names)` | `@readonly`: logs each attestation box, empty line if missing |            |
+| `logAttestations(names)` | `@readonly`: logs each attestation box, empty line if missing; stale ones too (walk the chain) |  |
 | inherited     | `increaseBudget`, `depositCredits`, `withdrawCredits`, `logCredits` |             |
 
 - Proving methods and `prune` are permissionless, but a sender that creates
@@ -282,17 +283,58 @@ with flags 385. Only the key can revoke itself, and for good.
 - The hold-down is 30 days, RFC 5011's minimum; the root DNSKEY TTL is 2 days.
 - Anchor boxes created by Add are paid from the sender's credits; Reset and
   Retire refund the sender, as a cache prune does.
-- Revocation stales everything proven before it. `revokeRoot` bumps
-  `rootEpoch` (not for an AddPend key, which never proved anything); cache entries and attestations record the epoch they were
-  proven in. A stale cache entry fails as a parent (`STL`), a stale
-  attestation fails `attestationUsable` and `logAttestations` hides it, and
-  either is overwritten whatever its inception (a forged one may be newer than
-  any real RRSIG) or pruned by anyone. Without this, a compromised key's forged
-  root RRset, and every DS, DNSKEY and TXT proven below it, would outlive the
-  revocation by their attacker-chosen validity, and could still drive
-  `updateAnchor` to promote the attacker's key. A real rollover's revocation
-  costs one early re-proof of the cache, which the root's ~21-day signatures
-  force anyway.
+- Revoking a Valid or Missing anchor gives `rootEpoch` a fresh epoch, which
+  stales the root DNSKEY entry and everything below it (see "Epochs"). An
+  AddPend key never proved anything, so its revocation stales nothing; else a
+  thief could Add keys under a stolen anchor and, once revoked, revoke them one
+  by one to re-stale the contract each time. A stale root entry cannot drive
+  `updateAnchor` (`STL`). Without this, a compromised key's forged root RRset,
+  and every DS, DNSKEY and TXT proven below it, would outlive the revocation by
+  their attacker-chosen validity, and could still promote the attacker's key.
+  A real rollover's revocation costs one early re-proof of the cache, which
+  the root's ~21-day signatures force anyway, and of every attestation, each
+  by whoever wants it usable.
+
+### Epochs: a change above stales everything below
+
+DNSSEC withdraws a key by publishing a key set without it: a TLD dropping a
+compromised ZSK, a domain changing hands (new DS), a root revocation. Any of
+these must stale what the old keys signed, at every level.
+
+- `lastEpoch` is a counter; a fresh epoch is `++lastEpoch`, so each value
+  names exactly one box generation. It starts at 1, as does `rootEpoch`, and
+  0 is never an epoch.
+- A cache entry holds `epoch`, its own generation, and `parentEpoch`, the
+  epoch of the entry it was verified against (`rootEpoch` for the root DNSKEY
+  RRset). An attestation holds `parentEpoch`: its signer's DNSKEY entry.
+- An entry keeps its epoch only when its hash and its parent epoch are both
+  unchanged: a re-signed, identical RRset stales nothing. A new RRset, a new
+  parent generation, or a box re-created after a prune gets a fresh epoch.
+- Epochs only grow, and `rootEpoch` is minted at the revocation, so a box
+  whose epoch is below `rootEpoch` (for an attestation, whose `parentEpoch`
+  is) predates the last revocation. Such a box fails as a parent (`STL`,
+  which also keeps a forged root from driving `updateAnchor`), anyone may
+  prune it, and any proof replaces it whatever its inception (a forged one
+  may be newer than any real RRSIG).
+- Otherwise "newest inception wins" holds, across parent generations too: a
+  routine change above must not let a withdrawn but still-signed RRset or TXT
+  roll back in. Across generations a tie re-links without the `WRS` rule.
+- The contract checks one level only, plus the revocation test above: a
+  parent must exist, be unexpired, not predate the revocation and match the
+  hash. Every write reads its parent box's current generation, so a stale
+  chain exists only below a box that really changed. Consumers walk the whole
+  chain (below). Staleness from a routine change is not prunable early; a
+  newer proof replaces the box.
+- Residual, below the root: after a TLD key compromise and re-key, forged
+  entries off the real path still serve as parents until they expire. What is
+  proven under them fails the walk, and the inception rule keeps them from
+  displacing newer real proofs; a forged one with a recent inception can hold
+  a box until the zone's next signature is newer.
+- Cost: any change to an RRset above stales everything below it, a
+  pre-published key included. The root's DNSKEY RRset changes a few times a
+  quarter (ZSK rolls), so every attestation needs re-proving about that often,
+  within what `maxAge` asks anyway. `ponytail:` stale on key removal only if
+  that churn bites; it needs the old RRset passed in for a subset check.
 
 Captured on 2026-09-28: the RRset signed by KSK-2017 and holding KSK-2024
 drives Add in the emulator. Post-roll captures (2026-10-11 on) and the
@@ -306,8 +348,8 @@ payments, so a closed account can never block a write.
 | Box          | Who pays                   | Who can prune, and when                          | Refund credited to |
 |--------------|----------------------------|--------------------------------------------------|--------------------|
 | Anchor       | admin (initial), Add sender | Reset and Retire, by anyone (see "Root anchors") | the caller         |
-| Cache        | first prover               | anyone, once expired                             | the pruner         |
-| Attestation  | each prover                | `payer` once expired; anyone 30 days after       | `payer`            |
+| Cache        | first prover               | anyone, once expired or predating a revocation   | the pruner         |
+| Attestation  | each prover                | `payer` once expired; anyone 30 days after, or once it predates a revocation | `payer` |
 
 - Cache boxes are fixed size, so replacing one moves no credit.
 - Replacing an attestation deletes the old box and credits the old `payer`
@@ -329,6 +371,17 @@ payments, so a closed account can never block a write.
   reference reader, from an oracle app ID they pin (the example consumer
   stores it at create). Fallback, only if PuyaTs 1.3.1 does not expose
   `app_params_set`: consumers call `logAttestations` as an inner call.
+- The reader's `attestationUsable` walks the chain: the attestation's
+  `parentEpoch` must equal the signer's DNSKEY entry's `epoch`, its
+  `parentEpoch` the zone's DS entry's `epoch`, and so on up to the root DNSKEY
+  entry, whose `parentEpoch` must equal `rootEpoch`. The caller passes the
+  zones from the signer up to the TLD. That is safe, because each epoch
+  names one box generation: a wrong or shortened list fails. The transaction
+  needs box references for the attestation, each zone's DNSKEY and DS, and
+  the root DNSKEY: 6 for `_tag.example.com`, which fits beside the oracle app
+  in one transaction's 8. Longer chains spread them over the group. The SDK
+  mirrors the walk off-chain (`chainLive`), and `attestationZones` finds the
+  zones from the name by matching epochs; the CLI's `get` reports it.
 - Off-chain, SDK: point lookups simulate `logAttestations` (batched,
   `@chunked`); listing every attestation or cache uses the algod
   `scanBoxes` prefix scan. An e2e test asserts both return the same bytes.
@@ -389,7 +442,7 @@ Ordered from unavoidable to self-inflicted.
 | 7 | **Admin, after deploy** | Nothing: `addAnchors` runs once and there is no TLD whitelist. A registry can only forge names under its own TLD, so which TLDs to trust is each consumer's choice, made by the names it accepts. |
 | 8 | **Algorand consensus and AVM** | The only clock is the block timestamp, bounded to +25 s per block but not to wall-clock time. Proposers stalling it extend the life of expired signatures. |
 | 9 | **Verification code** | The RSA and MBR libraries, the wire parser, the Puya compiler, the rule list. A bug equals a forged root key, and the contract cannot be patched. Largest avoidable risk. |
-| 10 | **Consumer code** | Must pin the oracle app ID and parse the attestation box by its layout. Reading from an app the caller names, or a substring match, is a forgery at the consumer. |
+| 10 | **Consumer code** | Must pin the oracle app ID, parse the attestation box by its layout, and walk its chain (`attestationUsable`). Reading from an app the caller names, or a substring match, is a forgery at the consumer; skipping the walk accepts proofs from withdrawn keys. |
 | 11 | **Watchers, for liveness and rollover** | Someone must submit the root RRset at least every 21 days or every proof below stalls. The same cron (`maintainAnchors`) sends revocations and Reset within 30 days, or a key added under a compromised anchor gets promoted. Cheap, permissionless. |
 | — | **Relayer** | **Not trusted for integrity.** Freshness depends on everyone who can submit, below. |
 
@@ -402,8 +455,10 @@ Ordered from unavoidable to self-inflicted.
 - **That a name has no records.** No NSEC/NSEC3. A TXT set deleted entirely
   can only age out.
 - **Current ownership.** After a transfer or lapse, the previous owner's keys
-  stay usable until the DS signature expires, up to about 7 days for `.com`,
-  and they can pick inception = now to outrank the new owner.
+  stay usable until the new owner's DS is proven: that stales everything
+  signed by the old keys (see "Epochs"). Until then, up to the old DS
+  signature's expiry (about 7 days for `.com`), the old owner can pick
+  inception = now to outrank the new owner.
 - **Resolver semantics.** No CNAME following, no wildcards.
 
 Advice for consumers: put the app ID, the Algorand address and a nonce inside

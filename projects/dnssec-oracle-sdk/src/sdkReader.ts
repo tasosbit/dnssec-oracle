@@ -6,13 +6,14 @@ import {
   Attestation,
   boxNames,
   CacheEntry,
+  chainLinks,
   decodeAnchor,
   decodeAttestation,
   decodeCache,
   isTrusted,
 } from './boxes.js'
 import { APP_SPEC, DnssecOracleClient, DnssecOracleComposer } from './generated/DnssecOracleClient.js'
-import { nameToWire, sha256, toHex } from './prover/wire.js'
+import { ancestors, nameToWire, RRType, sha256, toHex } from './prover/wire.js'
 import { ReaderConstructorArgs } from './types.js'
 import { chunk } from './util/chunk.js'
 import { chunked } from './util/chunked.js'
@@ -61,7 +62,7 @@ export class DnssecOracleReaderSDK {
 
   /**
    * Global state: admin, initial anchor count, the newest root inception a rollover step
-   * used, and the revocation count that stales older cache entries and attestations.
+   * used, and the anchor set's epoch, fresh at each revocation of a trusted key.
    */
   @wrapErrors()
   async getState(): Promise<{ admin: string; anchorCount: bigint; rollInception: bigint; rootEpoch: bigint }> {
@@ -74,7 +75,10 @@ export class DnssecOracleReaderSDK {
     }
   }
 
-  /** The attestation for `name`, through the contract's logAttestations logger, or undefined if none or stale. */
+  /**
+   * The attestation for `name`, through the contract's logAttestations logger, or undefined.
+   * Stale ones included: check chainLive.
+   */
   @wrapErrors()
   async getAttestation(name: NameLike): Promise<Attestation | undefined> {
     const [attestation] = await this.getAttestations([name])
@@ -105,8 +109,8 @@ export class DnssecOracleReaderSDK {
 
   /**
    * Every attestation, by the algod prefix scan, keyed by `sha256(name)` hex: box names
-   * hold only the hash, so names are for the caller to match. Stale ones included: compare
-   * `epoch` with getState's `rootEpoch`.
+   * hold only the hash, so names are for the caller to match. Stale ones included: check
+   * chainLive.
    */
   @wrapErrors()
   async listAttestations(): Promise<Map<string, Attestation>> {
@@ -119,6 +123,39 @@ export class DnssecOracleReaderSDK {
   async scanRaw(prefix: string): Promise<Map<string, Uint8Array>> {
     const boxes = await scanBoxes(this.algorand.client.algod, this.appId, new TextEncoder().encode(prefix))
     return new Map(boxes.map(({ name, value }) => [toHex(name.slice(prefix.length)), value]))
+  }
+
+  /**
+   * Whether no ancestor of `attestation` has changed since it was proven: the off-chain twin
+   * of reader.algo.ts's attestationChainLive. `zones` runs from the signer's zone up to the TLD.
+   */
+  @wrapErrors()
+  async chainLive(attestation: Attestation, zones: NameLike[]): Promise<boolean> {
+    let epoch = attestation.parentEpoch
+    for (const [name, type] of chainLinks(zones.map(toWire))) {
+      const entry = await this.getCache(name, type)
+      if (entry?.epoch !== epoch) return false
+      epoch = entry.parentEpoch
+    }
+    return BigInt(epoch) === (await this.getState()).rootEpoch
+  }
+
+  /**
+   * The zones `name`'s attestation chains through, signer first, found by matching epochs up
+   * the name's ancestors: what chainLive and a consumer's hasTxt take. Undefined if its chain
+   * is not current.
+   */
+  @wrapErrors()
+  async attestationZones(name: NameLike, attestation: Attestation): Promise<Uint8Array[] | undefined> {
+    const zones: Uint8Array[] = []
+    let epoch = attestation.parentEpoch
+    for (const zone of ancestors(toWire(name)).slice(0, -1)) {
+      // epochs are unique: only the zone that signed the link below matches
+      if ((await this.getCache(zone, RRType.DNSKEY))?.epoch !== epoch) continue
+      zones.push(zone)
+      epoch = (await this.getCache(zone, RRType.DS))?.parentEpoch ?? 0
+    }
+    return (await this.chainLive(attestation, zones)) ? zones : undefined
   }
 
   /** The cache entry for `name type`, or undefined. */
