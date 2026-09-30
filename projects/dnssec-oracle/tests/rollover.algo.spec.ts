@@ -335,8 +335,10 @@ describe('epochs: a change above stales everything below', () => {
   type S = ReturnType<typeof comKeys>
   // the RRset is in canonical order: find com's KSK in it
   const comIndex = (keys: S) => rdataOf(keys.rrset).findIndex((r) => toHex(r) === toHex(com.rdata))
+  // likewise com's DS in its parent's RRset
+  const dsIndex = (parent: S) => rdataOf(parent.rrset).findIndex((r) => toHex(r) === toHex(dsRdata(comName, com.rdata)))
   const proveKeys = (c: DnssecOracle, s: S, parent = ds) =>
-    c.proveDnskey(B(s.signedData), B(s.signature), NO_HINT, comIndex(s), 0, B(parent.rrset))
+    c.proveDnskey(B(s.signedData), B(s.signature), NO_HINT, comIndex(s), dsIndex(parent), B(parent.rrset))
   const proveTag = (c: DnssecOracle, s: S, keys: S) =>
     c.proveTxt(B(s.signedData), B(s.signature), NO_HINT, comIndex(keys), B(keys.rrset))
   const epochOf = (c: DnssecOracle, name: Uint8Array, type: number) =>
