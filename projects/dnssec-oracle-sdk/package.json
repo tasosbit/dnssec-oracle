@@ -34,6 +34,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@d13co/puya-ts-utils": "git+file:///home/bit/code/puya-ts-utils#183713f&path:/projects/puya-ts-utils"
+    "@d13co/puya-ts-utils": "git+https://github.com/d13co/puya-ts-utils.git#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils"
   }
 }

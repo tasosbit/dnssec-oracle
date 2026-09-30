@@ -52,8 +52,8 @@ importers:
         specifier: 1.3.1
         version: 1.3.1(tslib@2.8.1)
       '@d13co/puya-ts-utils':
-        specifier: git+file:///home/bit/code/puya-ts-utils#183713f&path:/projects/puya-ts-utils
-        version: git+file:///home/bit/code/puya-ts-utils#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)
+        specifier: git+https://github.com/d13co/puya-ts-utils.git#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils
+        version: https://codeload.github.com/d13co/puya-ts-utils/tar.gz/183713f9d1f4bc69ae5745ee1e732a942637d0c9#path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)
       dnssec-oracle-sdk:
         specifier: link:../dnssec-oracle-sdk
         version: link:../dnssec-oracle-sdk
@@ -95,8 +95,8 @@ importers:
   projects/dnssec-oracle-sdk:
     dependencies:
       '@d13co/puya-ts-utils':
-        specifier: git+file:///home/bit/code/puya-ts-utils#183713f&path:/projects/puya-ts-utils
-        version: git+file:///home/bit/code/puya-ts-utils#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)
+        specifier: git+https://github.com/d13co/puya-ts-utils.git#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils
+        version: https://codeload.github.com/d13co/puya-ts-utils/tar.gz/183713f9d1f4bc69ae5745ee1e732a942637d0c9#path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^9.2.2
@@ -155,8 +155,8 @@ packages:
   '@algorandfoundation/xhd-wallet-api@2.0.0-canary.1':
     resolution: {integrity: sha512-U6rSWMO6FKDLvMxWtfKyW5ctqSy2NrONWTU/jOA+BX0SGru0GPXsxwzFdcPa5w+X055V/xVVsr8eA3xA+m/5jA==}
 
-  '@d13co/puya-ts-utils@git+file:///home/bit/code/puya-ts-utils#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils':
-    resolution: {commit: 183713f9d1f4bc69ae5745ee1e732a942637d0c9, path: /projects/puya-ts-utils, repo: file:///home/bit/code/puya-ts-utils, type: git}
+  '@d13co/puya-ts-utils@https://codeload.github.com/d13co/puya-ts-utils/tar.gz/183713f9d1f4bc69ae5745ee1e732a942637d0c9#path:/projects/puya-ts-utils':
+    resolution: {path: /projects/puya-ts-utils, tarball: https://codeload.github.com/d13co/puya-ts-utils/tar.gz/183713f9d1f4bc69ae5745ee1e732a942637d0c9}
     version: 0.3.0
     engines: {node: '>=22.0', npm: '>=9.0'}
     peerDependencies:
@@ -1169,7 +1169,7 @@ snapshots:
       algo-msgpack-with-bigint: 2.1.1
       bn.js: 5.2.5
 
-  '@d13co/puya-ts-utils@git+file:///home/bit/code/puya-ts-utils#183713f9d1f4bc69ae5745ee1e732a942637d0c9&path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)':
+  '@d13co/puya-ts-utils@https://codeload.github.com/d13co/puya-ts-utils/tar.gz/183713f9d1f4bc69ae5745ee1e732a942637d0c9#path:/projects/puya-ts-utils(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.8.0))(@algorandfoundation/algorand-typescript@1.3.1(tslib@2.8.1))(algosdk@3.8.0)':
     dependencies:
       '@algorandfoundation/algorand-typescript': 1.3.1(tslib@2.8.1)
     optionalDependencies:

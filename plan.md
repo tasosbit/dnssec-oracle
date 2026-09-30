@@ -10,8 +10,8 @@ signature chain from the DNS root down to the TXT RRset on-chain.
 - RSA verification and MBR accounting are **out of scope**. They come from
   `@d13co/puya-ts-utils/rsa` and `@d13co/puya-ts-utils/mbrManager`; the
   prover computes hints with `@d13co/puya-ts-utils/rsaHint`
-  (`rsaMontgomeryHint(modulus)`). Source: `/home/bit/code/puya-ts-utils`,
-  v0.3.0, not on npm yet, so linked locally. Taken at face value: Wycheproof
+  (`rsaMontgomeryHint(modulus)`). Source: `d13co/puya-ts-utils` on GitHub,
+  pinned at `183713f9d1f4bc69ae5745ee1e732a942637d0c9` (v0.3.0). Taken at face value: Wycheproof
   PKCS#1 v1.5 vectors pass, and a hostile hint can only fail.
 - Target: MainNet consensus v42 / AVM v13. The local Algorand skills describe
   AVM 12 and are stale; `/home/bit/Docs/draftvim/avm13-opus.md` is the reference.
@@ -475,7 +475,7 @@ failed at a root KSK roll (with KSK-2017, 2026-10-11).
 
 ## Open in `puya-ts-utils`
 
-- Publish 0.3.0 to npm. Until then the workspace links it locally.
+- Publish 0.3.0 to npm. Until then the workspace pins its GitHub repository by commit.
 
 Program size: the RSA code adds about 1.45 KB (`verifyRsaSha256`). An app
 gets 2 KB per page with up to 3 extra pages, 8 KB in all. Plan on extra
