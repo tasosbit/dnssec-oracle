@@ -325,7 +325,7 @@ marked:
 - Group usage stayed at 1,000,000 for every proof group: fees are the transaction count
   (outer calls plus op-up inner calls) at the minimum fee, nothing extra.
 - `increaseBudget` costs 21 opcodes, plus 21 per inner call: pinned in the SDK constants.
-- Approval program: 6,393 bytes with `hasRecord` (2026-10-01), three extra pages.
+- Approval program: 6,531 bytes with `hasRecord` and camelCase error codes (2026-10-01), three extra pages.
   AVM 13 allows 16 KB.
 - The emulator (`algorand-typescript-testing` 1.2.0) pins `latestTimestamp`, but has no
   `app_params_set` and misdecodes struct reads through `.maybe()`; the tests and the

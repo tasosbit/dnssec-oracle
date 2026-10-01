@@ -54,26 +54,26 @@ describe('names', () => {
     ['an extended label 0x80', [0x80, 0x00]],
     ['a 64-byte label', [64, ...new Array(64).fill(0x61), 0]],
   ])('rejects %s', (_, wire) => {
-    expect(() => inTxn(() => readName(Bytes(new Uint8Array(wire)), 0))).toThrow(code('WIR'))
+    expect(() => inTxn(() => readName(Bytes(new Uint8Array(wire)), 0))).toThrow(code('wireFormat'))
   })
 
   test('rejects names over 255 bytes, and accepts 255', () => {
     const label = [63, ...new Array(63).fill(0x61)]
     const long = new Uint8Array([...label, ...label, ...label, ...label, 0]) // 257 bytes
-    expect(() => inTxn(() => readName(Bytes(long), 0))).toThrow(code('WIR'))
+    expect(() => inTxn(() => readName(Bytes(long), 0))).toThrow(code('wireFormat'))
     const max = new Uint8Array([...label, ...label, ...label, 61, ...new Array(61).fill(0x61), 0]) // 255 bytes
     expect(readName(Bytes(max), 0)[0]).toEqual(255)
   })
 
   test('rejects a wildcard label anywhere, but not a label merely starting with *', () => {
-    expect(() => inTxn(() => readName(b('*.example.com'), 0))).toThrow(code('WLD'))
-    expect(() => inTxn(() => readName(b('a.*.com'), 0))).toThrow(code('WLD'))
+    expect(() => inTxn(() => readName(b('*.example.com'), 0))).toThrow(code('wildcard'))
+    expect(() => inTxn(() => readName(b('a.*.com'), 0))).toThrow(code('wildcard'))
     expect(readName(b('*a.example.com'), 0)[1]).toEqual(3)
   })
 
   test('checkName rejects trailing bytes', () => {
     expect(checkName(b('example.com'))).toEqual(2)
-    expect(() => inTxn(() => checkName(Bytes(concat(nameToWire('example.com'), new Uint8Array([0])))))).toThrow(code('WIR'))
+    expect(() => inTxn(() => checkName(Bytes(concat(nameToWire('example.com'), new Uint8Array([0])))))).toThrow(code('wireFormat'))
   })
 
   test('ancestry is label by label: ample is not an ancestor of example', () => {
@@ -114,7 +114,7 @@ describe('RRsets', () => {
     expect(labels).toEqual(3)
     expect(hex(indexed)).toBe(Buffer.from(txt('b')).toString('hex'))
     expect(hex(records)).toBe('0002' + '0161' + '0002' + '0162')
-    expect(() => inTxn(() => walkRRset(Bytes(rrset), 0, RRType.TXT, 2, true))).toThrow(code('IDX'))
+    expect(() => inTxn(() => walkRRset(Bytes(rrset), 0, RRType.TXT, 2, true))).toThrow(code('index'))
   })
 
   test('boundary shift: a fake RR inside a TXT value stays RDATA', () => {
@@ -126,28 +126,28 @@ describe('RRsets', () => {
     expect(hex(o)).toBe(Buffer.from(owner).toString('hex'))
     expect(hex(indexed)).toBe(Buffer.from(value).toString('hex'))
     expect(hex(records)).toBe(Buffer.from(concat(u16(value.length), value)).toString('hex'))
-    expect(() => inTxn(() => walkRRset(Bytes(data), 0, RRType.TXT, 1, true))).toThrow(code('IDX'))
+    expect(() => inTxn(() => walkRRset(Bytes(data), 0, RRType.TXT, 1, true))).toThrow(code('index'))
   })
 
   test('rejects trailing bytes and RDATA past the end', () => {
     const data = rr(owner, RRType.TXT, txt('x'))
-    expect(() => inTxn(() => walkRRset(Bytes(concat(data, new Uint8Array([0]))), 0, RRType.TXT, 0, true))).toThrow(code('OWN'))
+    expect(() => inTxn(() => walkRRset(Bytes(concat(data, new Uint8Array([0]))), 0, RRType.TXT, 0, true))).toThrow(code('owner'))
     expect(() => inTxn(() => walkRRset(Bytes(concat(data, new Uint8Array([1, 0x61]))), 0, RRType.TXT, 0, true))).toThrow()
     const short = data.slice(0, data.length - 1)
-    expect(() => inTxn(() => walkRRset(Bytes(short), 0, RRType.TXT, 0, true))).toThrow(code('WIR'))
+    expect(() => inTxn(() => walkRRset(Bytes(short), 0, RRType.TXT, 0, true))).toThrow(code('wireFormat'))
   })
 
   test('one owner, one type, class IN', () => {
     const one = rr(owner, RRType.TXT, txt('x'))
     const other = rr(nameToWire('_tag.example.org'), RRType.TXT, txt('y'))
-    expect(() => inTxn(() => walkRRset(Bytes(concat(one, other)), 0, RRType.TXT, 0, true))).toThrow(code('OWN'))
-    expect(() => inTxn(() => walkRRset(Bytes(one), 0, RRType.DS, 0, false))).toThrow(code('TYP'))
-    expect(() => inTxn(() => walkRRset(Bytes(rr(owner, RRType.TXT, txt('x'), 3)), 0, RRType.TXT, 0, true))).toThrow(code('CLS'))
+    expect(() => inTxn(() => walkRRset(Bytes(concat(one, other)), 0, RRType.TXT, 0, true))).toThrow(code('owner'))
+    expect(() => inTxn(() => walkRRset(Bytes(one), 0, RRType.DS, 0, false))).toThrow(code('rrType'))
+    expect(() => inTxn(() => walkRRset(Bytes(rr(owner, RRType.TXT, txt('x'), 3)), 0, RRType.TXT, 0, true))).toThrow(code('class'))
   })
 
   test('TXT character-strings must sum to the RDATA length', () => {
     for (const bad of [new Uint8Array([]), new Uint8Array([2, 0x61]), new Uint8Array([1, 0x61, 5])]) {
-      expect(() => inTxn(() => walkRRset(Bytes(rr(owner, RRType.TXT, bad)), 0, RRType.TXT, 0, true))).toThrow(code('TXT'))
+      expect(() => inTxn(() => walkRRset(Bytes(rr(owner, RRType.TXT, bad)), 0, RRType.TXT, 0, true))).toThrow(code('txt'))
     }
     // not checked for other types
     walkRRset(Bytes(rr(owner, RRType.DS, new Uint8Array([2, 0x61]))), 0, RRType.DS, 0, false)
@@ -169,11 +169,11 @@ describe('signed data', () => {
   })
 
   test.each([
-    ['type covered', () => concat(header(RRType.DS, 3, 'example.com'), rrset), 1500, 'TYP'],
-    ['labels', () => concat(header(RRType.TXT, 2, 'example.com'), rrset), 1500, 'LBL'],
-    ['not yet valid', () => concat(header(RRType.TXT, 3, 'example.com'), rrset), 999, 'TIM'],
-    ['expired', () => concat(header(RRType.TXT, 3, 'example.com'), rrset), 2001, 'TIM'],
-    ['a pointer in the signer name', () => concat(header(RRType.TXT, 3, 'com').slice(0, 18), new Uint8Array([0xc0, 0x0c]), rrset), 1500, 'WIR'],
+    ['type covered', () => concat(header(RRType.DS, 3, 'example.com'), rrset), 1500, 'rrType'],
+    ['labels', () => concat(header(RRType.TXT, 2, 'example.com'), rrset), 1500, 'labels'],
+    ['not yet valid', () => concat(header(RRType.TXT, 3, 'example.com'), rrset), 999, 'sigTime'],
+    ['expired', () => concat(header(RRType.TXT, 3, 'example.com'), rrset), 2001, 'sigTime'],
+    ['a pointer in the signer name', () => concat(header(RRType.TXT, 3, 'com').slice(0, 18), new Uint8Array([0xc0, 0x0c]), rrset), 1500, 'wireFormat'],
   ])('rejects a wrong %s', (_, data, now, err) => {
     expect(() => inTxn(() => parseSignedData(Bytes(data()), RRType.TXT, 0, now))).toThrow(code(err))
   })

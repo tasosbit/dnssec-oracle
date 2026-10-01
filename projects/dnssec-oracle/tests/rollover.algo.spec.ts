@@ -83,11 +83,11 @@ describe('root rollover (RFC 5011)', () => {
   test('addAnchors: once, no duplicates, all Valid', () => {
     const [k0, k1, k2] = [ecKey(), ecKey(), ecKey()]
     // the emulator does not roll back a failed call: k0's box would survive it
-    expect(() => deploy([k0, k0])).toThrow(code('AST'))
+    expect(() => deploy([k0, k0])).toThrow(code('anchorSet'))
     const contract = deploy([k1, k2])
     expect(anchor(contract, k1)).toEqual({ state: AnchorState.Valid, since: T0 })
     expect(anchor(contract, k2).state).toBe(AnchorState.Valid)
-    expect(() => contract.addAnchors([B(ecKey().rdata)])).toThrow(code('AST'))
+    expect(() => contract.addAnchors([B(ecKey().rdata)])).toThrow(code('anchorSet'))
   })
 
   test('Add, hold-down, Promote: the new key then proves the root', () => {
@@ -101,14 +101,14 @@ describe('root rollover (RFC 5011)', () => {
     expect(contract.rollInception.value).toEqual(T0)
 
     // AddPend is not trusted
-    expect(() => proveRoot(contract, rootSet(k2, [k1, k2], T0 + DAY))).toThrow(code('ANC'))
-    expect(() => update(contract, withK2, k2)).toThrow(code('HLD'))
+    expect(() => proveRoot(contract, rootSet(k2, [k1, k2], T0 + DAY))).toThrow(code('anchor'))
+    expect(() => update(contract, withK2, k2)).toThrow(code('holdDown'))
 
     const promoteAt = T0 + DAY + HOLD_DOWN_SECONDS
     at(promoteAt - 1)
     const later = rootSet(k1, [k1, k2], promoteAt - DAY)
     proveRoot(contract, later)
-    expect(() => update(contract, later, k2)).toThrow(code('HLD'))
+    expect(() => update(contract, later, k2)).toThrow(code('holdDown'))
     at(promoteAt)
     update(contract, later, k2)
     expect(anchor(contract, k2)).toEqual({ state: AnchorState.Valid, since: promoteAt })
@@ -116,8 +116,8 @@ describe('root rollover (RFC 5011)', () => {
 
     // nothing left to do for either key
     const current = rootSet(k2, [k1, k2], promoteAt)
-    expect(() => update(contract, current, k2)).toThrow(code('ROL'))
-    expect(() => update(contract, current, k1)).toThrow(code('ROL'))
+    expect(() => update(contract, current, k2)).toThrow(code('rollover'))
+    expect(() => update(contract, current, k1)).toThrow(code('rollover'))
   })
 
   test('Add takes only usable KSKs that are in the cached RRset', () => {
@@ -127,11 +127,11 @@ describe('root rollover (RFC 5011)', () => {
     at(T0 + DAY)
     const set = rootSet(k1, [k1, zone, weakExponent], T0)
     proveRoot(contract, set)
-    expect(() => update(contract, set, zone)).toThrow(code('ROL'))
-    expect(() => update(contract, set, weakExponent)).toThrow(code('EXP'))
-    expect(() => update(contract, set, absent)).toThrow(code('ROL'))
+    expect(() => update(contract, set, zone)).toThrow(code('rollover'))
+    expect(() => update(contract, set, weakExponent)).toThrow(code('exponent'))
+    expect(() => update(contract, set, absent)).toThrow(code('rollover'))
     // the RRset must be the cached one
-    expect(() => update(contract, rootSet(k1, [k1, absent], T0), absent)).toThrow(code('PAR'))
+    expect(() => update(contract, rootSet(k1, [k1, absent], T0), absent)).toThrow(code('parent'))
   })
 
   test('Reset, Miss and Return', () => {
@@ -148,10 +148,10 @@ describe('root rollover (RFC 5011)', () => {
     proveRoot(contract, onlyK1)
     update(contract, onlyK1, k3)
     expect(anchor(contract, k3).state).toBe(0)
-    expect(() => update(contract, onlyK1, k3)).toThrow(code('ROL'))
+    expect(() => update(contract, onlyK1, k3)).toThrow(code('rollover'))
     update(contract, onlyK1, k2)
     expect(anchor(contract, k2)).toEqual({ state: AnchorState.Missing, since: T0 + DAY })
-    expect(() => update(contract, onlyK1, k2)).toThrow(code('ROL'))
+    expect(() => update(contract, onlyK1, k2)).toThrow(code('rollover'))
 
     // a Missing anchor is still trusted, and comes back
     at(T0 + 2 * DAY)
@@ -169,20 +169,20 @@ describe('root rollover (RFC 5011)', () => {
     const revocation = rootSet(k1r, [k1r, k2], T0 + DAY)
     revokeRoot(contract, revocation)
     expect(anchor(contract, k1)).toEqual({ state: AnchorState.Revoked, since: T0 + DAY })
-    expect(() => revokeRoot(contract, revocation)).toThrow(code('ANC'))
+    expect(() => revokeRoot(contract, revocation)).toThrow(code('anchor'))
     // an RRset from before the revocation, still valid, no longer proves
-    expect(() => proveRoot(contract, rootSet(k1, [k1, k2], T0))).toThrow(code('ANC'))
+    expect(() => proveRoot(contract, rootSet(k1, [k1, k2], T0))).toThrow(code('anchor'))
 
     const retireAt = T0 + DAY + HOLD_DOWN_SECONDS
     at(retireAt - 1)
     const current = rootSet(k2, [k1r, k2], retireAt - DAY)
     proveRoot(contract, current)
-    expect(() => update(contract, current, k1)).toThrow(code('HLD'))
+    expect(() => update(contract, current, k1)).toThrow(code('holdDown'))
     at(retireAt)
     update(contract, current, k1)
     expect(anchor(contract, k1).state).toBe(0)
     // still in the RRset, but revoked: not added back
-    expect(() => update(contract, current, k1)).toThrow(code('ROL'))
+    expect(() => update(contract, current, k1)).toThrow(code('rollover'))
   })
 
   test('revoking an AddPend key stales nothing: it never proved anything', () => {
@@ -204,14 +204,14 @@ describe('root rollover (RFC 5011)', () => {
     const [k1r, k3r] = [withFlags(k1, 385), withFlags(k3, 385)]
     const contract = deploy([k1, k2])
     at(T0 + DAY)
-    expect(() => revokeRoot(contract, rootSet(k1, [k1, k2], T0))).toThrow(code('RVK'))
-    expect(() => revokeRoot(contract, rootSet(k3r, [k1, k2, k3r], T0))).toThrow(code('ANC'))
+    expect(() => revokeRoot(contract, rootSet(k1, [k1, k2], T0))).toThrow(code('revoke'))
+    expect(() => revokeRoot(contract, rootSet(k3r, [k1, k2, k3r], T0))).toThrow(code('anchor'))
     // k2 signs, but the data names k1r as the signer
     const forged = rootSet(k2, [k1r, k2], T0)
     const k1rIndex = rdataOf(forged.rrset).findIndex((r) => toHex(r) === toHex(k1r.rdata))
-    expect(() => revokeRoot(contract, { ...forged, keyIndex: k1rIndex })).toThrow(code('SIG'))
+    expect(() => revokeRoot(contract, { ...forged, keyIndex: k1rIndex })).toThrow(code('signature'))
     // a revoked key cannot prove the root either
-    expect(() => proveRoot(contract, rootSet(k1r, [k1r, k2], T0))).toThrow(code('KFL'))
+    expect(() => proveRoot(contract, rootSet(k1r, [k1r, k2], T0))).toThrow(code('keyFlags'))
   })
 
   test('an RSA-2048 anchor, like the real root KSK, revokes itself', () => {
@@ -255,10 +255,10 @@ describe('root rollover (RFC 5011)', () => {
     revokeRoot(contract, rootSet(k1r, [k1r, k2], t + DAY))
     expect(contract.rootEpoch.value).not.toEqual(1)
     // nothing chains from the forged root any more: the rollover refuses it, consumers too
-    expect(() => update(contract, forged, rogue)).toThrow(code('STL'))
+    expect(() => update(contract, forged, rogue)).toThrow(code('stale'))
     expect(live()).toBe(false)
-    expect(() => proveDs(forged.rrset)).toThrow(code('STL'))
-    expect(() => proveTag()).toThrow(code('STL'))
+    expect(() => proveDs(forged.rrset)).toThrow(code('stale'))
+    expect(() => proveTag()).toThrow(code('stale'))
     // anyone prunes what predates the revocation, unexpired and not their own
     const stranger = ctx.any.account()
     const appId = ctx.ledger.getApplicationForContract(contract)
@@ -271,7 +271,7 @@ describe('root rollover (RFC 5011)', () => {
     // until a newer one arrives: rollInception is the forged inception
     const older = rootSet(k2, [k1r, k2], T0, 10 * DAY)
     proveRoot(contract, older)
-    expect(() => update(contract, older, rogue)).toThrow(code('OLD'))
+    expect(() => update(contract, older, rogue)).toThrow(code('old'))
     const current = rootSet(k2, [k1r, k2], t + DAY)
     proveRoot(contract, current)
     // Reset: the rogue key never reaches Valid
@@ -295,7 +295,7 @@ describe('root rollover (RFC 5011)', () => {
     at(T0 + 6 * DAY)
     contract.prune(B(ROOT), RRType.DNSKEY)
     proveRoot(contract, old)
-    expect(() => update(contract, old, k2)).toThrow(code('OLD'))
+    expect(() => update(contract, old, k2)).toThrow(code('old'))
   })
 })
 
@@ -386,7 +386,7 @@ describe('epochs: a change above stales everything below', () => {
     const newer = comKeys(T0 + 1, [ecKey({ flags: 256 })])
     proveKeys(contract, newer)
     // the older record, still validly signed, cannot slip in while the stored one is stale
-    expect(() => proveTag(contract, tag(T0 + 1, 'withdrawn'), newer)).toThrow(code('OLD'))
+    expect(() => proveTag(contract, tag(T0 + 1, 'withdrawn'), newer)).toThrow(code('old'))
     proveTag(contract, tag(T0 + 2, 'current'), newer)
     expect(chainLive(contract, tagName, [comName])).toBe(true)
   })
@@ -401,7 +401,7 @@ describe('epochs: a change above stales everything below', () => {
       expiration: T0 + 60 * DAY,
     })
     contract.proveDs(B(ds2.signedData), B(ds2.signature), NO_HINT, zskIndex, B(root.rrset))
-    expect(() => proveKeys(contract, comKeys(T0), ds2)).toThrow(code('OLD'))
+    expect(() => proveKeys(contract, comKeys(T0), ds2)).toThrow(code('old'))
     // the same signature re-links under the new DS
     proveKeys(contract, newer, ds2)
     proveTag(contract, tag(T0 + 1), newer)
@@ -436,7 +436,7 @@ describe('root rollover, captured 2026-09-28', () => {
     expect(anchor(contract, ROOT_KSK_2024)).toEqual({ state: AnchorState.AddPend, since: fixture.capturedAt })
     // not revoked, so no revocation
     expect(() => contract.revokeRoot(B(step.signedData), B(step.signature), B(step.hint), step.keyIndex)).toThrow(
-      code('RVK'),
+      code('revoke'),
     )
   })
 
@@ -444,7 +444,7 @@ describe('root rollover, captured 2026-09-28', () => {
     const contract = deploy([ROOT_KSK_2017, ROOT_KSK_2024], fixture.capturedAt)
     const [step] = await steps()
     contract.proveRoot(B(step.signedData), B(step.signature), B(step.hint), step.keyIndex)
-    expect(() => contract.updateAnchor(B(step.rrset), hash(ROOT_KSK_2024))).toThrow(code('ROL'))
+    expect(() => contract.updateAnchor(B(step.rrset), hash(ROOT_KSK_2024))).toThrow(code('rollover'))
     expect(anchor(contract, ROOT_KSK_2024).state).toBe(AnchorState.Valid)
   })
 })

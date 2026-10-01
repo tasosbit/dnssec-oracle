@@ -124,7 +124,7 @@ async function fetchSigned(resolver: Resolver, owner: Uint8Array, type: number, 
     .filter((rr) => rr.type === RRType.RRSIG)
     .map((rr) => parseRrsig(rr.rdata))
     .filter((s) => s.typeCovered === type && s.inception <= now && now <= s.expiration)
-    // newest first: an older one can fail OLD against what is stored
+    // newest first: an older one can fail `old` against what is stored
     .sort((a, b) => b.inception - a.inception)
   if (sigs.length === 0) throw new Error(`${label}: no RRSIG valid at ${now}`)
   return { rrs, sigs }

@@ -103,7 +103,7 @@ above it rather than below. Each layer owns one concern.
   `minBalance` at the start and settles the difference against credits at
   the end. `depositCredits`, `withdrawCredits` and `logCredits` come with it.
 - Errors: `loggedAssert(cond, errX)` with codes in `errors.algo.ts`, e.g.
-  `export const errAnchor = 'ANC' // Signing key is not an anchor`.
+  `export const errAnchor = 'anchor' // Signing key is not an anchor`.
   `generate-errors.ts` must also read the library's codes (`CRD`, `RCV`,
   `AMT`), which are documented with a JSDoc comment above the constant, not a
   trailing one.
@@ -154,7 +154,7 @@ so signed data or a parent RRset above that size is unprovable. Documented,
 not worked around. The contract needs no check: an AVM byte slice holds at
 most 4,096 bytes, so oversized data never reaches it. The SDK's prover refuses
 it before sending. An attestation is written as one value, so it has the same
-cap: a TXT RRset whose attestation would exceed 4,096 bytes fails (`BIG`).
+cap: a TXT RRset whose attestation would exceed 4,096 bytes fails (`tooBig`).
 
 Wire rules: a label length byte must be below `0x40`, which rejects
 compression pointers and extended label types.
@@ -210,12 +210,12 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `parentEpoch`, 
 
 - Proving methods and `prune` are permissionless, but a sender that creates
   boxes needs credits.
-- `proveDs`, `proveDnskey` and `proveTxt` reject the root as owner (`ROT`):
+- `proveDs`, `proveDnskey` and `proveTxt` reject the root as owner (`rootOwner`):
   only `proveRoot` writes the root DNSKEY entry.
 - Ancestry is tested label by label.
 - Newest inception wins, for caches and attestations alike. Ties replace,
   except that a cache entry at the same inception is replaced only if its
-  expiry and `weakestKeyBits` get no worse (`WRS`): a second signature cannot
+  expiry and `weakestKeyBits` get no worse (`worse`): a second signature cannot
   shorten or weaken it, and a re-proof after its parent is refreshed still
   extends it.
 - A TXT proof replaces the whole RDATA set, so a removed record disappears as
@@ -262,13 +262,13 @@ is *present* if the RRset holds it without REVOKE. One event applies:
 | State   | Present | Event   | Becomes                                     |
 |---------|---------|---------|---------------------------------------------|
 | none    | yes     | Add     | AddPend; flags 257 and a key `checkKey` takes |
-| AddPend | yes     | Promote | Valid, 30 days after Add (`HLD` before)     |
+| AddPend | yes     | Promote | Valid, 30 days after Add (`holdDown` before)|
 | AddPend | no      | Reset   | box deleted                                 |
 | Valid   | no      | Miss    | Missing, still trusted                      |
 | Missing | yes     | Return  | Valid                                       |
 | Revoked | either  | Retire  | box deleted, 30 days after Revoke           |
 
-Anything else fails with `ROL`. `revokeRoot` is the seventh event: the root
+Anything else fails with `rollover`. `revokeRoot` is the seventh event: the root
 DNSKEY RRset signed by an anchor (any state but Revoked) that the RRset holds
 with flags 385. Only the key can revoke itself, and for good.
 
@@ -289,7 +289,7 @@ with flags 385. Only the key can revoke itself, and for good.
   AddPend key never proved anything, so its revocation stales nothing; else a
   thief could Add keys under a stolen anchor and, once revoked, revoke them one
   by one to re-stale the contract each time. A stale root entry cannot drive
-  `updateAnchor` (`STL`). Without this, a compromised key's forged root RRset,
+  `updateAnchor` (`stale`). Without this, a compromised key's forged root RRset,
   and every DS, DNSKEY and TXT proven below it, would outlive the revocation by
   their attacker-chosen validity, and could still promote the attacker's key.
   A real rollover's revocation costs one early re-proof of the cache, which
@@ -313,13 +313,13 @@ these must stale what the old keys signed, at every level.
   parent generation, or a box re-created after a prune gets a fresh epoch.
 - Epochs only grow, and `rootEpoch` is minted at the revocation, so a box
   whose epoch is below `rootEpoch` (for an attestation, whose `parentEpoch`
-  is) predates the last revocation. Such a box fails as a parent (`STL`,
+  is) predates the last revocation. Such a box fails as a parent (`stale`,
   which also keeps a forged root from driving `updateAnchor`), anyone may
   prune it, and any proof replaces it whatever its inception (a forged one
   may be newer than any real RRSIG).
 - Otherwise "newest inception wins" holds, across parent generations too: a
   routine change above must not let a withdrawn but still-signed RRset or TXT
-  roll back in. Across generations a tie re-links without the `WRS` rule.
+  roll back in. Across generations a tie re-links without the `worse` rule.
 - The contract checks one level only, plus the revocation test above: a
   parent must exist, be unexpired, not predate the revocation and match the
   hash. Every write reads its parent box's current generation, so a stale
@@ -510,7 +510,7 @@ tests.
 Second pass: root rollover (`updateAnchor`, `revokeRoot`, SDK `maintainAnchors`,
 CLI `maintain-anchors`). Proves: every event and its hold-down in the emulator
 with a pinned clock; AddPend and Revoked not trusted; revocation self-signed
-only, RSA-2048 included; replay of an older RRset (`OLD`); Add only for usable
+only, RSA-2048 included; replay of an older RRset (`old`); Add only for usable
 KSKs in the cached RRset; Add from the captured 2026-09-28 root. On LocalNet
 through the SDK: Add, Reset, revocation, credits. Still to do: replay the
 post-roll and revocation captures when the cron has them.
@@ -524,7 +524,7 @@ post-roll and revocation captures when the cron has them.
   synthetic roots signed at test time.
 - E2E tests go through the SDK. Negative cases start from the real maker and
   mutate its group with `sendMutated`, asserting on the transformed error
-  (`Error ANC: ...`).
+  (`Error anchor: ...`).
 - Each phase's "Proves" column is its test list.
 - A second contract reads an attestation box directly using the reference reader.
 - SDK constants that mirror on-chain behaviour (op-up costs, limits) are

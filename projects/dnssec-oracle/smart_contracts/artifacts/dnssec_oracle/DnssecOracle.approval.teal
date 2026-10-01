@@ -5,7 +5,7 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 2 64 128 2592000 65535
-    bytecblock 0x "rootEpoch" 0x00 "c" "r" 0x01 "ERR:SGN" "t" "ERR:WIR" "a" "admin" "anchorCount" "rollInception" "lastEpoch" "ERR:ROT" "ERR:OLD" "ERR:TYP" "ERR:ALG" "ERR:SLN" "ERR:SIG" "ERR:AST" "ERR:ANC" "ERR:ROL" "ERR:HLD" "ERR:MIS" "ERR:PRN" base64(DYEBQw==) "ERR:rcv" "ERR:amt" "ERR:PAR"
+    bytecblock 0x "rootEpoch" 0x00 "c" "r" 0x01 "ERR:signer" "t" "ERR:wireFormat" "a" "admin" "anchorCount" "rollInception" "lastEpoch" "ERR:rootOwner" "ERR:old" "ERR:rrType" "ERR:algorithm" "ERR:sigLength" "ERR:signature" "ERR:anchorSet" "ERR:anchor" "ERR:rollover" "ERR:holdDown" "ERR:missing" "ERR:prune" base64(DYEBQw==) "ERR:rcv" "ERR:amt" "ERR:parent"
     // smart_contracts/dnssec_oracle/contract.algo.ts:129
     // export class DnssecOracle extends BaseContract {
     txn NumAppArgs
@@ -126,9 +126,9 @@ readName_while_top@1:
     intc_3 // 64
     <
     bnz readName_after_assert@4
-    bytec 8 // "ERR:WIR"
+    bytec 8 // "ERR:wireFormat"
     log
-    err // ERR:WIR
+    err // ERR:wireFormat
 
 readName_after_assert@4:
     // smart_contracts/dnssec_oracle/wire.algo.ts:54
@@ -154,9 +154,9 @@ readName_bool_merge@8:
     // smart_contracts/dnssec_oracle/wire.algo.ts:54
     // loggedAssert(length !== 1 || op.getByte(data, pos + 1) !== 0x2a, errWildcard)
     bnz readName_after_assert@10
-    pushbytes "ERR:WLD"
+    pushbytes "ERR:wildcard"
     log
-    err // ERR:WLD
+    err // ERR:wildcard
 
 readName_after_assert@10:
     // smart_contracts/dnssec_oracle/wire.algo.ts:55
@@ -196,9 +196,9 @@ readName_after_while@11:
     pushint 255
     <=
     bnz readName_after_assert@13
-    bytec 8 // "ERR:WIR"
+    bytec 8 // "ERR:wireFormat"
     log
-    err // ERR:WIR
+    err // ERR:wireFormat
 
 readName_after_assert@13:
     // smart_contracts/dnssec_oracle/wire.algo.ts:61
@@ -300,9 +300,9 @@ walkRRset_while_top@1:
     dig 5
     ==
     bnz walkRRset_after_assert@4
-    pushbytes "ERR:OWN"
+    pushbytes "ERR:owner"
     log
-    err // ERR:OWN
+    err // ERR:owner
 
 walkRRset_after_assert@4:
     // smart_contracts/dnssec_oracle/wire.algo.ts:96
@@ -313,9 +313,9 @@ walkRRset_after_assert@4:
     frame_dig -3
     ==
     bnz walkRRset_after_assert@6
-    bytec 16 // "ERR:TYP"
+    bytec 16 // "ERR:rrType"
     log
-    err // ERR:TYP
+    err // ERR:rrType
 
 walkRRset_after_assert@6:
     // smart_contracts/dnssec_oracle/wire.algo.ts:97
@@ -329,9 +329,9 @@ walkRRset_after_assert@6:
     intc_1 // 1
     ==
     bnz walkRRset_after_assert@8
-    pushbytes "ERR:CLS"
+    pushbytes "ERR:class"
     log
-    err // ERR:CLS
+    err // ERR:class
 
 walkRRset_after_assert@8:
     // smart_contracts/dnssec_oracle/wire.algo.ts:99
@@ -360,9 +360,9 @@ walkRRset_after_assert@8:
     uncover 2
     <=
     bnz walkRRset_after_assert@10
-    bytec 8 // "ERR:WIR"
+    bytec 8 // "ERR:wireFormat"
     log
-    err // ERR:WIR
+    err // ERR:wireFormat
 
 walkRRset_after_assert@10:
     // smart_contracts/dnssec_oracle/wire.algo.ts:102
@@ -443,9 +443,9 @@ walkRRset_bool_merge@25:
     // smart_contracts/dnssec_oracle/wire.algo.ts:123
     // loggedAssert(rdata.length > 0 && at === rdata.length, errTxt)
     bnz walkRRset_after_assert@27
-    pushbytes "ERR:TXT"
+    pushbytes "ERR:txt"
     log
-    err // ERR:TXT
+    err // ERR:txt
 
 walkRRset_after_assert@27:
     // smart_contracts/dnssec_oracle/wire.algo.ts:108
@@ -481,9 +481,9 @@ walkRRset_after_while@15:
     // loggedAssert(found, errIndex)
     frame_dig 7
     bnz walkRRset_after_assert@17
-    pushbytes "ERR:IDX"
+    pushbytes "ERR:index"
     log
-    err // ERR:IDX
+    err // ERR:index
 
 walkRRset_after_assert@17:
     // smart_contracts/dnssec_oracle/wire.algo.ts:114
@@ -512,9 +512,9 @@ parseSignedData:
     frame_dig -3
     ==
     bnz parseSignedData_after_assert@2
-    bytec 16 // "ERR:TYP"
+    bytec 16 // "ERR:rrType"
     log
-    err // ERR:TYP
+    err // ERR:rrType
 
 parseSignedData_after_assert@2:
     // smart_contracts/dnssec_oracle/wire.algo.ts:133
@@ -548,9 +548,9 @@ parseSignedData_bool_merge@6:
     // smart_contracts/dnssec_oracle/wire.algo.ts:136
     // loggedAssert(inception <= now && now <= expiration, errTime)
     bnz parseSignedData_after_assert@8
-    pushbytes "ERR:TIM"
+    pushbytes "ERR:sigTime"
     log
-    err // ERR:TIM
+    err // ERR:sigTime
 
 parseSignedData_after_assert@8:
     // smart_contracts/dnssec_oracle/wire.algo.ts:137
@@ -583,9 +583,9 @@ parseSignedData_after_assert@8:
     uncover 8
     ==
     bnz parseSignedData_after_assert@10
-    pushbytes "ERR:LBL"
+    pushbytes "ERR:labels"
     log
-    err // ERR:LBL
+    err // ERR:labels
 
 parseSignedData_after_assert@10:
     // smart_contracts/dnssec_oracle/wire.algo.ts:141
@@ -1291,9 +1291,9 @@ checkKey_bool_merge@4:
     // smart_contracts/dnssec_oracle/contract.algo.ts:593
     // loggedAssert((flags & FLAG_ZONE) !== 0 && (flags & FLAG_REVOKE) === 0, errKeyFlags)
     bnz checkKey_after_assert@6
-    pushbytes "ERR:KFL"
+    pushbytes "ERR:keyFlags"
     log
-    err // ERR:KFL
+    err // ERR:keyFlags
 
 checkKey_after_assert@6:
     // smart_contracts/dnssec_oracle/contract.algo.ts:594
@@ -1304,9 +1304,9 @@ checkKey_after_assert@6:
     pushint 3
     ==
     bnz checkKey_after_assert@8
-    pushbytes "ERR:PRO"
+    pushbytes "ERR:protocol"
     log
-    err // ERR:PRO
+    err // ERR:protocol
 
 checkKey_after_assert@8:
     // smart_contracts/dnssec_oracle/contract.algo.ts:595
@@ -1317,9 +1317,9 @@ checkKey_after_assert@8:
     frame_dig -1
     ==
     bnz checkKey_after_assert@10
-    bytec 17 // "ERR:ALG"
+    bytec 17 // "ERR:algorithm"
     log
-    err // ERR:ALG
+    err // ERR:algorithm
 
 checkKey_after_assert@10:
     // smart_contracts/dnssec_oracle/contract.algo.ts:596
@@ -1345,9 +1345,9 @@ checkKey_after_assert@10:
     intc_3 // 64
     ==
     bnz checkKey_after_assert@13
-    pushbytes "ERR:ECK"
+    pushbytes "ERR:ecKey"
     log
-    err // ERR:ECK
+    err // ERR:ecKey
 
 checkKey_after_assert@13:
     // smart_contracts/dnssec_oracle/contract.algo.ts:599
@@ -1363,9 +1363,9 @@ checkKey_after_if_else@14:
     pushint 8
     ==
     bnz checkKey_after_assert@16
-    bytec 17 // "ERR:ALG"
+    bytec 17 // "ERR:algorithm"
     log
-    err // ERR:ALG
+    err // ERR:algorithm
 
 checkKey_after_assert@16:
     // smart_contracts/dnssec_oracle/contract.algo.ts:603
@@ -1388,9 +1388,9 @@ checkKey_bool_merge@20:
     // smart_contracts/dnssec_oracle/contract.algo.ts:603
     // loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
     bnz checkKey_after_assert@22
-    pushbytes "ERR:EXP"
+    pushbytes "ERR:exponent"
     log
-    err // ERR:EXP
+    err // ERR:exponent
 
 checkKey_after_assert@22:
     // smart_contracts/dnssec_oracle/contract.algo.ts:605
@@ -1426,9 +1426,9 @@ checkKey_bool_merge@27:
     // smart_contracts/dnssec_oracle/contract.algo.ts:607
     // loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
     bnz checkKey_after_assert@29
-    pushbytes "ERR:MOD"
+    pushbytes "ERR:modulus"
     log
-    err // ERR:MOD
+    err // ERR:modulus
 
 checkKey_after_assert@29:
     // smart_contracts/dnssec_oracle/contract.algo.ts:608
@@ -1475,9 +1475,9 @@ verify:
     intc_3 // 64
     ==
     bnz verify_after_assert@3
-    bytec 18 // "ERR:SLN"
+    bytec 18 // "ERR:sigLength"
     log
-    err // ERR:SLN
+    err // ERR:sigLength
 
 verify_after_assert@3:
     // smart_contracts/dnssec_oracle/contract.algo.ts:618
@@ -1529,9 +1529,9 @@ verify_after_if_else@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:630
     // loggedAssert(valid, errSignature)
     bnz verify_after_assert@7
-    bytec 19 // "ERR:SIG"
+    bytec 19 // "ERR:signature"
     log
-    err // ERR:SIG
+    err // ERR:signature
 
 verify_after_assert@7:
     // smart_contracts/dnssec_oracle/contract.algo.ts:631
@@ -1564,9 +1564,9 @@ verify_after_if_else@8:
     ==
     dup
     bnz verify_after_assert@10
-    bytec 18 // "ERR:SLN"
+    bytec 18 // "ERR:sigLength"
     log
-    err // ERR:SLN
+    err // ERR:sigLength
 
 verify_after_assert@10:
     // smart_contracts/dnssec_oracle/contract.algo.ts:637
@@ -1576,9 +1576,9 @@ verify_after_assert@10:
     dup
     cover 3
     bnz verify_after_assert@12
-    pushbytes "ERR:HNT"
+    pushbytes "ERR:rsaHint"
     log
-    err // ERR:HNT
+    err // ERR:rsaHint
 
 verify_after_assert@12:
     // smart_contracts/dnssec_oracle/contract.algo.ts:638
@@ -2308,9 +2308,9 @@ verify_bool_merge@69:
     // smart_contracts/dnssec_oracle/contract.algo.ts:638
     // loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
     bnz verify_after_assert@14
-    bytec 19 // "ERR:SIG"
+    bytec 19 // "ERR:signature"
     log
-    err // ERR:SIG
+    err // ERR:signature
 
 verify_after_assert@14:
     retsub
@@ -2537,9 +2537,9 @@ addAnchors_after_for@4:
     app_global_get_ex
     assert // check GlobalState exists
     bz addAnchors_after_assert@7
-    bytec 20 // "ERR:AST"
+    bytec 20 // "ERR:anchorSet"
     log
-    err // ERR:AST
+    err // ERR:anchorSet
 
 addAnchors_after_assert@7:
     // smart_contracts/dnssec_oracle/contract.algo.ts:181
@@ -2568,9 +2568,9 @@ addAnchors_for_header@8:
     pushint 257
     ==
     bnz addAnchors_after_assert@11
-    pushbytes "ERR:AFL"
+    pushbytes "ERR:anchorFlags"
     log
-    err // ERR:AFL
+    err // ERR:anchorFlags
 
 addAnchors_after_assert@11:
     // smart_contracts/dnssec_oracle/contract.algo.ts:186
@@ -2603,9 +2603,9 @@ addAnchors_after_assert@11:
     box_len
     bury 1
     bz addAnchors_after_assert@13
-    bytec 20 // "ERR:AST"
+    bytec 20 // "ERR:anchorSet"
     log
-    err // ERR:AST
+    err // ERR:anchorSet
 
 addAnchors_after_assert@13:
     // smart_contracts/dnssec_oracle/contract.algo.ts:191
@@ -2756,9 +2756,9 @@ proveRoot_bool_merge@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:217
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
     bnz proveRoot_after_assert@7
-    bytec 6 // "ERR:SGN"
+    bytec 6 // "ERR:signer"
     log
-    err // ERR:SGN
+    err // ERR:signer
 
 proveRoot_after_assert@7:
     // smart_contracts/dnssec_oracle/contract.algo.ts:218
@@ -2818,9 +2818,9 @@ proveRoot_bool_merge@12:
     //   errAnchor,
     // )
     bnz proveRoot_after_assert@14
-    bytec 21 // "ERR:ANC"
+    bytec 21 // "ERR:anchor"
     log
-    err // ERR:ANC
+    err // ERR:anchor
 
 proveRoot_after_assert@14:
     // smart_contracts/dnssec_oracle/contract.algo.ts:225
@@ -2970,9 +2970,9 @@ proveDs:
     intc_1 // 1
     callsub isAncestor
     bnz proveDs_after_assert@3
-    bytec 6 // "ERR:SGN"
+    bytec 6 // "ERR:signer"
     log
-    err // ERR:SGN
+    err // ERR:signer
 
 proveDs_after_assert@3:
     // smart_contracts/dnssec_oracle/contract.algo.ts:243
@@ -2982,9 +2982,9 @@ proveDs_after_assert@3:
     intc_1 // 1
     >
     bnz proveDs_after_assert@5
-    bytec 14 // "ERR:ROT"
+    bytec 14 // "ERR:rootOwner"
     log
-    err // ERR:ROT
+    err // ERR:rootOwner
 
 proveDs_after_assert@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:245
@@ -3178,9 +3178,9 @@ proveDnskey:
     // loggedAssert(s.signer === s.owner, errSigner)
     ==
     bnz proveDnskey_after_assert@3
-    bytec 6 // "ERR:SGN"
+    bytec 6 // "ERR:signer"
     log
-    err // ERR:SGN
+    err // ERR:signer
 
 proveDnskey_after_assert@3:
     // smart_contracts/dnssec_oracle/contract.algo.ts:273
@@ -3190,9 +3190,9 @@ proveDnskey_after_assert@3:
     intc_1 // 1
     >
     bnz proveDnskey_after_assert@5
-    bytec 14 // "ERR:ROT"
+    bytec 14 // "ERR:rootOwner"
     log
-    err // ERR:ROT
+    err // ERR:rootOwner
 
 proveDnskey_after_assert@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:275
@@ -3238,9 +3238,9 @@ proveDnskey_bool_merge@10:
     // smart_contracts/dnssec_oracle/contract.algo.ts:643
     // loggedAssert(ds.length === 36 && op.getByte(ds, 3) === 2, errDsDigest)
     bnz proveDnskey_after_assert@12
-    pushbytes "ERR:DSD"
+    pushbytes "ERR:dsDigest"
     log
-    err // ERR:DSD
+    err // ERR:dsDigest
 
 proveDnskey_after_assert@12:
     // smart_contracts/dnssec_oracle/contract.algo.ts:645
@@ -3357,9 +3357,9 @@ proveDnskey_bool_merge@22:
     //   errDsMatch,
     // )
     bnz proveDnskey_after_assert@24
-    pushbytes "ERR:DSM"
+    pushbytes "ERR:dsMatch"
     log
-    err // ERR:DSM
+    err // ERR:dsMatch
 
 proveDnskey_after_assert@24:
     // smart_contracts/dnssec_oracle/contract.algo.ts:278
@@ -3524,9 +3524,9 @@ proveTxt:
     intc_0 // 0
     callsub isAncestor
     bnz proveTxt_after_assert@3
-    bytec 6 // "ERR:SGN"
+    bytec 6 // "ERR:signer"
     log
-    err // ERR:SGN
+    err // ERR:signer
 
 proveTxt_after_assert@3:
     // smart_contracts/dnssec_oracle/contract.algo.ts:295
@@ -3536,9 +3536,9 @@ proveTxt_after_assert@3:
     intc_1 // 1
     >
     bnz proveTxt_after_assert@5
-    bytec 14 // "ERR:ROT"
+    bytec 14 // "ERR:rootOwner"
     log
-    err // ERR:ROT
+    err // ERR:rootOwner
 
 proveTxt_after_assert@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:296
@@ -3588,9 +3588,9 @@ proveTxt_after_assert@5:
     pushint 4096
     <=
     bnz proveTxt_after_assert@7
-    pushbytes "ERR:BIG"
+    pushbytes "ERR:tooBig"
     log
-    err // ERR:BIG
+    err // ERR:tooBig
 
 proveTxt_after_assert@7:
     // smart_contracts/dnssec_oracle/contract.algo.ts:303
@@ -3644,9 +3644,9 @@ proveTxt_after_assert@7:
     dig 1
     <=
     bnz proveTxt_after_if_else@12
-    bytec 15 // "ERR:OLD"
+    bytec 15 // "ERR:old"
     log
-    err // ERR:OLD
+    err // ERR:old
 
 proveTxt_after_if_else@12:
     // smart_contracts/dnssec_oracle/contract.algo.ts:311
@@ -3805,9 +3805,9 @@ updateAnchor:
     assert // check GlobalState exists
     >=
     bnz updateAnchor_after_assert@3
-    bytec 15 // "ERR:OLD"
+    bytec 15 // "ERR:old"
     log
-    err // ERR:OLD
+    err // ERR:old
 
 updateAnchor_after_assert@3:
     // smart_contracts/dnssec_oracle/contract.algo.ts:134
@@ -3940,9 +3940,9 @@ updateAnchor_bool_merge@12:
     // smart_contracts/dnssec_oracle/contract.algo.ts:361
     // loggedAssert(present && op.extractUint16(key, 0) === ANCHOR_FLAGS, errRoll)
     bnz updateAnchor_after_assert@14
-    bytec 22 // "ERR:ROL"
+    bytec 22 // "ERR:rollover"
     log
-    err // ERR:ROL
+    err // ERR:rollover
 
 updateAnchor_after_assert@14:
     // smart_contracts/dnssec_oracle/contract.algo.ts:362
@@ -4006,9 +4006,9 @@ updateAnchor_else_body@15:
     uncover 2
     <=
     bnz updateAnchor_after_assert@18
-    bytec 23 // "ERR:HLD"
+    bytec 23 // "ERR:holdDown"
     log
-    err // ERR:HLD
+    err // ERR:holdDown
 
 updateAnchor_after_assert@18:
     // smart_contracts/dnssec_oracle/contract.algo.ts:369
@@ -4048,9 +4048,9 @@ updateAnchor_else_body@22:
     dig 2
     <=
     bnz updateAnchor_after_assert@25
-    bytec 23 // "ERR:HLD"
+    bytec 23 // "ERR:holdDown"
     log
-    err // ERR:HLD
+    err // ERR:holdDown
 
 updateAnchor_after_assert@25:
     // smart_contracts/dnssec_oracle/contract.algo.ts:376
@@ -4073,9 +4073,9 @@ updateAnchor_else_body@26:
     dig 1
     ==
     bnz updateAnchor_after_assert@28
-    bytec 22 // "ERR:ROL"
+    bytec 22 // "ERR:rollover"
     log
-    err // ERR:ROL
+    err // ERR:rollover
 
 updateAnchor_after_assert@28:
     // smart_contracts/dnssec_oracle/contract.algo.ts:380
@@ -4195,9 +4195,9 @@ revokeRoot_bool_merge@5:
     // smart_contracts/dnssec_oracle/contract.algo.ts:399
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
     bnz revokeRoot_after_assert@7
-    bytec 6 // "ERR:SGN"
+    bytec 6 // "ERR:signer"
     log
-    err // ERR:SGN
+    err // ERR:signer
 
 revokeRoot_after_assert@7:
     // smart_contracts/dnssec_oracle/contract.algo.ts:400
@@ -4208,9 +4208,9 @@ revokeRoot_after_assert@7:
     pushint 385
     ==
     bnz revokeRoot_after_assert@9
-    pushbytes "ERR:RVK"
+    pushbytes "ERR:revoke"
     log
-    err // ERR:RVK
+    err // ERR:revoke
 
 revokeRoot_after_assert@9:
     // smart_contracts/dnssec_oracle/contract.algo.ts:402
@@ -4258,9 +4258,9 @@ revokeRoot_bool_merge@13:
     // smart_contracts/dnssec_oracle/contract.algo.ts:405
     // loggedAssert(box.exists && box.value.state !== ANCHOR_REVOKED, errAnchor)
     bnz revokeRoot_after_assert@15
-    bytec 21 // "ERR:ANC"
+    bytec 21 // "ERR:anchor"
     log
-    err // ERR:ANC
+    err // ERR:anchor
 
 revokeRoot_after_assert@15:
     // smart_contracts/dnssec_oracle/contract.algo.ts:406
@@ -4357,9 +4357,9 @@ prune:
     len
     ==
     bnz prune_after_assert@25
-    bytec 8 // "ERR:WIR"
+    bytec 8 // "ERR:wireFormat"
     log
-    err // ERR:WIR
+    err // ERR:wireFormat
 
 prune_after_assert@25:
     // smart_contracts/dnssec_oracle/contract.algo.ts:426
@@ -4388,9 +4388,9 @@ prune_after_assert@25:
     box_len
     bury 1
     bnz prune_after_assert@4
-    bytec 24 // "ERR:MIS"
+    bytec 24 // "ERR:missing"
     log
-    err // ERR:MIS
+    err // ERR:missing
 
 prune_after_assert@4:
     // smart_contracts/dnssec_oracle/contract.algo.ts:430
@@ -4471,9 +4471,9 @@ prune_bool_merge@10:
     //   errPrune,
     // )
     bnz prune_after_assert@12
-    bytec 25 // "ERR:PRN"
+    bytec 25 // "ERR:prune"
     log
-    err // ERR:PRN
+    err // ERR:prune
 
 prune_after_assert@12:
     // smart_contracts/dnssec_oracle/contract.algo.ts:439
@@ -4510,9 +4510,9 @@ prune_else_body@13:
     box_len
     bury 1
     bnz prune_after_assert@15
-    bytec 24 // "ERR:MIS"
+    bytec 24 // "ERR:missing"
     log
-    err // ERR:MIS
+    err // ERR:missing
 
 prune_after_assert@15:
     // smart_contracts/dnssec_oracle/contract.algo.ts:444
@@ -4551,9 +4551,9 @@ prune_bool_merge@19:
     // smart_contracts/dnssec_oracle/contract.algo.ts:445
     // loggedAssert(now > entry.expiry || entry.epoch < this.rootEpoch.value, errPrune)
     bnz prune_after_assert@21
-    bytec 25 // "ERR:PRN"
+    bytec 25 // "ERR:prune"
     log
-    err // ERR:PRN
+    err // ERR:prune
 
 prune_after_assert@21:
     // smart_contracts/dnssec_oracle/contract.algo.ts:446
@@ -5453,9 +5453,9 @@ onlyAdmin:
     assert // check GlobalState exists
     ==
     bnz onlyAdmin_after_assert@2
-    pushbytes "ERR:ADM"
+    pushbytes "ERR:admin"
     log
-    err // ERR:ADM
+    err // ERR:admin
 
 onlyAdmin_after_assert@2:
     retsub
@@ -5488,9 +5488,9 @@ parentEntry:
     box_len
     bury 1
     bnz parentEntry_after_assert@2
-    bytec 29 // "ERR:PAR"
+    bytec 29 // "ERR:parent"
     log
-    err // ERR:PAR
+    err // ERR:parent
 
 parentEntry_after_assert@2:
     // smart_contracts/dnssec_oracle/contract.algo.ts:504
@@ -5543,9 +5543,9 @@ parentEntry_bool_merge@6:
     // smart_contracts/dnssec_oracle/contract.algo.ts:505
     // loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch >= this.rootEpoch.value, errStale)
     bnz parentEntry_after_assert@8
-    pushbytes "ERR:STL"
+    pushbytes "ERR:stale"
     log
-    err // ERR:STL
+    err // ERR:stale
 
 parentEntry_after_assert@8:
     // smart_contracts/dnssec_oracle/contract.algo.ts:506
@@ -5555,9 +5555,9 @@ parentEntry_after_assert@8:
     dig 2
     ==
     bnz parentEntry_after_assert@10
-    bytec 29 // "ERR:PAR"
+    bytec 29 // "ERR:parent"
     log
-    err // ERR:PAR
+    err // ERR:parent
 
 parentEntry_after_assert@10:
     // smart_contracts/dnssec_oracle/contract.algo.ts:507
@@ -5663,9 +5663,9 @@ writeCache:
     frame_dig -12
     <=
     bnz writeCache_after_assert@4
-    bytec 15 // "ERR:OLD"
+    bytec 15 // "ERR:old"
     log
-    err // ERR:OLD
+    err // ERR:old
 
 writeCache_after_assert@4:
     // smart_contracts/dnssec_oracle/contract.algo.ts:527
@@ -5708,9 +5708,9 @@ writeCache_bool_merge@12:
     //   errWorse,
     // )
     bnz writeCache_after_if_else@16
-    pushbytes "ERR:WRS"
+    pushbytes "ERR:worse"
     log
-    err // ERR:WRS
+    err // ERR:worse
 
 writeCache_after_if_else@16:
     // smart_contracts/dnssec_oracle/contract.algo.ts:535

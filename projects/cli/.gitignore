@@ -1,3 +1,6 @@
 .env.local
 dist-exe/
 dnssec-oracle-linux-x64
+.env.testnet
+.env.mainnet
+.env

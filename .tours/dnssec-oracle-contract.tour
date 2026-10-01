@@ -73,13 +73,13 @@
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
       "pattern": "public proveTxt",
       "title": "proveTxt: the attestation",
-      "description": "This is the last step. The signer may be the owner itself or any ancestor (`proper = false`). The TXT records are stored under `t ‖ sha256(owner)` with a 64-byte header: inception, expiration, weakest key bits, parent epoch, and payer.\n\nA newer inception replaces the old attestation, and the previous payer gets the rent back. An older inception fails with `OLD`, so no one can replay stale records over fresh ones, unless the old one was proven under another generation of the signer's keys: then any proof replaces it."
+      "description": "This is the last step. The signer may be the owner itself or any ancestor (`proper = false`). The TXT records are stored under `t ‖ sha256(owner)` with a 64-byte header: inception, expiration, weakest key bits, parent epoch, and payer.\n\nA newer inception replaces the old attestation, and the previous payer gets the rent back. An older inception fails with `old`, so no one can replay stale records over fresh ones, unless the old one was proven under another generation of the signer's keys: then any proof replaces it."
     },
     {
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
       "pattern": "private writeCache",
       "title": "writeCache: newest wins",
-      "description": "Every cache write goes through here:\n\n- An older inception fails with `OLD`.\n- An equal inception replaces the entry only if expiry and key bits don't get worse. Otherwise it fails with `WRS`. A second valid signature can't shorten or weaken an entry.\n- A newer inception always replaces it.\n\nEntries are fixed size, so a replacement doesn't change the box rent."
+      "description": "Every cache write goes through here:\n\n- An older inception fails with `old`.\n- An equal inception replaces the entry only if expiry and key bits don't get worse. Otherwise it fails with `worse`. A second valid signature can't shorten or weaken an entry.\n- A newer inception always replaces it.\n\nEntries are fixed size, so a replacement doesn't change the box rent."
     },
     {
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
@@ -103,7 +103,7 @@
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",
       "pattern": "public updateAnchor",
       "title": "updateAnchor: RFC 5011 rollover",
-      "description": "Anyone can call this. It applies the one event the **cached** root RRset implies for one key. The table in the doc comment lists them all.\n\n`rollInception` is a ratchet. Once a rollover step uses one root RRset, no later step may use an older one. Without it, an older RRset that is still valid could be proven again after a prune and undo a step.\n\nAdd and Retire wait 30 days (`HLD`). Miss and Return take effect right away, because a missing key stays trusted."
+      "description": "Anyone can call this. It applies the one event the **cached** root RRset implies for one key. The table in the doc comment lists them all.\n\n`rollInception` is a ratchet. Once a rollover step uses one root RRset, no later step may use an older one. Without it, an older RRset that is still valid could be proven again after a prune and undo a step.\n\nAdd and Retire wait 30 days (`holdDown`). Miss and Return take effect right away, because a missing key stays trusted."
     },
     {
       "file": "projects/dnssec-oracle/smart_contracts/dnssec_oracle/contract.algo.ts",

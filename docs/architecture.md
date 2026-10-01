@@ -131,9 +131,9 @@ permissionless. A sender that creates boxes needs credits.
 
 Replacement rules:
 
-- **Newest inception wins**, for caches and attestations alike (`OLD`).
+- **Newest inception wins**, for caches and attestations alike (`old`).
 - **Ties:** a cache entry at the same inception is replaced only if its expiry and
-  `weakestKeyBits` get no worse (`WRS`).
+  `weakestKeyBits` get no worse (`worse`).
 - **TXT:** a proof replaces the whole RDATA set, so a removed record disappears as soon
   as anyone submits the newer RRset.
 - **Revocations:** a box from before the last trusted-key revocation is replaced whatever
@@ -168,7 +168,7 @@ old keys has to become unusable, at every level below.
 - An entry keeps its epoch only if both its hash and its parent epoch are unchanged. A
   re-signed, identical RRset stales nothing.
 - The contract checks one level per write: the parent must exist, be unexpired, match
-  the hash and not predate the last revocation (`STL`). Consumers walk the whole chain
+  the hash and not predate the last revocation (`stale`). Consumers walk the whole chain
   with `attestationChainLive`, comparing each link's epoch up to `rootEpoch`. They pass
   the zone list, which is safe because only the real ancestors' epochs match.
 - Revoking a Valid or Missing root anchor mints a new `rootEpoch`. That stales the root
@@ -180,7 +180,7 @@ old keys has to become unusable, at every level below.
 | State   | Key present in the cached root RRset | Event   | Becomes |
 |---------|--------------------------------------|---------|---------|
 | none    | yes                                  | Add     | AddPend (flags 257, key passes `checkKey`) |
-| AddPend | yes                                  | Promote | Valid, 30 days after Add (`HLD` before) |
+| AddPend | yes                                  | Promote | Valid, 30 days after Add (`holdDown` before) |
 | AddPend | no                                   | Reset   | box deleted |
 | Valid   | no                                   | Miss    | Missing, still trusted |
 | Missing | yes                                  | Return  | Valid |
@@ -249,13 +249,13 @@ On LocalNet (consensus v42), group usage stayed at the 1,000,000 baseline, so ea
 the transaction count at the minimum fee. Refreshing the root and one RSA TLD takes three
 RSA-2048 checks, about 0.4 Algo, once per signing period. A `.com` domain on an ECDSA DNS
 provider costs about 0.01 Algo for its three remaining steps. The approval program is
-6,393 bytes with `hasRecord`: three extra pages (AVM 13 allows 16 KB). Other Phase 0 measurements are in the [README](../README.md#phase-0-results).
+6,531 bytes with `hasRecord` and camelCase error codes (2026-10-01): three extra pages (AVM 13 allows 16 KB). Other Phase 0 measurements are in the [README](../README.md#phase-0-results).
 
 ## Limitations
 
 ### RSA keys above 2048 bits
 
-`checkKey` rejects RSA moduli above 2048 bits (`MOD`). The cap bounds the most expensive
+`checkKey` rejects RSA moduli above 2048 bits (`modulus`). The cap bounds the most expensive
 step to one RSA-2048 check, about 92k opcodes, which fits one group's 190,400-opcode
 op-up pool with room to spare. Cost grows roughly with the square of the modulus size:
 RSA-3072 needs about 189k, right at the pool limit, and RSA-4096 would be roughly four
@@ -290,7 +290,7 @@ moves off these assumptions.
   repeated in every RR. The prover refuses anything larger before sending it.
 - **`parent`:** a cached RRset handed back in, always smaller than its own signed data.
 - **The attestation:** a 64-byte header plus `uint16 rdlen ‖ rdata` per TXT RR, written
-  as one value (`BIG` if it would not fit).
+  as one value (`tooBig` if it would not fit).
 
 On the 2026-09-28 snapshot of every signed TLD, nothing on the DS/DNSKEY path came close.
 The largest TLD DNSKEY RRset was 1,962 bytes, and every key in every TLD could double
@@ -339,11 +339,11 @@ existence) does not apply. It also diverges where the AVM forces a narrower choi
 | Requirement | RFC | How |
 |-------------|-----|-----|
 | Signature over RRSIG RDATA (minus signature) ‖ canonical RRset | 4034 §3.1.8.1 | `signedData` is exactly that, hashed whole |
-| Canonical names: uncompressed, lowercase | 4034 §6.2 | compression pointers rejected (`WIR`); case is enforced by the signature, since only the canonical form verifies |
-| RRSIG and RRset share owner, class and type covered | 4035 §5.3.1 | `walkRRset` and `parseSignedData` (`OWN`, `CLS`, `TYP`) |
-| Validity window | 4035 §5.3.1 | `inception ≤ now ≤ expiration` against block time (`TIM`) |
-| RRSIG algorithm equals the DNSKEY's | 4035 §5.3.1 | `ALG` |
-| Zone key flag set, protocol 3 | 4034 §2.1.1–2.1.2 | `KFL`, `PRO` |
+| Canonical names: uncompressed, lowercase | 4034 §6.2 | compression pointers rejected (`wireFormat`); case is enforced by the signature, since only the canonical form verifies |
+| RRSIG and RRset share owner, class and type covered | 4035 §5.3.1 | `walkRRset` and `parseSignedData` (`owner`, `class`, `rrType`) |
+| Validity window | 4035 §5.3.1 | `inception ≤ now ≤ expiration` against block time (`sigTime`) |
+| RRSIG algorithm equals the DNSKEY's | 4035 §5.3.1 | `algorithm` |
+| Zone key flag set, protocol 3 | 4034 §2.1.1–2.1.2 | `keyFlags`, `protocol` |
 | SEP flag is advisory | 4034 §2.1.1 | any zone key that matches a DS may sign the DNSKEY RRset (anchors are the exception: exactly 257) |
 | DS links parent to child: key tag, algorithm, digest of owner ‖ RDATA | 4034 §5.1.4, App. B; 4509 | `checkDs` |
 | A DNSKEY RRset is trusted when a key matching a trusted DS signs it | 4035 §5.2 | `proveDnskey` |
@@ -362,7 +362,7 @@ existence) does not apply. It also diverges where the AVM forces a narrower choi
 | Algorithm support | 8624 §3.1 lists 5, 7, 8 and 13 as MUST-validate, 14 and 15 as RECOMMENDED | 8 and 13 only | SHA-1 algorithms are being retired; 14 and 15 are not implemented. Unsupported zones fail closed (unprovable) instead of being treated as insecure |
 | DS digest types | 8624 §3.3: SHA-1 and SHA-256 MUST, SHA-384 RECOMMENDED | SHA-256 only | deployment assumption; a SHA-1 DS published alongside is ignored, not an error |
 | RSA key size and exponent | 3110 and 5702 allow any exponent and 512–4096-bit moduli | 65537 only; 1024–2048 bits | opcode budget per group (see [above](#rsa-keys-above-2048-bits)) and a single code path |
-| Wildcards | 4035 §5.3.1 allows labels < owner labels; 4035 §5.3.4, 4592 | labels must equal the owner's count; `*` labels rejected (`LBL`, `WLD`) | wildcard proofs need NSEC/NSEC3 to rule out a closer match, which the oracle does not do |
+| Wildcards | 4035 §5.3.1 allows labels < owner labels; 4035 §5.3.4, 4592 | labels must equal the owner's count; `*` labels rejected (`labels`, `wildcard`) | wildcard proofs need NSEC/NSEC3 to rule out a closer match, which the oracle does not do |
 | Signer name | 4035 §5.3.1: the signer is the zone containing the RRset | `proveDs`: any proper ancestor; `proveTxt`: the owner or any ancestor whose DNSKEY is cached | the oracle has no zone cut knowledge (no NS/SOA). An ancestor zone could sign data below a delegation that a resolver would ignore. It could take the name over anyway by publishing a DS (plan.md trust point 2), so the trust boundary does not move |
 | Authenticated denial | 4035 §5.4; 5155 (NSEC3) | none | cannot prove absence, insecure delegations or NODATA; unsigned zones are simply unprovable |
 | CNAME, DNAME | 1034 §3.6.2; 6672 | not followed; the prover refuses CNAME answers | a name must hold its TXT RRset directly |
@@ -371,7 +371,7 @@ existence) does not apply. It also diverges where the AVM forces a narrower choi
 | TTLs and Original TTL | 4035 §5.3.3: RR TTLs reset to Original TTL; a cache honours TTLs | RR TTLs not checked; the signature binds whatever was signed. Cache life is the chain's earliest RRSIG expiration, not the TTL | an oracle records proofs, not lookups. Consumers' `maxAge` stands in for TTL-based freshness |
 | RRSIG key tag field | 4035 §5.3.1 uses it to select the key | ignored; the key comes by index and must verify | a wrong tag cannot make a bad signature verify |
 | Canonical RR order, duplicates | 4034 §6.3 | not checked | the signature binds the order that was signed |
-| Class | any class | IN only (`CLS`) | – |
+| Class | any class | IN only (`class`) | – |
 | RFC 5011 active refresh | 5011 §2.3: the resolver queries the trust point periodically, and a key must be seen throughout the hold-down | permissionless watchers submit the root RRset. Hold-downs count on-chain time from the Add call, and a key's absence counts only once someone submits it (Reset, Miss) | the chain cannot query DNS. A key that vanishes and returns between two watcher runs is not reset. Daily `maintainAnchors` keeps the gap small |
 | RFC 5011 anchor set changes | 5011 §4 | additionally, revoking a trusted anchor mints a new `rootEpoch` and stales every cached box and attestation below it | goes beyond the RFC: anything a compromised key may have forged stops being usable at once |
 | Initial anchor flags | 4034 §2.1.1 allows any zone key as an anchor | exactly 257 (zone + SEP), checked like a signing key | anchors must be able to prove the root |

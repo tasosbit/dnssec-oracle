@@ -313,7 +313,7 @@ describe('DnssecOracle e2e', () => {
     test('proofs fail before any anchor', async () => {
       const { sdk, chain } = await unanchored()
       const [root] = await chain('_tag.example.com')
-      await expect(sdk.proveStep({ step: root })).rejects.toThrow(code('ANC'))
+      await expect(sdk.proveStep({ step: root })).rejects.toThrow(code('anchor'))
     })
 
     test('addAnchors: admin only, once, KSK flags only', async () => {
@@ -325,18 +325,18 @@ describe('DnssecOracle e2e', () => {
           call.txn.sender = account.addr
           call.signer = account.signer
         }),
-      ).rejects.toThrow(code('ADM'))
-      await expect(sdk.addAnchors({ anchors: [withFlags(root.ksk, 256).rdata] })).rejects.toThrow(code('AFL'))
+      ).rejects.toThrow(code('admin'))
+      await expect(sdk.addAnchors({ anchors: [withFlags(root.ksk, 256).rdata] })).rejects.toThrow(code('anchorFlags'))
       await expect(sdk.addAnchors({ anchors: [root.ksk.rdata, withFlags(root.ksk, 385).rdata] })).rejects.toThrow(
-        code('AFL'),
+        code('anchorFlags'),
       )
-      await expect(sdk.addAnchors({ anchors: [root.ksk.rdata, root.ksk.rdata] })).rejects.toThrow(code('AST'))
+      await expect(sdk.addAnchors({ anchors: [root.ksk.rdata, root.ksk.rdata] })).rejects.toThrow(code('anchorSet'))
       const second = ecKey()
       await sdk.addAnchors({ anchors: [root.ksk.rdata, second.rdata] })
       expect((await sdk.getAnchor(root.ksk.rdata))?.state).toBe(AnchorState.Valid)
       expect((await sdk.getAnchor(second.rdata))?.state).toBe(AnchorState.Valid)
       expect((await sdk.getState()).anchorCount).toBe(2n)
-      await expect(sdk.addAnchors({ anchors: [ecKey().rdata] })).rejects.toThrow(code('AST'))
+      await expect(sdk.addAnchors({ anchors: [ecKey().rdata] })).rejects.toThrow(code('anchorSet'))
     })
 
     test('the anchor is keyed by public key: a REVOKE flag does not move it', async () => {
@@ -357,15 +357,15 @@ describe('DnssecOracle e2e', () => {
     const e65537 = new Uint8Array([3, 1, 0, 1])
 
     test.each([
-      ['RSA-1023', () => rsaRdata(concat(e65537, fakeModulus(128, 0x7f))), 'MOD'],
-      ['RSA-2049', () => rsaRdata(concat(e65537, fakeModulus(257, 0x01))), 'MOD'],
-      ['a zero-padded modulus', () => rsaRdata(concat(e65537, new Uint8Array([0]), fakeModulus(256, 0x80))), 'MOD'],
-      ['exponent 3', () => rsaRdata(concat(new Uint8Array([1, 3]), fakeModulus(256, 0x80))), 'EXP'],
-      ['65537 in the 3-byte length form', () => rsaRdata(concat(new Uint8Array([0, 0, 3, 1, 0, 1]), fakeModulus(256, 0x80))), 'EXP'],
-      ['a revoked key', () => withFlags(rsaKey({ bits: 1024 }), 385).rdata, 'KFL'],
-      ['a key without the zone flag', () => withFlags(rsaKey({ bits: 1024 }), 1).rdata, 'KFL'],
-      ['protocol 2', () => concat(u16(257), new Uint8Array([2, 8]), fakeModulus(64, 0x80)), 'PRO'],
-      ['an unknown algorithm', () => dnskeyRdata(257, 15, fakeModulus(32, 0x80)), 'ALG'],
+      ['RSA-1023', () => rsaRdata(concat(e65537, fakeModulus(128, 0x7f))), 'modulus'],
+      ['RSA-2049', () => rsaRdata(concat(e65537, fakeModulus(257, 0x01))), 'modulus'],
+      ['a zero-padded modulus', () => rsaRdata(concat(e65537, new Uint8Array([0]), fakeModulus(256, 0x80))), 'modulus'],
+      ['exponent 3', () => rsaRdata(concat(new Uint8Array([1, 3]), fakeModulus(256, 0x80))), 'exponent'],
+      ['65537 in the 3-byte length form', () => rsaRdata(concat(new Uint8Array([0, 0, 3, 1, 0, 1]), fakeModulus(256, 0x80))), 'exponent'],
+      ['a revoked key', () => withFlags(rsaKey({ bits: 1024 }), 385).rdata, 'keyFlags'],
+      ['a key without the zone flag', () => withFlags(rsaKey({ bits: 1024 }), 1).rdata, 'keyFlags'],
+      ['protocol 2', () => concat(u16(257), new Uint8Array([2, 8]), fakeModulus(64, 0x80)), 'protocol'],
+      ['an unknown algorithm', () => dnskeyRdata(257, 15, fakeModulus(32, 0x80)), 'algorithm'],
     ])('rejects %s at the key index; the same RRset still proves under its KSK', async (_, key, err) => {
       const { sdk, world, root, chain } = await deploy({ rootAlg: 'rsa' })
       const bad = key()
@@ -379,8 +379,8 @@ describe('DnssecOracle e2e', () => {
     test('rejects wrong signature lengths, a missing hint, a bad hint and a bad signature', async () => {
       const { sdk, chain } = await deploy({ rootAlg: 'rsa' })
       const step = find(await chain('_tag.example.com'), 'root')
-      await expect(sdk.proveStep({ step: { ...step, signature: step.signature.slice(1) } })).rejects.toThrow(code('SLN'))
-      await expect(sdk.proveStep({ step: { ...step, hint: new Uint8Array() } })).rejects.toThrow(code('HNT'))
+      await expect(sdk.proveStep({ step: { ...step, signature: step.signature.slice(1) } })).rejects.toThrow(code('sigLength'))
+      await expect(sdk.proveStep({ step: { ...step, hint: new Uint8Array() } })).rejects.toThrow(code('rsaHint'))
       // puya-ts-utils' own RSA codes
       const badHint = step.hint.slice()
       badHint[10] ^= 1
@@ -388,7 +388,7 @@ describe('DnssecOracle e2e', () => {
       await expect(sdk.proveStep({ step: { ...step, hint: step.hint.slice(0, 1) } })).rejects.toThrow(code('HINTLEN'))
       const badSig = step.signature.slice()
       badSig[100] ^= 1
-      await expect(sdk.proveStep({ step: { ...step, signature: badSig } })).rejects.toThrow(code('SIG'))
+      await expect(sdk.proveStep({ step: { ...step, signature: badSig } })).rejects.toThrow(code('signature'))
       await sdk.proveStep({ step })
     })
   })
@@ -419,19 +419,19 @@ describe('DnssecOracle e2e', () => {
       const short = dnskeyRdata(257, 13, new Uint8Array(randomBytes(63)))
       world.publishKeys(root, [short])
       const step = find(await chain('_tag.example.com'), 'root')
-      await expect(sdk.proveStep({ step: { ...step, keyIndex: indexOf(step.rrset, short) } })).rejects.toThrow(code('ECK'))
-      await expect(sdk.proveStep({ step: { ...step, signature: step.signature.slice(1) } })).rejects.toThrow(code('SLN'))
+      await expect(sdk.proveStep({ step: { ...step, keyIndex: indexOf(step.rrset, short) } })).rejects.toThrow(code('ecKey'))
+      await expect(sdk.proveStep({ step: { ...step, signature: step.signature.slice(1) } })).rejects.toThrow(code('sigLength'))
       const bad = step.signature.slice()
       bad[5] ^= 1
-      await expect(sdk.proveStep({ step: { ...step, signature: bad } })).rejects.toThrow(code('SIG'))
+      await expect(sdk.proveStep({ step: { ...step, signature: bad } })).rejects.toThrow(code('signature'))
     })
 
     test('rejects s = 0, s = n and s > n', async () => {
       const { sdk, chain } = await deploy()
       const step = find(await chain('_tag.example.com'), 'root')
-      await expect(sdk.proveStep({ step: { ...step, signature: withS(step.signature, 0n) } })).rejects.toThrow(code('SIG'))
+      await expect(sdk.proveStep({ step: { ...step, signature: withS(step.signature, 0n) } })).rejects.toThrow(code('signature'))
       // normalised to n - n = 0
-      await expect(sdk.proveStep({ step: { ...step, signature: withS(step.signature, P256_N) } })).rejects.toThrow(code('SIG'))
+      await expect(sdk.proveStep({ step: { ...step, signature: withS(step.signature, P256_N) } })).rejects.toThrow(code('signature'))
       // n - s underflows: the AVM fails, with no error code
       await expect(sdk.proveStep({ step: { ...step, signature: withS(step.signature, P256_N + 1n) } })).rejects.toThrow()
       await sdk.proveStep({ step })
@@ -443,7 +443,7 @@ describe('DnssecOracle e2e', () => {
       world.root = { ...root, ksk: imposter }
       world.publish(root.name, RRType.DNSKEY, [imposter.rdata, root.zsk.rdata], imposter, root.name)
       const step = (await buildTxtChain('_tag.example.com', world.resolver, { anchors: [imposter.rdata] }))[0]
-      await expect(sdk.proveStep({ step })).rejects.toThrow(code('ANC'))
+      await expect(sdk.proveStep({ step })).rejects.toThrow(code('anchor'))
     })
   })
 
@@ -471,7 +471,7 @@ describe('DnssecOracle e2e', () => {
       world.txt(exampleCom, '_tag.example.com', [txt('newer')], { inception: world.inception + 10 })
       await sdk.proveChain(await chain('_tag.example.com'))
       expect((await sdk.getRawAttestation('_tag.example.com'))?.texts).toEqual(['newer'])
-      await expect(sdk.proveStep({ step: old })).rejects.toThrow(code('OLD'))
+      await expect(sdk.proveStep({ step: old })).rejects.toThrow(code('old'))
 
       // the same RRset again: replaces, and the payer becomes the new sender
       const { other, account } = await otherSdk(sdk)
@@ -483,12 +483,12 @@ describe('DnssecOracle e2e', () => {
       world.inception += 20
       world.publishKeys(world.root)
       await sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })
-      await expect(sdk.proveStep({ step: olderRoot })).rejects.toThrow(code('OLD'))
+      await expect(sdk.proveStep({ step: olderRoot })).rejects.toThrow(code('old'))
 
       // a cache tie replaces only if expiry and key bits get no worse
       const keys = [world.root.ksk.rdata, world.root.zsk.rdata]
       world.publish(world.root.name, RRType.DNSKEY, keys, world.root.ksk, world.root.name, { expiration: world.expiration - 1000 })
-      await expect(sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })).rejects.toThrow(code('WRS'))
+      await expect(sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })).rejects.toThrow(code('worse'))
       world.publish(world.root.name, RRType.DNSKEY, keys, world.root.ksk, world.root.name, { expiration: world.expiration + 1000 })
       await sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })
       expect((await sdk.getRawCache('.', RRType.DNSKEY))?.expiry).toBe(world.expiration + 1000)
@@ -518,19 +518,19 @@ describe('DnssecOracle e2e', () => {
         sdk.proveStep({
           step: { ...dsStep, signedData: selfDs.signedData, signature: selfDs.signature, keyIndex: indexOf(exampleKeys.rrset, exampleCom.zsk.rdata), parent: exampleKeys.rrset },
         }),
-      ).rejects.toThrow(code('SGN'))
+      ).rejects.toThrow(code('signer'))
 
       // a zone's DNSKEY RRset signed by its parent
       const foreign = world.publish(exampleCom.name, RRType.DNSKEY, [exampleCom.ksk.rdata, exampleCom.zsk.rdata], com.zsk, com.name)
-      await expect(sdk.proveStep({ step: { ...exampleKeys, signedData: foreign.signedData, signature: foreign.signature } })).rejects.toThrow(code('SGN'))
+      await expect(sdk.proveStep({ step: { ...exampleKeys, signedData: foreign.signedData, signature: foreign.signature } })).rejects.toThrow(code('signer'))
 
       // a TXT signed by a zone that is not an ancestor of it
       const sideways = world.publish(nameToWire('_tag.example.io'), RRType.TXT, [txt('x')], exampleCom.zsk, exampleCom.name)
       const txtStep = find(steps, 'txt')
-      await expect(sdk.proveStep({ step: { ...txtStep, signedData: sideways.signedData, signature: sideways.signature } })).rejects.toThrow(code('SGN'))
+      await expect(sdk.proveStep({ step: { ...txtStep, signedData: sideways.signedData, signature: sideways.signature } })).rejects.toThrow(code('signer'))
 
       // proveRoot for a zone that is not the root
-      await expect(sdk.proveStep({ step: { ...comKeys, kind: 'root' } })).rejects.toThrow(code('SGN'))
+      await expect(sdk.proveStep({ step: { ...comKeys, kind: 'root' } })).rejects.toThrow(code('signer'))
 
       // a TXT at the root
       const rootTxt = world.publish(new Uint8Array([0]), RRType.TXT, [txt('x')], world.root.zsk, world.root.name)
@@ -539,25 +539,25 @@ describe('DnssecOracle e2e', () => {
         sdk.proveStep({
           step: { kind: 'txt', ...rootTxt, owner: new Uint8Array([0]), type: RRType.TXT, hint: new Uint8Array(), keyIndex: indexOf(rootKeys.rrset, world.root.zsk.rdata), inception: 0, expiration: 0, keyBits: 0, parent: rootKeys.rrset },
         }),
-      ).rejects.toThrow(code('ROT'))
+      ).rejects.toThrow(code('rootOwner'))
     })
 
     test('parent rules: not cached, hash mismatch, another zone', async () => {
       const { sdk, chain } = await deploy()
       const com = await chain('_tag.example.com')
       const io = await chain('_tag.example.io')
-      await expect(sdk.proveStep({ step: find(com, 'ds', 'com') })).rejects.toThrow(code('PAR'))
+      await expect(sdk.proveStep({ step: find(com, 'ds', 'com') })).rejects.toThrow(code('parent'))
       await sdk.proveChain(io)
       await sdk.proveStep({ step: find(com, 'root') })
 
       const ds = find(com, 'ds', 'com')
       const tampered = ds.parent.slice()
       tampered[tampered.length - 1] ^= 1
-      await expect(sdk.proveStep({ step: { ...ds, parent: tampered } })).rejects.toThrow(code('PAR'))
+      await expect(sdk.proveStep({ step: { ...ds, parent: tampered } })).rejects.toThrow(code('parent'))
 
       await sdk.proveChain(com.slice(0, 5))
       const txtStep = find(com, 'txt')
-      await expect(sdk.proveStep({ step: { ...txtStep, parent: find(io, 'dnskey', 'example.io').rrset } })).rejects.toThrow(code('PAR'))
+      await expect(sdk.proveStep({ step: { ...txtStep, parent: find(io, 'dnskey', 'example.io').rrset } })).rejects.toThrow(code('parent'))
     })
 
     test('DS rules: digest type and match', async () => {
@@ -568,9 +568,9 @@ describe('DnssecOracle e2e', () => {
       const steps = await chain('_tag.example.com')
       await sdk.proveChain(steps.slice(0, 2))
       const keys = find(steps, 'dnskey', 'com')
-      await expect(sdk.proveStep({ step: { ...keys, dsIndex: indexOf(keys.parent, sha1) } })).rejects.toThrow(code('DSD'))
-      await expect(sdk.proveStep({ step: { ...keys, dsIndex: indexOf(keys.parent, otherKey) } })).rejects.toThrow(code('DSM'))
-      await expect(sdk.proveStep({ step: { ...keys, dsIndex: 3 } })).rejects.toThrow(code('IDX'))
+      await expect(sdk.proveStep({ step: { ...keys, dsIndex: indexOf(keys.parent, sha1) } })).rejects.toThrow(code('dsDigest'))
+      await expect(sdk.proveStep({ step: { ...keys, dsIndex: indexOf(keys.parent, otherKey) } })).rejects.toThrow(code('dsMatch'))
+      await expect(sdk.proveStep({ step: { ...keys, dsIndex: 3 } })).rejects.toThrow(code('index'))
       await sdk.proveStep({ step: keys })
     })
 
@@ -583,18 +583,18 @@ describe('DnssecOracle e2e', () => {
       const owner = nameToWire('_tag.example.com')
 
       const mislabeled = world.publish(owner, RRType.TXT, [txt('x')], exampleCom.zsk, exampleCom.name, { labels: 2 })
-      await expect(sdk.proveStep({ step: withSigned(mislabeled) })).rejects.toThrow(code('LBL'))
+      await expect(sdk.proveStep({ step: withSigned(mislabeled) })).rejects.toThrow(code('labels'))
       const wild = world.publish(nameToWire('*.example.com'), RRType.TXT, [txt('x')], exampleCom.zsk, exampleCom.name)
-      await expect(sdk.proveStep({ step: withSigned(wild) })).rejects.toThrow(code('WLD'))
+      await expect(sdk.proveStep({ step: withSigned(wild) })).rejects.toThrow(code('wildcard'))
       const broken = world.publish(owner, RRType.TXT, [new Uint8Array([5, 0x61, 0x62])], exampleCom.zsk, exampleCom.name)
-      await expect(sdk.proveStep({ step: withSigned(broken) })).rejects.toThrow(code('TXT'))
+      await expect(sdk.proveStep({ step: withSigned(broken) })).rejects.toThrow(code('txt'))
       const future = world.publish(owner, RRType.TXT, [txt('x')], exampleCom.zsk, exampleCom.name, { inception: world.now + 3600 })
-      await expect(sdk.proveStep({ step: withSigned(future) })).rejects.toThrow(code('TIM'))
+      await expect(sdk.proveStep({ step: withSigned(future) })).rejects.toThrow(code('sigTime'))
       const expired = world.publish(owner, RRType.TXT, [txt('x')], exampleCom.zsk, exampleCom.name, { expiration: world.now - 7200 })
-      await expect(sdk.proveStep({ step: withSigned(expired) })).rejects.toThrow(code('TIM'))
+      await expect(sdk.proveStep({ step: withSigned(expired) })).rejects.toThrow(code('sigTime'))
       // a DNSKEY RRset handed to proveTxt
-      await expect(sdk.proveStep({ step: { ...find(steps, 'dnskey', 'example.com'), kind: 'txt', parent: txtStep.parent } })).rejects.toThrow(code('TYP'))
-      await expect(sdk.proveStep({ step: { ...txtStep, keyIndex: 2 } })).rejects.toThrow(code('IDX'))
+      await expect(sdk.proveStep({ step: { ...find(steps, 'dnskey', 'example.com'), kind: 'txt', parent: txtStep.parent } })).rejects.toThrow(code('rrType'))
+      await expect(sdk.proveStep({ step: { ...txtStep, keyIndex: 2 } })).rejects.toThrow(code('index'))
       await sdk.proveStep({ step: txtStep })
     })
 
@@ -608,11 +608,11 @@ describe('DnssecOracle e2e', () => {
       // the key set signed by the ZSK, which has no DS
       const byZsk = world.publish(exampleCom.name, RRType.DNSKEY, [exampleCom.ksk.rdata, exampleCom.zsk.rdata], exampleCom.zsk, exampleCom.name)
       const signed = { signedData: byZsk.signedData, signature: byZsk.signature }
-      await expect(sdk.proveStep({ step: { ...keys, ...signed, keyIndex: zsk } })).rejects.toThrow(code('DSM'))
+      await expect(sdk.proveStep({ step: { ...keys, ...signed, keyIndex: zsk } })).rejects.toThrow(code('dsMatch'))
       // ...claimed to be the KSK's signature
-      await expect(sdk.proveStep({ step: { ...keys, ...signed, keyIndex: ksk } })).rejects.toThrow(code('SIG'))
+      await expect(sdk.proveStep({ step: { ...keys, ...signed, keyIndex: ksk } })).rejects.toThrow(code('signature'))
       // the KSK's signature, pointed at the ZSK
-      await expect(sdk.proveStep({ step: { ...keys, keyIndex: zsk } })).rejects.toThrow(code('DSM'))
+      await expect(sdk.proveStep({ step: { ...keys, keyIndex: zsk } })).rejects.toThrow(code('dsMatch'))
       await sdk.proveStep({ step: keys })
     })
 
@@ -622,11 +622,11 @@ describe('DnssecOracle e2e', () => {
       await sdk.proveChain(steps.slice(0, 4))
       const keys = find(steps, 'dnskey', 'example.com')
       const asRsa = world.publish(exampleCom.name, RRType.DNSKEY, [exampleCom.ksk.rdata, exampleCom.zsk.rdata], exampleCom.ksk, exampleCom.name, { algorithm: 8 })
-      await expect(sdk.proveStep({ step: { ...keys, signedData: asRsa.signedData, signature: asRsa.signature } })).rejects.toThrow(code('ALG'))
+      await expect(sdk.proveStep({ step: { ...keys, signedData: asRsa.signedData, signature: asRsa.signature } })).rejects.toThrow(code('algorithm'))
       await sdk.proveStep({ step: keys })
       const txtStep = find(steps, 'txt')
       const txtAsRsa = world.txt(exampleCom, '_tag.example.com', [txt('x')], { algorithm: 8 })
-      await expect(sdk.proveStep({ step: { ...txtStep, signedData: txtAsRsa.signedData, signature: txtAsRsa.signature } })).rejects.toThrow(code('ALG'))
+      await expect(sdk.proveStep({ step: { ...txtStep, signedData: txtAsRsa.signedData, signature: txtAsRsa.signature } })).rejects.toThrow(code('algorithm'))
     })
 
     test('a revoked or non-zone key in a cached DNSKEY RRset cannot sign a DS or a TXT', async () => {
@@ -642,7 +642,7 @@ describe('DnssecOracle e2e', () => {
         const bad = world.publish(exampleCom.name, RRType.DS, [dsRdata(exampleCom.name, exampleCom.ksk.rdata)], key, com.name)
         await expect(
           sdk.proveStep({ step: { ...ds, signedData: bad.signedData, signature: bad.signature, keyIndex: indexOf(ds.parent, key.rdata) } }),
-        ).rejects.toThrow(code('KFL'))
+        ).rejects.toThrow(code('keyFlags'))
       }
       await sdk.proveChain(steps.slice(3, 5))
       const txtStep = find(steps, 'txt')
@@ -650,7 +650,7 @@ describe('DnssecOracle e2e', () => {
         const bad = world.publish(nameToWire('_tag.example.com'), RRType.TXT, [txt('x')], key, exampleCom.name)
         await expect(
           sdk.proveStep({ step: { ...txtStep, signedData: bad.signedData, signature: bad.signature, keyIndex: indexOf(txtStep.parent, key.rdata) } }),
-        ).rejects.toThrow(code('KFL'))
+        ).rejects.toThrow(code('keyFlags'))
       }
       await sdk.proveStep({ step: txtStep })
     })
@@ -661,8 +661,8 @@ describe('DnssecOracle e2e', () => {
       await sdk.proveChain(steps.slice(0, 5))
       const comDs = find(steps, 'ds', 'com').rrset
       const exampleDs = find(steps, 'ds', 'example.com')
-      await expect(sdk.proveStep({ step: { ...exampleDs, parent: comDs } })).rejects.toThrow(code('PAR'))
-      await expect(sdk.proveStep({ step: { ...find(steps, 'txt'), parent: exampleDs.rrset } })).rejects.toThrow(code('PAR'))
+      await expect(sdk.proveStep({ step: { ...exampleDs, parent: comDs } })).rejects.toThrow(code('parent'))
+      await expect(sdk.proveStep({ step: { ...find(steps, 'txt'), parent: exampleDs.rrset } })).rejects.toThrow(code('parent'))
     })
 
     test('a DS signed by a sibling zone', async () => {
@@ -681,7 +681,7 @@ describe('DnssecOracle e2e', () => {
         const bad = world.publish(exampleCom.name, RRType.DS, record, key, signer.name)
         await expect(
           sdk.proveStep({ step: { ...ds, signedData: bad.signedData, signature: bad.signature, keyIndex: indexOf(keys.rrset, key.rdata), parent: keys.rrset } }),
-        ).rejects.toThrow(code('SGN'))
+        ).rejects.toThrow(code('signer'))
       }
     })
 
@@ -705,7 +705,7 @@ describe('DnssecOracle e2e', () => {
         return { ...txtStep, owner, signedData, signature: rawSign(exampleCom.zsk, signedData) }
       }
 
-      await expect(sdk.proveStep({ step: signedTxt(lower, mixedSigner) })).rejects.toThrow(code('SGN'))
+      await expect(sdk.proveStep({ step: signedTxt(lower, mixedSigner) })).rejects.toThrow(code('signer'))
       // accepted, but under its own bytes: the lowercase name is still unattested
       await sdk.proveStep({ step: signedTxt(mixedOwner, signer) })
       expect(await sdk.getRawAttestation('_tag.example.com')).toBeUndefined()
@@ -720,7 +720,7 @@ describe('DnssecOracle e2e', () => {
       // A group this large owes a usage fee over one per transaction: proveStep prices it
       const send = async () => sdk.proveStep({ step: find(await chain('example.com'), 'txt') })
       world.txt(exampleCom, 'example.com', [bigRdata(4031)])
-      await expect(send()).rejects.toThrow(code('BIG'))
+      await expect(send()).rejects.toThrow(code('tooBig'))
       world.txt(exampleCom, 'example.com', [bigRdata(4030)])
       await send()
       expect((await sdk.scanRaw('t')).get(attestationKey('example.com'))?.length).toBe(4096)
@@ -839,11 +839,11 @@ describe('DnssecOracle e2e', () => {
       const rootStep = find(await chain('_tag.example.com'), 'root')
       await sdk.proveStep({ step: rootStep })
       const stranger = ecKey()
-      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(stranger.rdata) })).rejects.toThrow(code('ROL'))
-      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('ROL'))
+      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(stranger.rdata) })).rejects.toThrow(code('rollover'))
+      await expect(sdk.updateAnchor({ rrset: rootStep.rrset, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('rollover'))
       const tampered = rootStep.rrset.slice()
       tampered[tampered.length - 1] ^= 1
-      await expect(sdk.updateAnchor({ rrset: tampered, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('PAR'))
+      await expect(sdk.updateAnchor({ rrset: tampered, keyHash: anchorHash(root.ksk.rdata) })).rejects.toThrow(code('parent'))
     })
   })
 
@@ -896,11 +896,11 @@ describe('DnssecOracle e2e', () => {
       const shortKeys = find(shortSteps, 'dnskey', 'short.com')
 
       // not yet expired
-      await expect(sdk.prune({ name: 'short.com', type: RRType.DS })).rejects.toThrow(code('PRN'))
+      await expect(sdk.prune({ name: 'short.com', type: RRType.DS })).rejects.toThrow(code('prune'))
       await waitPast(soon)
 
       // a stale parent
-      await expect(sdk.proveStep({ step: shortKeys })).rejects.toThrow(code('STL'))
+      await expect(sdk.proveStep({ step: shortKeys })).rejects.toThrow(code('stale'))
 
       // cache: anyone once expired, refund to the pruner, who needs a credit box
       const { other: noBox } = await otherSdk(sdk, 0)
@@ -912,13 +912,13 @@ describe('DnssecOracle e2e', () => {
       expect(await sdk.getRawCache('short.com', RRType.DS)).toBeUndefined()
 
       // attestation: only the payer, until 30 days past expiry; refund to the payer
-      await expect(other.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('PRN'))
+      await expect(other.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('prune'))
       const payer = localnet.context.testAccount.toString()
       const payerBefore = await sdk.getCredits(payer)
       await sdk.prune({ name: '_tag.example.com', type: RRType.TXT })
       expect(await sdk.getCredits(payer)).toBe(payerBefore! + BigInt(attestationBoxMbrMicroAlgos(txt('brief').length, 1)))
       expect(await sdk.getRawAttestation('_tag.example.com')).toBeUndefined()
-      await expect(sdk.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('MIS'))
+      await expect(sdk.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('missing'))
     })
 
   })
@@ -930,11 +930,11 @@ describe('DnssecOracle e2e', () => {
       const { sdk } = await deploy()
       const { other, account } = await otherSdk(sdk)
       const admin = localnet.context.testAccount.toString()
-      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('ADM'))
+      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('admin'))
       await sdk.setAdmin({ admin: account.toString() })
-      await expect(sdk.setAdmin({ admin })).rejects.toThrow(code('ADM'))
+      await expect(sdk.setAdmin({ admin })).rejects.toThrow(code('admin'))
       await other.setAdmin({ admin: Address.zeroAddress().toString() })
-      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('ADM'))
+      await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('admin'))
       expect((await sdk.getState()).admin).toBe(Address.zeroAddress().toString())
     })
   })

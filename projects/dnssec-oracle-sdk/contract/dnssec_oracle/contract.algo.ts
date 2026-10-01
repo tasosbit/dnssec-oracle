@@ -337,7 +337,7 @@ export class DnssecOracle extends BaseContract {
    * | Missing | yes     | Return  | Valid                                     |
    * | Revoked | either  | Retire  | box deleted, 30 days after Revoke         |
    *
-   * Anything else fails with ROL. A new box is paid from the sender's credits, a deleted
+   * Anything else fails with `rollover`. A new box is paid from the sender's credits, a deleted
    * one refunded to them.
    * @param rrset The root DNSKEY RRset, as cached
    * @param keyHash `sha256(alg ‖ pubkey)` of the key: its anchor box key

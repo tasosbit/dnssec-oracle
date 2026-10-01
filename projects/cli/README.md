@@ -96,4 +96,4 @@ dnssec-oracle prune <name> [--type 16]   # 16: expired attestation; 48/43: expir
 
 Settings are read from `.env`, or from `.env.$ENV` when `ENV` is set (e.g. `ENV=testnet` → `.env.testnet`). Flags override the environment.
 
-LocalNet's block clock can lag the wall clock. When it does, proofs from live DNS fail with `TIM` (RRSIG is not valid now), because their signatures look like they come from the future. Replay a capture with `--captured` instead.
+LocalNet's block clock can lag the wall clock. When it does, proofs from live DNS fail with `sigTime` (RRSIG is not valid now), because their signatures look like they come from the future. Replay a capture with `--captured` instead.
