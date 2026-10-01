@@ -7,7 +7,7 @@
 # Writes captures/<UTC date>/:
 #   dig.txt      presentation format, from dig alone: the fallback if node breaks
 #   chains.json  wire format for the prover and the test fixtures
-#   alerts.txt   only when a deployment assumption changed (see capture.ts)
+#   alerts.txt   only when a deployment assumption changed (see capture.mts)
 #
 # Install: crontab -e, then
 #   17 3 * * * /home/bit/code/dnssec-oracle/scripts/capture-root.sh >> /home/bit/code/dnssec-oracle/captures/cron.log 2>&1
@@ -20,8 +20,8 @@ mkdir -p "$OUT"
 # cron starts with a bare PATH
 export PATH="$HOME/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-# One name per whitelisted TLD, plus an RSA-signed domain under com.
-NAMES=(_dmarc.publicnode.com _dmarc.nodely.io _dmarc.folks.finance _dmarc.mercury.co llamanodes.com)
+# One name per target TLD.
+NAMES=(_dmarc.publicnode.com _dmarc.nodely.io _dmarc.folks.finance _dmarc.mercury.co)
 
 {
   echo "; captured $(date -u +%FT%TZ)"

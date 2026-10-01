@@ -6,13 +6,11 @@ Goal: a smart contract on Algorand that lets anyone prove, with no trusted
 relayer, that a TXT record exists at a DNS name, by verifying the DNSSEC
 signature chain from the DNS root down to the TXT RRset on-chain.
 
-- Greenfield: `/home/bit/code/dnssec-oracle` is empty.
 - RSA verification and MBR accounting are **out of scope**. They come from
   `@d13co/puya-ts-utils/rsa` and `@d13co/puya-ts-utils/mbrManager`; the
   prover computes hints with `@d13co/puya-ts-utils/rsaHint`
-  (`rsaMontgomeryHint(modulus)`). Source: `/home/bit/code/puya-ts-utils`,
-  v0.3.0, not on npm yet, so linked locally. Taken at face value: Wycheproof
-  PKCS#1 v1.5 vectors pass, and a hostile hint can only fail.
+  (`rsaMontgomeryHint(modulus)`). From npm, `^0.2.0`. Taken at face value:
+  Wycheproof PKCS#1 v1.5 vectors pass, and a hostile hint can only fail.
 - Target: MainNet consensus v42 / AVM v13. The local Algorand skills describe
   AVM 12 and are stale; `/home/bit/Docs/draftvim/avm13-opus.md` is the reference.
 - Stack: Algorand TypeScript (PuyaTs ≥ 1.3.1) + AlgoKit, in **D13 style**:
@@ -153,9 +151,10 @@ for a sibling name inside their own TXT value.
 
 Hard limit: `sha256` takes one value of at most 4,096 bytes and cannot stream,
 so signed data or a parent RRset above that size is unprovable. Documented,
-not worked around. The contract needs no check: v42 caps each app argument at
-4,096 bytes, so oversized data never reaches it. The SDK's prover refuses it
-before sending.
+not worked around. The contract needs no check: an AVM byte slice holds at
+most 4,096 bytes, so oversized data never reaches it. The SDK's prover refuses
+it before sending. An attestation is written as one value, so it has the same
+cap: a TXT RRset whose attestation would exceed 4,096 bytes fails (`BIG`).
 
 Wire rules: a label length byte must be below `0x40`, which rejects
 compression pointers and extended label types.
@@ -205,6 +204,7 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `parentEpoch`, 
 | `prune`       | see "Box rent"                                            |                       |
 | `setAdmin`    | sender is `admin`                                         |                       |
 | `logAttestations(names)` | `@readonly`: logs each attestation box, empty line if missing; stale ones too (walk the chain) |  |
+| `logCaches(keys)` | `@readonly`: logs each cache box by `name ‖ type`, empty line if missing |  |
 | inherited     | `increaseBudget`, `depositCredits`, `withdrawCredits`, `logCredits` |             |
 
 - Proving methods and `prune` are permissionless, but a sender that creates
@@ -231,7 +231,7 @@ alongside does not block a proof.
 | Item    | Checks                                                                   |
 |---------|--------------------------------------------------------------------------|
 | DNSKEY  | Zone flag set, REVOKE clear, protocol 3, algorithm = RRSIG algorithm, 8 or 13 |
-| DS      | digest type 2, 36 bytes; key tag, algorithm and digest match the DNSKEY  |
+| DS      | digest type 2, 32-byte digest; key tag, algorithm and digest match the DNSKEY  |
 | RSA     | exponent exactly 65537; modulus first byte non-zero; **1024 to 2048 bits** by real length; signature length = modulus length; Montgomery hint required |
 | ECDSA   | key and signature exactly 64 bytes; if `s > n/2` then `s = n − s`, left-padded to 32 bytes |
 | RRSIG   | type covered = RRset type; class IN; one owner for all RRs; labels field = owner's label count; no `*` label; `inception ≤ now ≤ expiration` |
@@ -369,8 +369,8 @@ payments, so a closed account can never block a write.
 - On-chain: the contract enables `ForeignBoxReads` on itself at creation with
   `app_params_set` (AVM v13). Consumers read the `t` box directly with the
   reference reader, from an oracle app ID they pin (the example consumer
-  stores it at create). Fallback, only if PuyaTs 1.3.1 does not expose
-  `app_params_set`: consumers call `logAttestations` as an inner call.
+  stores it at create). Phase 0 confirmed this works on LocalNet, so the
+  `logAttestations` inner-call fallback is not needed on-chain.
 - The reader's `attestationUsable` walks the chain: the attestation's
   `parentEpoch` must equal the signer's DNSKEY entry's `epoch`, its
   `parentEpoch` the zone's DS entry's `epoch`, and so on up to the root DNSKEY
@@ -382,9 +382,11 @@ payments, so a closed account can never block a write.
   in one transaction's 8. Longer chains spread them over the group. The SDK
   mirrors the walk off-chain (`chainLive`), and `attestationZones` finds the
   zones from the name by matching epochs; the CLI's `get` reports it.
-- Off-chain, SDK: point lookups simulate `logAttestations` (batched,
-  `@chunked`); listing every attestation or cache uses the algod
-  `scanBoxes` prefix scan. An e2e test asserts both return the same bytes.
+- Off-chain, SDK: point lookups simulate `logAttestations` and `logCaches`
+  (batched, `@chunked`), so `chainLive` and `attestationZones` read every
+  link in one simulate, in one round; listing every attestation or cache
+  uses the algod `scanBoxes` prefix scan. An e2e test asserts both return
+  the same bytes.
 
 ### Cost
 
@@ -411,8 +413,8 @@ are measured on LocalNet and pinned in the SDK constants.
 Fees are usage-based in v42: the SDK simulates every group to price it.
 
 `ponytail:` RSA runs inside the contract. A LogicSig host could be much
-cheaper (the 1/20th figure is unverified under v42 usage fees; Phase 0
-measures it) but adds a second program and binding checks between the two.
+cheaper (the 1/20th figure is unverified under v42 usage fees) but adds a
+second program and binding checks between the two.
 Move only if proof volume makes fees matter; it means a redeploy.
 
 ### SDK (D13)
@@ -473,39 +475,18 @@ successor promoted, nobody submits the root for longer than its signatures
 last, or in 2106 when DNSSEC's 32-bit timestamps wrap. The first pass also
 failed at a root KSK roll (with KSK-2017, 2026-10-11).
 
-## Open in `puya-ts-utils`
+## Program size
 
-- Publish 0.3.0 to npm. Until then the workspace links it locally.
-
-Program size: the RSA code adds about 1.45 KB (`verifyRsaSha256`). An app
-gets 2 KB per page with up to 3 extra pages, 8 KB in all. Plan on extra
-pages; Phase 0 measures the full contract.
+The RSA code adds about 1.45 KB (`verifyRsaSha256`). AVM 13 gives an app
+2 KB per page with up to 7 extra pages, 16 KB in all. The measured size is in
+the README.
 
 ## Project layout
 
-pnpm workspace, D13 monorepo:
-
-```
-projects/dnssec-oracle/                    contract, unit + e2e tests
-  smart_contracts/base/base.algo.ts        BaseContract (increaseBudget) + EmptyContract
-  smart_contracts/dnssec_oracle/contract.algo.ts   state, methods
-  smart_contracts/dnssec_oracle/errors.algo.ts     error codes
-  smart_contracts/dnssec_oracle/wire.algo.ts       signed-data parser, name rules
-  smart_contracts/dnssec_oracle/reader.algo.ts     reference attestation reader
-  tests/fixtures/                          captured chains
-  tests/helpers.ts                         sendMutated
-projects/dnssec-oracle-sdk/                e2e tests import it via "link:../dnssec-oracle-sdk"
-  scripts/generate-errors.ts               own layers + puya-ts-utils MbrManager codes
-  src/generated/                           DnssecOracleClient.ts, errors.ts
-  src/sdkReader.ts, src/sdk.ts
-  src/prover/                              off-chain proof builder
-  src/util/                                txnExecutor, increaseBudget, wrapErrors, chunked
-  src/constants.ts                         AVM limits + measured op costs
-scripts/capture-root.sh                    the daily capture
-```
-
-Build chain: contract `build` → SDK `prebuild` copies the client and
-regenerates errors → SDK build → contract e2e tests.
+pnpm workspace, D13 monorepo: see the README's "Layout". The e2e tests import
+the SDK via `link:../dnssec-oracle-sdk`. Build chain: contract `build` → SDK
+`prebuild` copies the client and regenerates errors → SDK build → contract e2e
+tests.
 
 ## Build order
 

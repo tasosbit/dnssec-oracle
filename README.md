@@ -64,13 +64,15 @@ or `dnssec-oracle maintain-anchors`. Design: plan.md, "Root anchors: rollover".
 
 Installed in the user crontab at 03:17 local time, logging to `captures/cron.log`. Keep it
 running until KSK-2017 is seen revoked, about 2027-01-11. Each run writes the root DNSKEY
-RRset straight from a root server and a full chain for one name under each of `com`, `io`, `finance` and `co`, and
-writes `alerts.txt` (exit code 2) when a zone moves off the contract's deployment
-assumptions or the root DNSKEY RRset is signed by a key other than 20326.
+RRset straight from a root server and a full chain for one name under each of `com`, `io`,
+`finance` and `co`, and writes `alerts.txt` (exit code 2) when a zone moves off the
+contract's deployment assumptions or the root DNSKEY RRset is signed by a key other than
+20326.
 
 ## Phase 0 results
 
-Measured on LocalNet (algod 5.0.0, consensus v42), 2026-09-28:
+Measured on LocalNet (algod 5.0.0, consensus v42), 2026-09-28, recorded in 6b1fb81 unless
+marked:
 
 | Proof step                     | Opcodes | Fee, µAlgo |
 |--------------------------------|---------|------------|
@@ -82,11 +84,12 @@ Measured on LocalNet (algod 5.0.0, consensus v42), 2026-09-28:
 
 - `app_params_set(ForeignBoxReads)` works inside the creation call, and a second contract
   reads attestation boxes directly (the `logAttestations` fallback was not needed on-chain;
-  the SDK uses it for simulated point reads).
+  the SDK uses it, and `logCaches`, for simulated point reads).
 - Group usage stayed at 1,000,000 for every proof group: fees are the transaction count
   (outer calls plus op-up inner calls) at the minimum fee, nothing extra.
 - `increaseBudget` costs 21 opcodes, plus 21 per inner call: pinned in the SDK constants.
-- Approval program: 5,089 bytes, two extra pages. AVM 13 allows 16 KB.
+- Approval program: 6,017 bytes at e4e451b (2026-10-01), two extra pages, 127 bytes under a
+  third. AVM 13 allows 16 KB.
 - The emulator (`algorand-typescript-testing` 1.2.0) pins `latestTimestamp`, but has no
   `app_params_set` and misdecodes struct reads through `.maybe()`; the tests and the
   contract work around both.
