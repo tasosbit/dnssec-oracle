@@ -3,6 +3,38 @@
 TypeScript SDK and prover for the DNSSEC oracle on Algorand: the typed client
 (`DnssecOracleClient`), the prover that builds and submits chain proofs, and readers for
 the oracle's boxes. See the [project README](../../README.md) for what the oracle attests.
+For interactive use, the [`@d13co/dnssec-oracle`](../cli) CLI wraps this SDK.
+
+## Off-chain use
+
+Read with `DnssecOracleReaderSDK` (no signer; reads go through simulate). Prove with
+`DnssecOracleSDK`, which extends it and takes a `writerAccount`:
+
+```ts
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { DnssecOracleSDK } from '@d13co/dnssec-oracle-sdk'
+
+const sdk = new DnssecOracleSDK({
+  algorand: AlgorandClient.testNet(),
+  appId: 772959888n, // testnet
+  writerAccount: { sender, signer },
+})
+
+// box rent is drawn from the sender's credits (µAlgo)
+await sdk.depositCredits({ amount: 1_000_000n })
+
+// build `example.com TXT`'s chain from DNS (1.1.1.1 over TCP) and prove it
+const { proven, cached } = await sdk.proveTxt('example.com')
+
+// the attestation, if usable now: unexpired, signed within maxAge, no key under minKeyBits
+const verified = await sdk.getVerifiedAttestation('example.com', { maxAge: 86_400, minKeyBits: 2048 })
+console.log(verified?.attestation.texts)
+
+await sdk.withdrawCredits({})
+```
+
+`getRawAttestation` skips the checks; `listRawAttestations`, `listAnchors` and `getCredits`
+read the rest of the oracle's state.
 
 ## On-chain consumers
 
