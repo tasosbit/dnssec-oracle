@@ -25,18 +25,20 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm --dir ../dnssec-oracle-sdk run build:chain && pnpm run build:ts"
+    "prepublishOnly": "pnpm --dir ../dnssec-oracle-sdk run build:chain && pnpm run build:ts",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --target=node22 --external:readline/promises --log-level=warning --outfile=../../bin/dnssec-oracle.cjs"
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.2",
-    "algosdk": "^3.8.0",
     "@d13co/dnssec-oracle-sdk": "workspace:^",
+    "algosdk": "^3.8.0",
     "dotenv": "^16.4.7",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/yargs": "^17.0.33",
+    "esbuild": "^0.28.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

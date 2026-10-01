@@ -11,6 +11,12 @@ cp env.example .env                          # LocalNet by default; set MNEMONIC
 node dist/index.js --help
 ```
 
+Or run it straight from the repo, no checkout (npm builds a bundle on first run):
+
+```sh
+npx github:tasosbit/dnssec-oracle --help
+```
+
 ## Build from source
 
 ```sh

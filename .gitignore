@@ -6,3 +6,4 @@ debug_traces/
 .env
 *.tsbuildinfo
 captures/cron.log
+bin/
