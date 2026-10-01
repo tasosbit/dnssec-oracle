@@ -204,6 +204,7 @@ Attestation header: `inception`, `expiration`, `weakestKeyBits`, `parentEpoch`, 
 | `prune`       | see "Box rent"                                            |                       |
 | `setAdmin`    | sender is `admin`                                         |                       |
 | `logAttestations(names)` | `@readonly`: logs each attestation box, empty line if missing; stale ones too (walk the chain) |  |
+| `hasRecord(name, rdata, maxAge, minKeyBits, zones)` | `@readonly`: whether the attestation is `attestationUsable` and holds `rdata`; for contracts calling in |  |
 | `logCaches(keys)` | `@readonly`: logs each cache box by `name ‖ type`, empty line if missing |  |
 | inherited     | `increaseBudget`, `depositCredits`, `withdrawCredits`, `logCredits` |             |
 
@@ -370,7 +371,13 @@ payments, so a closed account can never block a write.
   `app_params_set` (AVM v13). Consumers read the `t` box directly with the
   reference reader, from an oracle app ID they pin (the example consumer
   stores it at create). Phase 0 confirmed this works on LocalNet, so the
-  `logAttestations` inner-call fallback is not needed on-chain.
+  `logAttestations` inner-call fallback is not needed on-chain. Contracts
+  that would rather not carry the reader call `hasRecord` (the TXT RDATA,
+  plus the same arguments and box references as `attestationUsable`, the
+  oracle app reference and one inner call's fee): the oracle walks the
+  chain and matches the record itself. It returns a boolean, not the box:
+  an app call logs at most 1024 bytes and attestations run to 4096. The app
+  ID must still be pinned.
 - The reader's `attestationUsable` walks the chain: the attestation's
   `parentEpoch` must equal the signer's DNSKEY entry's `epoch`, its
   `parentEpoch` the zone's DS entry's `epoch`, and so on up to the root DNSKEY

@@ -40,7 +40,8 @@ It means *this RRset was validly signed at `inception`*, not that the record sti
 now. The consumer decides how old is too old (`maxAge`) and how weak is too weak
 (`minKeyBits`), and walks the chain to check that no key above has been replaced since.
 The reference reader `smart_contracts/dnssec_oracle/reader.algo.ts` does all three in
-`attestationUsable`.
+`attestationUsable`. Contracts that would rather not carry it call the oracle's
+`hasRecord`, which does the same and matches the record (one inner call).
 
 ## Usage models
 
@@ -144,7 +145,7 @@ Summary only. The reasons behind each one are in
 projects/dnssec-oracle/          contract (PuyaTs, AVM 13), unit + e2e tests
   smart_contracts/base/          BaseContract: increaseBudget, above puya-ts-utils' MbrManager
   smart_contracts/dnssec_oracle/ contract, errors, wire parser, reference attestation reader
-  smart_contracts/consumer/      example consumer reading attestation boxes directly
+  smart_contracts/consumer/      example consumer: direct box reads, or hasRecord by call
   tests/                         emulator (*.algo.spec.ts) and LocalNet (*.e2e.spec.ts) suites
 projects/dnssec-oracle-sdk/      reader/writer SDK and the off-chain prover
   src/prover/                    DNS over TCP, canonical signed data, chain building
@@ -309,12 +310,14 @@ marked:
 
 - `app_params_set(ForeignBoxReads)` works inside the creation call, and a second contract
   reads attestation boxes directly (the `logAttestations` fallback was not needed on-chain;
-  the SDK uses it, and `logCaches`, for simulated point reads).
+  the SDK uses it, and `logCaches`, for simulated point reads). Contracts that would rather
+  not carry the reader call `hasRecord` instead: the oracle walks the chain and matches the
+  record, and returns a boolean (an app call logs at most 1024 bytes, so not the box).
 - Group usage stayed at 1,000,000 for every proof group: fees are the transaction count
   (outer calls plus op-up inner calls) at the minimum fee, nothing extra.
 - `increaseBudget` costs 21 opcodes, plus 21 per inner call: pinned in the SDK constants.
-- Approval program: 6,017 bytes at e4e451b (2026-10-01), two extra pages, 127 bytes under a
-  third. AVM 13 allows 16 KB.
+- Approval program: 6,393 bytes with `hasRecord` (2026-10-01), three extra pages.
+  AVM 13 allows 16 KB.
 - The emulator (`algorand-typescript-testing` 1.2.0) pins `latestTimestamp`, but has no
   `app_params_set` and misdecodes struct reads through `.maybe()`; the tests and the
   contract work around both.

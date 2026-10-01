@@ -44,8 +44,11 @@ const P256_N = BigInt('0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac
 /** The transformed error: `Error CODE: message`. */
 const code = (c: string) => new RegExp(`Error ${c}:`)
 
-/** TXT RDATA of `length` bytes (3826 to 4080), in 255-byte strings. */
-const bigRdata = (length: number) => concat(...Array.from({ length: 15 }, () => txt('x'.repeat(254))), txt('x'.repeat(length - 15 * 255 - 1)))
+/** TXT RDATA of `length` bytes, in 255-byte strings. */
+const bigRdata = (length: number) => {
+  const full = Math.ceil(length / 255) - 1
+  return concat(...Array.from({ length: full }, () => txt('x'.repeat(254))), txt('x'.repeat(length - full * 255 - 1)))
+}
 
 const indexOf = (rrset: Uint8Array, rdata: Uint8Array) => rdataOf(rrset).findIndex((r) => toHex(r) === toHex(rdata))
 
@@ -91,26 +94,42 @@ describe('DnssecOracle e2e', () => {
   }
 
   /**
-   * An example consumer pinned to `sdk`'s app, asking whether `_tag.example.com` holds `text`.
-   * Box references: the attestation and its chain walk, 6 boxes.
+   * An example consumer pinned to `sdk`'s app, asking whether `_tag.example.com` holds `text`,
+   * both by reading the boxes itself and by calling the oracle's hasRecord: the two must
+   * agree. Box references: the attestation and its chain walk, 6 boxes.
    */
   const consumerAsk = async (sdk: DnssecOracleSDK) => {
     const { testAccount } = localnet.context
     const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
     // the consumer pins the oracle at create: callers cannot point it at an app of their own
     const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
-    const name = nameToWire('_tag.example.com')
-    return async (text: string, { maxAge = 86_400 * 3, minKeyBits = 2048, zones = ['example.com', 'com'] } = {}) => {
+    return async (text: string, { maxAge = 86_400 * 3, minKeyBits = 2048, zones = ['example.com', 'com'], owner = '_tag.example.com' } = {}) => {
+      const name = nameToWire(owner)
       const wireZones = zones.map((z) => nameToWire(z))
       const boxes = [boxNames.attestation(name), ...boxNames.chain(wireZones)]
-      const { return: ok } = await consumer.send.hasTxt({
+      const params = {
         args: { name, text: new TextEncoder().encode(text), maxAge, minKeyBits, zones: wireZones },
         appReferences: [sdk.appId],
         boxReferences: boxes.map((box) => ({ appId: sdk.appId, name: box })),
         note: `${Math.random()}`,
-      })
-      return ok
+      }
+      const { return: direct } = await consumer.send.hasTxt(params)
+      const { return: byCall } = await consumer.send.hasTxtByCall({ ...params, extraFee: microAlgo(1000) })
+      expect(byCall).toBe(direct)
+      return direct
     }
+  }
+
+  /** The oracle's hasRecord, called directly: `name` signed by its parent zone, under `com`. */
+  const hasRecord = async (sdk: DnssecOracleSDK, owner: string, rdata: Uint8Array, zones = ['example.com', 'com']) => {
+    const name = nameToWire(owner)
+    const wireZones = zones.map((z) => nameToWire(z))
+    const { return: ok } = await sdk.writeClient!.send.hasRecord({
+      args: { name, rdata, maxAge: 86_400 * 3, minKeyBits: 0, zones: wireZones },
+      boxReferences: [boxNames.attestation(name), ...boxNames.chain(wireZones)],
+      note: `${Math.random()}`,
+    })
+    return ok
   }
 
   /** App balance that is neither locked by boxes nor owed to anyone as credit. */
@@ -199,6 +218,7 @@ describe('DnssecOracle e2e', () => {
       await prove('_tag.example.com')
       const ask = await consumerAsk(sdk)
       expect(await ask('hello com')).toBe(true)
+      expect(await ask('hello com', { owner: '_none.example.com' })).toBe(false) // no attestation
       expect(await ask('hello')).toBe(false) // a substring is not a record
       expect(await ask('hello com', { maxAge: 60 })).toBe(false) // signed too long ago
       expect(await ask('hello com', { minKeyBits: 4096 })).toBe(false) // weaker than asked: P-256 counts as 3072
@@ -689,6 +709,15 @@ describe('DnssecOracle e2e', () => {
       world.txt(exampleCom, 'example.com', [bigRdata(4030)])
       await send()
       expect((await sdk.scanRaw('t')).get(attestationKey('example.com'))?.length).toBe(4096)
+      // hasRecord answers at any size: returning the box would log past an app call's 1024 bytes
+      expect(await hasRecord(sdk, 'example.com', txt('hi'))).toBe(false)
+      // a second record costs more signed bytes than stored ones: two top out at 4085.
+      // The match sorts last (0xff > 0xfe), so the walk crosses the whole box
+      const last = txt('y'.repeat(255))
+      world.txt(exampleCom, 'example.com', [bigRdata(3761), last])
+      await send()
+      expect((await sdk.scanRaw('t')).get(attestationKey('example.com'))?.length).toBe(4085)
+      expect(await hasRecord(sdk, 'example.com', last)).toBe(true)
     })
 
   })

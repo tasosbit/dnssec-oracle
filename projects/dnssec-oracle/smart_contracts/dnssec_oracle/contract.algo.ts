@@ -48,9 +48,12 @@ import {
 import {
   ATTESTATION_HEADER,
   attestationExpiration,
+  attestationHasRecord,
   attestationInception,
   attestationParentEpoch,
   attestationPayer,
+  attestationUsable,
+  readAttestation,
 } from './reader.algo'
 import {
   checkName,
@@ -450,7 +453,8 @@ export class DnssecOracle extends BaseContract {
 
   /**
    * Log each name's attestation box, in input order; an empty line if there is none. Stale
-   * ones included: whether the chain above is current takes a walk (reader.algo.ts).
+   * ones included: whether the chain above is current takes a walk (reader.algo.ts). For
+   * simulate with more logging allowed: an app call logs at most 1024 bytes on-chain.
    */
   @readonly
   public logAttestations(names: bytes[]): void {
@@ -458,6 +462,19 @@ export class DnssecOracle extends BaseContract {
       const [value, exists] = this.attestations(op.sha256(name)).maybe()
       log(exists ? value : Bytes())
     }
+  }
+
+  /**
+   * Whether `name` has a usable attestation (attestationUsable in reader.algo.ts) holding a
+   * TXT record with exactly this `rdata`. For contracts calling in: box references as for a
+   * direct read (the attestation, each zone's DNSKEY and DS, the root DNSKEY). A boolean, not
+   * the box: an app call logs at most 1024 bytes, and attestations run to 4096.
+   */
+  @readonly
+  public hasRecord(name: bytes, rdata: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    const self = Global.currentApplicationId
+    const [value, exists] = readAttestation(self, name)
+    return exists && attestationUsable(self, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, rdata)
   }
 
   /**

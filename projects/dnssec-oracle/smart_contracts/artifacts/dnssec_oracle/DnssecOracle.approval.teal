@@ -5,23 +5,23 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 2 64 128 2592000 65535
-    bytecblock 0x "rootEpoch" "c" 0x00 0x01 "ERR:SGN" "ERR:WIR" "a" "t" "r" "admin" "anchorCount" "rollInception" "lastEpoch" "ERR:ROT" "ERR:OLD" "ERR:TYP" "ERR:ALG" "ERR:SLN" "ERR:SIG" "ERR:AST" "ERR:ANC" "ERR:ROL" "ERR:HLD" "ERR:MIS" "ERR:PRN" base64(DYEBQw==) "ERR:rcv" "ERR:amt" "ERR:PAR"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:126
+    bytecblock 0x "rootEpoch" 0x00 "c" "r" 0x01 "ERR:SGN" "t" "ERR:WIR" "a" "admin" "anchorCount" "rollInception" "lastEpoch" "ERR:ROT" "ERR:OLD" "ERR:TYP" "ERR:ALG" "ERR:SLN" "ERR:SIG" "ERR:AST" "ERR:ANC" "ERR:ROL" "ERR:HLD" "ERR:MIS" "ERR:PRN" base64(DYEBQw==) "ERR:rcv" "ERR:amt" "ERR:PAR"
+    // smart_contracts/dnssec_oracle/contract.algo.ts:129
     // export class DnssecOracle extends BaseContract {
     txn NumAppArgs
-    bz main_createApplication@22
+    bz main_createApplication@23
     txn OnCompletion
     !
     assert
     txn ApplicationID
     assert
-    pushbytess 0x03330549 0x17866912 0x2e03d8a1 0xa9ec5e64 0xe307b5b4 0xc5216efd 0xcd74b9b6 0xa7372ed6 0x77a26204 0x92f8f243 0x942ee077 0x4118ecbf 0x3d75f0c4 0x941da4e5 0xeaee7fbd // method "addAnchors(byte[][])void", method "setAdmin(address)void", method "proveRoot(byte[],byte[],byte[],uint64)void", method "proveDs(byte[],byte[],byte[],uint64,byte[])void", method "proveDnskey(byte[],byte[],byte[],uint64,uint64,byte[])void", method "proveTxt(byte[],byte[],byte[],uint64,byte[])void", method "updateAnchor(byte[],byte[32])void", method "revokeRoot(byte[],byte[],byte[],uint64)void", method "prune(byte[],uint64)void", method "logAttestations(byte[][])void", method "logCaches(byte[][])void", method "increaseBudget(uint64)void", method "depositCredits(address,pay)void", method "logCredits(address[])void", method "withdrawCredits()void"
+    pushbytess 0x03330549 0x17866912 0x2e03d8a1 0xa9ec5e64 0xe307b5b4 0xc5216efd 0xcd74b9b6 0xa7372ed6 0x77a26204 0x92f8f243 0x8b8ad878 0x942ee077 0x4118ecbf 0x3d75f0c4 0x941da4e5 0xeaee7fbd // method "addAnchors(byte[][])void", method "setAdmin(address)void", method "proveRoot(byte[],byte[],byte[],uint64)void", method "proveDs(byte[],byte[],byte[],uint64,byte[])void", method "proveDnskey(byte[],byte[],byte[],uint64,uint64,byte[])void", method "proveTxt(byte[],byte[],byte[],uint64,byte[])void", method "updateAnchor(byte[],byte[32])void", method "revokeRoot(byte[],byte[],byte[],uint64)void", method "prune(byte[],uint64)void", method "logAttestations(byte[][])void", method "hasRecord(byte[],byte[],uint64,uint64,byte[][])bool", method "logCaches(byte[][])void", method "increaseBudget(uint64)void", method "depositCredits(address,pay)void", method "logCredits(address[])void", method "withdrawCredits()void"
     txna ApplicationArgs 0
-    match addAnchors setAdmin proveRoot proveDs proveDnskey proveTxt updateAnchor revokeRoot prune logAttestations logCaches increaseBudget depositCredits logCredits withdrawCredits
+    match addAnchors setAdmin proveRoot proveDs proveDnskey proveTxt updateAnchor revokeRoot prune logAttestations hasRecord logCaches increaseBudget depositCredits logCredits withdrawCredits
     err
 
-main_createApplication@22:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:152
+main_createApplication@23:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:155
     // @baremethod({ onCreate: 'require' })
     txn OnCompletion
     !
@@ -29,46 +29,46 @@ main_createApplication@22:
     !
     &&
     assert
-    // smart_contracts/dnssec_oracle/contract.algo.ts:127
+    // smart_contracts/dnssec_oracle/contract.algo.ts:130
     // admin = GlobalState<Account>({ key: 'admin' })
     bytec 10 // "admin"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:154
+    // smart_contracts/dnssec_oracle/contract.algo.ts:157
     // this.admin.value = Txn.sender
     txn Sender
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:129
+    // smart_contracts/dnssec_oracle/contract.algo.ts:132
     // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
     bytec 11 // "anchorCount"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:155
+    // smart_contracts/dnssec_oracle/contract.algo.ts:158
     // this.anchorCount.value = 0
     intc_0 // 0
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:131
+    // smart_contracts/dnssec_oracle/contract.algo.ts:134
     // rollInception = GlobalState<uint64>({ key: 'rollInception' })
     bytec 12 // "rollInception"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:156
+    // smart_contracts/dnssec_oracle/contract.algo.ts:159
     // this.rollInception.value = 0
     intc_0 // 0
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:133
+    // smart_contracts/dnssec_oracle/contract.algo.ts:136
     // lastEpoch = GlobalState<uint64>({ key: 'lastEpoch' })
     bytec 13 // "lastEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:157
+    // smart_contracts/dnssec_oracle/contract.algo.ts:160
     // this.lastEpoch.value = 1
     intc_1 // 1
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:158
+    // smart_contracts/dnssec_oracle/contract.algo.ts:161
     // this.rootEpoch.value = 1
     intc_1 // 1
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:160
+    // smart_contracts/dnssec_oracle/contract.algo.ts:163
     // op.AppParamsSet.appForeignBoxReads(true)
     intc_1 // 1
     app_params_set AppForeignBoxReads
-    // smart_contracts/dnssec_oracle/contract.algo.ts:152
+    // smart_contracts/dnssec_oracle/contract.algo.ts:155
     // @baremethod({ onCreate: 'require' })
     intc_1 // 1
     return
@@ -126,7 +126,7 @@ readName_while_top@1:
     intc_3 // 64
     <
     bnz readName_after_assert@4
-    bytec 6 // "ERR:WIR"
+    bytec 8 // "ERR:WIR"
     log
     err // ERR:WIR
 
@@ -196,7 +196,7 @@ readName_after_while@11:
     pushint 255
     <=
     bnz readName_after_assert@13
-    bytec 6 // "ERR:WIR"
+    bytec 8 // "ERR:WIR"
     log
     err // ERR:WIR
 
@@ -360,7 +360,7 @@ walkRRset_after_assert@8:
     uncover 2
     <=
     bnz walkRRset_after_assert@10
-    bytec 6 // "ERR:WIR"
+    bytec 8 // "ERR:WIR"
     log
     err // ERR:WIR
 
@@ -733,6 +733,49 @@ isAncestor_bool_false@10:
     b isAncestor_bool_merge@11
 
 
+// smart_contracts/dnssec_oracle/reader.algo.ts::linkUp(oracle: uint64, name: bytes, rrtype: uint64, epoch: uint64) -> uint64:
+linkUp:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:71
+    // function linkUp(oracle: Application, name: bytes, rrtype: uint64, epoch: uint64): uint64 {
+    proto 4 1
+    // smart_contracts/dnssec_oracle/wire.algo.ts:173
+    // return name.concat(op.extract(op.itob(rrtype), 6, 2))
+    frame_dig -2
+    itob
+    extract 6 2
+    frame_dig -3
+    swap
+    concat
+    // smart_contracts/dnssec_oracle/reader.algo.ts:72
+    // const [entry, exists] = op.AppBox.get(oracle, Bytes('r').concat(op.sha256(nameType(name, rrtype))))
+    sha256
+    bytec 4 // "r"
+    swap
+    concat
+    frame_dig -4
+    swap
+    app_box_get
+    // smart_contracts/dnssec_oracle/reader.algo.ts:73
+    // return exists && op.extractUint64(entry, CACHE_EPOCH) === epoch ? op.extractUint64(entry, CACHE_EPOCH + 8) : 0
+    bz linkUp_ternary_false@3
+    dup
+    pushint 56
+    extract_uint64
+    frame_dig -1
+    ==
+    bz linkUp_ternary_false@3
+    intc_3 // 64
+    extract_uint64
+    retsub
+
+linkUp_ternary_false@3:
+    pop
+    // smart_contracts/dnssec_oracle/reader.algo.ts:73
+    // return exists && op.extractUint64(entry, CACHE_EPOCH) === epoch ? op.extractUint64(entry, CACHE_EPOCH + 8) : 0
+    intc_0 // 0
+    retsub
+
+
 // @d13co/puya-ts-utils/src/rsa.algo.ts::monMul(a: bytes, b: bytes, n: bytes, nInv: bytes) -> bytes:
 monMul:
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:288
@@ -895,7 +938,7 @@ monMul_after_while@5:
     // r = mac(c1, top, BigUint(1), c2)
     uncover 2
     swap
-    bytec 4 // 0x01
+    bytec 5 // 0x01
     uncover 5
     callsub mac
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:313
@@ -1061,7 +1104,7 @@ add_while_top@1:
     frame_dig -1
     dig 2
     callsub limb
-    bytec 4 // 0x01
+    bytec 5 // 0x01
     uncover 5
     callsub mac
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:344
@@ -1118,7 +1161,7 @@ sub:
     // return n.bitwiseInvert().bitwiseOr(Bytes.fromHex('01'))
     frame_dig -1
     b~
-    bytec 4 // 0x01
+    bytec 5 // 0x01
     b|
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:381
     // const [, difference] = add(x, negate(n))
@@ -1224,16 +1267,16 @@ limb:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::checkKey(rdata: bytes, algorithm: uint64) -> bytes, uint64:
 checkKey:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:574
+    // smart_contracts/dnssec_oracle/contract.algo.ts:591
     // function checkKey(rdata: bytes, algorithm: uint64): readonly [bytes, uint64] {
     proto 2 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:575
+    // smart_contracts/dnssec_oracle/contract.algo.ts:592
     // const flags = op.extractUint16(rdata, 0)
     frame_dig -2
     intc_0 // 0
     extract_uint16
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:576
+    // smart_contracts/dnssec_oracle/contract.algo.ts:593
     // loggedAssert((flags & FLAG_ZONE) !== 0 && (flags & FLAG_REVOKE) === 0, errKeyFlags)
     pushint 256
     &
@@ -1245,7 +1288,7 @@ checkKey:
     intc_1 // 1
 
 checkKey_bool_merge@4:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:576
+    // smart_contracts/dnssec_oracle/contract.algo.ts:593
     // loggedAssert((flags & FLAG_ZONE) !== 0 && (flags & FLAG_REVOKE) === 0, errKeyFlags)
     bnz checkKey_after_assert@6
     pushbytes "ERR:KFL"
@@ -1253,7 +1296,7 @@ checkKey_bool_merge@4:
     err // ERR:KFL
 
 checkKey_after_assert@6:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:577
+    // smart_contracts/dnssec_oracle/contract.algo.ts:594
     // loggedAssert(op.getByte(rdata, 2) === 3, errProtocol)
     frame_dig -2
     intc_2 // 2
@@ -1266,7 +1309,7 @@ checkKey_after_assert@6:
     err // ERR:PRO
 
 checkKey_after_assert@8:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:578
+    // smart_contracts/dnssec_oracle/contract.algo.ts:595
     // loggedAssert(op.getByte(rdata, 3) === algorithm, errAlgorithm)
     frame_dig -2
     pushint 3
@@ -1279,7 +1322,7 @@ checkKey_after_assert@8:
     err // ERR:ALG
 
 checkKey_after_assert@10:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:579
+    // smart_contracts/dnssec_oracle/contract.algo.ts:596
     // const publicKey = op.extract(rdata, 4, rdata.length - 4)
     frame_dig -2
     len
@@ -1289,13 +1332,13 @@ checkKey_after_assert@10:
     pushint 4
     uncover 2
     extract3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:580
+    // smart_contracts/dnssec_oracle/contract.algo.ts:597
     // if (algorithm === ALG_ECDSAP256SHA256) {
     frame_dig -1
     pushint 13
     ==
     bz checkKey_after_if_else@14
-    // smart_contracts/dnssec_oracle/contract.algo.ts:581
+    // smart_contracts/dnssec_oracle/contract.algo.ts:598
     // loggedAssert(publicKey.length === 64, errEcKey)
     dup
     len
@@ -1307,14 +1350,14 @@ checkKey_after_assert@10:
     err // ERR:ECK
 
 checkKey_after_assert@13:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:582
+    // smart_contracts/dnssec_oracle/contract.algo.ts:599
     // return [publicKey, ECDSA_P256_KEY_BITS]
     pushint 3072
     uncover 2
     retsub
 
 checkKey_after_if_else@14:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:584
+    // smart_contracts/dnssec_oracle/contract.algo.ts:601
     // loggedAssert(algorithm === ALG_RSASHA256, errAlgorithm)
     frame_dig -1
     pushint 8
@@ -1325,7 +1368,7 @@ checkKey_after_if_else@14:
     err // ERR:ALG
 
 checkKey_after_assert@16:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:586
+    // smart_contracts/dnssec_oracle/contract.algo.ts:603
     // loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
     dup
     len
@@ -1342,7 +1385,7 @@ checkKey_after_assert@16:
     intc_1 // 1
 
 checkKey_bool_merge@20:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:586
+    // smart_contracts/dnssec_oracle/contract.algo.ts:603
     // loggedAssert(publicKey.length > 4 && op.extract(publicKey, 0, 4) === Bytes.fromHex('03010001'), errExponent)
     bnz checkKey_after_assert@22
     pushbytes "ERR:EXP"
@@ -1350,12 +1393,12 @@ checkKey_bool_merge@20:
     err // ERR:EXP
 
 checkKey_after_assert@22:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:588
+    // smart_contracts/dnssec_oracle/contract.algo.ts:605
     // const first = op.getByte(publicKey, 4)
     dup
     pushint 4
     getbyte
-    // smart_contracts/dnssec_oracle/contract.algo.ts:589
+    // smart_contracts/dnssec_oracle/contract.algo.ts:606
     // const bits: uint64 = (publicKey.length - 5) * 8 + op.bitLength(first)
     uncover 2
     pushint 5
@@ -1366,7 +1409,7 @@ checkKey_after_assert@22:
     bitlen
     +
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:590
+    // smart_contracts/dnssec_oracle/contract.algo.ts:607
     // loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
     bz checkKey_bool_false@26
     dig 1
@@ -1380,7 +1423,7 @@ checkKey_after_assert@22:
     intc_1 // 1
 
 checkKey_bool_merge@27:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:590
+    // smart_contracts/dnssec_oracle/contract.algo.ts:607
     // loggedAssert(first !== 0 && bits >= RSA_MIN_BITS && bits <= RSA_MAX_BITS, errModulus)
     bnz checkKey_after_assert@29
     pushbytes "ERR:MOD"
@@ -1388,7 +1431,7 @@ checkKey_bool_merge@27:
     err // ERR:MOD
 
 checkKey_after_assert@29:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:591
+    // smart_contracts/dnssec_oracle/contract.algo.ts:608
     // return [publicKey, bits]
     swap
     uncover 2
@@ -1409,23 +1452,23 @@ checkKey_bool_false@3:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uint64, publicKey: bytes) -> void:
 verify:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:595
+    // smart_contracts/dnssec_oracle/contract.algo.ts:612
     // function verify(signedData: bytes, signature: bytes, hint: bytes, algorithm: uint64, publicKey: bytes): void {
     proto 5 0
     intc_0 // 0
     bytec_0 // ""
     dupn 4
-    // smart_contracts/dnssec_oracle/contract.algo.ts:596
+    // smart_contracts/dnssec_oracle/contract.algo.ts:613
     // const digest = op.sha256(signedData)
     frame_dig -5
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:597
+    // smart_contracts/dnssec_oracle/contract.algo.ts:614
     // if (algorithm === ALG_ECDSAP256SHA256) {
     frame_dig -2
     pushint 13
     ==
     bz verify_after_if_else@8
-    // smart_contracts/dnssec_oracle/contract.algo.ts:598
+    // smart_contracts/dnssec_oracle/contract.algo.ts:615
     // loggedAssert(signature.length === 64, errSigLength)
     frame_dig -4
     len
@@ -1437,12 +1480,12 @@ verify:
     err // ERR:SLN
 
 verify_after_assert@3:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:601
+    // smart_contracts/dnssec_oracle/contract.algo.ts:618
     // let s = BigUint(op.extract(signature, 32, 32))
     frame_dig -4
     extract 32 32
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:602
+    // smart_contracts/dnssec_oracle/contract.algo.ts:619
     // if (s > P256_HALF_N) s = P256_N - s
     pushbytes 0x7fffffff800000007fffffffffffffffde737d56d38bcf4279dce5617e3192a8
     b>
@@ -1452,24 +1495,24 @@ verify_after_assert@3:
     b-
 
 verify_after_if_else@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:604
+    // smart_contracts/dnssec_oracle/contract.algo.ts:621
     // const low = op.bzero(32).bitwiseOr(Bytes(s))
     pushint 32
     bzero
     b|
-    // smart_contracts/dnssec_oracle/contract.algo.ts:608
+    // smart_contracts/dnssec_oracle/contract.algo.ts:625
     // op.extract(signature, 0, 32),
     frame_dig -4
     extract 0 32
-    // smart_contracts/dnssec_oracle/contract.algo.ts:610
+    // smart_contracts/dnssec_oracle/contract.algo.ts:627
     // op.extract(publicKey, 0, 32),
     frame_dig -1
     extract 0 32
-    // smart_contracts/dnssec_oracle/contract.algo.ts:611
+    // smart_contracts/dnssec_oracle/contract.algo.ts:628
     // op.extract(publicKey, 32, 32),
     frame_dig -1
     extract 32 32
-    // smart_contracts/dnssec_oracle/contract.algo.ts:605-612
+    // smart_contracts/dnssec_oracle/contract.algo.ts:622-629
     // const valid = op.ecdsaVerify(
     //   op.Ecdsa.Secp256r1,
     //   digest,
@@ -1483,7 +1526,7 @@ verify_after_if_else@5:
     cover 4
     cover 4
     ecdsa_verify Secp256r1
-    // smart_contracts/dnssec_oracle/contract.algo.ts:613
+    // smart_contracts/dnssec_oracle/contract.algo.ts:630
     // loggedAssert(valid, errSignature)
     bnz verify_after_assert@7
     bytec 19 // "ERR:SIG"
@@ -1491,12 +1534,12 @@ verify_after_if_else@5:
     err // ERR:SIG
 
 verify_after_assert@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:614
+    // smart_contracts/dnssec_oracle/contract.algo.ts:631
     // return
     retsub
 
 verify_after_if_else@8:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:617
+    // smart_contracts/dnssec_oracle/contract.algo.ts:634
     // const modulus = op.extract(publicKey, 4, publicKey.length - 4)
     frame_dig -1
     len
@@ -1508,7 +1551,7 @@ verify_after_if_else@8:
     extract3
     dup
     frame_bury 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:618
+    // smart_contracts/dnssec_oracle/contract.algo.ts:635
     // loggedAssert(signature.length === modulus.length, errSigLength)
     frame_dig -4
     len
@@ -1526,7 +1569,7 @@ verify_after_if_else@8:
     err // ERR:SLN
 
 verify_after_assert@10:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:620
+    // smart_contracts/dnssec_oracle/contract.algo.ts:637
     // loggedAssert(hint.length > 0, errHint)
     frame_dig -3
     len
@@ -1538,7 +1581,7 @@ verify_after_assert@10:
     err // ERR:HNT
 
 verify_after_assert@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:621
+    // smart_contracts/dnssec_oracle/contract.algo.ts:638
     // loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
     frame_dig -1
     extract 1 3
@@ -1667,7 +1710,7 @@ verify_bool_merge@27:
     cover 2
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:360
     // let m = BigUint(1)
-    bytec 4 // 0x01
+    bytec 5 // 0x01
     cover 5
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:361
     // for (let i: uint64 = 0; i < 9; i++) {
@@ -2223,7 +2266,7 @@ verify_bool_merge@69:
     concat
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:229
     // .concat(Bytes.fromHex('00'))
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:227-229
     // const block = Bytes.fromHex('0001')
     //   .concat(op.bzero<uint64>(length - 3 - tail.length).bitwiseInvert())
@@ -2262,7 +2305,7 @@ verify_bool_merge@69:
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:231
     // return op.extract(state, HEADER + 3 * width, width) === pad(block, width)
     ==
-    // smart_contracts/dnssec_oracle/contract.algo.ts:621
+    // smart_contracts/dnssec_oracle/contract.algo.ts:638
     // loggedAssert(verifyRsaSha256(digest, signature, modulus, op.extract(publicKey, 1, 3), hint), errSignature)
     bnz verify_after_assert@14
     bytec 19 // "ERR:SIG"
@@ -2397,7 +2440,7 @@ verify_after_while@49:
     // node_modules/@d13co/puya-ts-utils/src/rsa.algo.ts:256
     // assert(carry === BigUint(1), errHint)
     swap
-    bytec 4 // 0x01
+    bytec 5 // 0x01
     b==
     assert // ERR:BADHINT
     uncover 3
@@ -2422,7 +2465,7 @@ verify_bool_false@18:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.addAnchors[routing]() -> void:
 addAnchors:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:174
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
     // public addAnchors(dnskeys: bytes[]): void {
     txna ApplicationArgs 1
     dupn 2
@@ -2440,7 +2483,7 @@ addAnchors:
     intc_0 // 0
 
 addAnchors_for_header@1:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:174
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
     // public addAnchors(dnskeys: bytes[]): void {
     dup
     dig 5
@@ -2474,22 +2517,22 @@ addAnchors_for_header@1:
 
 addAnchors_after_for@4:
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:174
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
     // public addAnchors(dnskeys: bytes[]): void {
     intc_2 // 2
     +
     ==
     assert // invalid number of bytes for arc4.dynamic_array<bytes>
-    // smart_contracts/dnssec_oracle/contract.algo.ts:175
+    // smart_contracts/dnssec_oracle/contract.algo.ts:178
     // this.onlyAdmin()
     callsub onlyAdmin
-    // smart_contracts/dnssec_oracle/contract.algo.ts:177
+    // smart_contracts/dnssec_oracle/contract.algo.ts:180
     // loggedAssert(this.anchorCount.value === 0, errAnchorSet)
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:129
+    // smart_contracts/dnssec_oracle/contract.algo.ts:132
     // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
     bytec 11 // "anchorCount"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:177
+    // smart_contracts/dnssec_oracle/contract.algo.ts:180
     // loggedAssert(this.anchorCount.value === 0, errAnchorSet)
     app_global_get_ex
     assert // check GlobalState exists
@@ -2499,7 +2542,7 @@ addAnchors_after_for@4:
     err // ERR:AST
 
 addAnchors_after_assert@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:178
+    // smart_contracts/dnssec_oracle/contract.algo.ts:181
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
@@ -2507,7 +2550,7 @@ addAnchors_after_assert@7:
     intc_0 // 0
 
 addAnchors_for_header@8:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:179
+    // smart_contracts/dnssec_oracle/contract.algo.ts:182
     // for (const rdata of dnskeys) {
     dup
     dig 3
@@ -2518,7 +2561,7 @@ addAnchors_for_header@8:
     callsub dynamic_array_read_byte_length_element
     extract 2 0
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:181
+    // smart_contracts/dnssec_oracle/contract.algo.ts:184
     // loggedAssert(op.extractUint16(rdata, 0) === ANCHOR_FLAGS, errAnchorFlags)
     intc_0 // 0
     extract_uint16
@@ -2530,32 +2573,32 @@ addAnchors_for_header@8:
     err // ERR:AFL
 
 addAnchors_after_assert@11:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:183
+    // smart_contracts/dnssec_oracle/contract.algo.ts:186
     // const algorithm = op.getByte(rdata, 3)
     dup
     pushint 3
     getbyte
-    // smart_contracts/dnssec_oracle/contract.algo.ts:184
+    // smart_contracts/dnssec_oracle/contract.algo.ts:187
     // const [publicKey] = checkKey(rdata, algorithm)
     swap
     dig 1
     callsub checkKey
     pop
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:565
+    // smart_contracts/dnssec_oracle/contract.algo.ts:582
     // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
     itob
     extract 7 1
     swap
     concat
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:142
+    // smart_contracts/dnssec_oracle/contract.algo.ts:145
     // anchors = BoxMap<bytes<32>, AnchorEntry>({ keyPrefix: 'a' })
-    bytec 7 // "a"
+    bytec 9 // "a"
     swap
     concat
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:187
+    // smart_contracts/dnssec_oracle/contract.algo.ts:190
     // loggedAssert(!box.exists, errAnchorSet)
     box_len
     bury 1
@@ -2565,7 +2608,7 @@ addAnchors_after_assert@11:
     err // ERR:AST
 
 addAnchors_after_assert@13:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:188
+    // smart_contracts/dnssec_oracle/contract.algo.ts:191
     // box.value = { state: ANCHOR_VALID, since: Global.latestTimestamp }
     global LatestTimestamp
     intc_2 // 2
@@ -2580,10 +2623,10 @@ addAnchors_after_assert@13:
 
 addAnchors_after_for@15:
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:129
+    // smart_contracts/dnssec_oracle/contract.algo.ts:132
     // anchorCount = GlobalState<uint64>({ key: 'anchorCount' })
     bytec 11 // "anchorCount"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:190
+    // smart_contracts/dnssec_oracle/contract.algo.ts:193
     // this.anchorCount.value = dnskeys.length
     uncover 2
     app_global_put
@@ -2592,7 +2635,7 @@ addAnchors_after_for@15:
     txn Sender
     swap
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:174
+    // smart_contracts/dnssec_oracle/contract.algo.ts:177
     // public addAnchors(dnskeys: bytes[]): void {
     intc_1 // 1
     return
@@ -2600,7 +2643,7 @@ addAnchors_after_for@15:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.setAdmin[routing]() -> void:
 setAdmin:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:196
+    // smart_contracts/dnssec_oracle/contract.algo.ts:199
     // public setAdmin(newAdmin: Account): void {
     txna ApplicationArgs 1
     dup
@@ -2608,17 +2651,17 @@ setAdmin:
     pushint 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/dnssec_oracle/contract.algo.ts:197
+    // smart_contracts/dnssec_oracle/contract.algo.ts:200
     // this.onlyAdmin()
     callsub onlyAdmin
-    // smart_contracts/dnssec_oracle/contract.algo.ts:127
+    // smart_contracts/dnssec_oracle/contract.algo.ts:130
     // admin = GlobalState<Account>({ key: 'admin' })
     bytec 10 // "admin"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:198
+    // smart_contracts/dnssec_oracle/contract.algo.ts:201
     // this.admin.value = newAdmin
     swap
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:196
+    // smart_contracts/dnssec_oracle/contract.algo.ts:199
     // public setAdmin(newAdmin: Account): void {
     intc_1 // 1
     return
@@ -2627,7 +2670,7 @@ setAdmin:
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveRoot[routing]() -> void:
 proveRoot:
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:210
+    // smart_contracts/dnssec_oracle/contract.algo.ts:213
     // public proveRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -2672,14 +2715,14 @@ proveRoot:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/dnssec_oracle/contract.algo.ts:211
+    // smart_contracts/dnssec_oracle/contract.algo.ts:214
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     swap
     cover 6
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:213
+    // smart_contracts/dnssec_oracle/contract.algo.ts:216
     // const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
     global LatestTimestamp
     uncover 2
@@ -2698,27 +2741,27 @@ proveRoot:
     cover 4
     cover 2
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:214
+    // smart_contracts/dnssec_oracle/contract.algo.ts:217
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     ==
     bz proveRoot_bool_false@4
     dig 2
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     ==
     bz proveRoot_bool_false@4
     intc_1 // 1
 
 proveRoot_bool_merge@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:214
+    // smart_contracts/dnssec_oracle/contract.algo.ts:217
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
     bnz proveRoot_after_assert@7
-    bytec 5 // "ERR:SGN"
+    bytec 6 // "ERR:SGN"
     log
     err // ERR:SGN
 
 proveRoot_after_assert@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:215
+    // smart_contracts/dnssec_oracle/contract.algo.ts:218
     // const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
     dig 5
     dig 1
@@ -2729,21 +2772,21 @@ proveRoot_after_assert@7:
     dup
     cover 2
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:565
+    // smart_contracts/dnssec_oracle/contract.algo.ts:582
     // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
     itob
     extract 7 1
     swap
     concat
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:142
+    // smart_contracts/dnssec_oracle/contract.algo.ts:145
     // anchors = BoxMap<bytes<32>, AnchorEntry>({ keyPrefix: 'a' })
-    bytec 7 // "a"
+    bytec 9 // "a"
     swap
     concat
     dup
     bury 17
-    // smart_contracts/dnssec_oracle/contract.algo.ts:219
+    // smart_contracts/dnssec_oracle/contract.algo.ts:222
     // anchor.exists && (anchor.value.state === ANCHOR_VALID || anchor.value.state === ANCHOR_MISSING),
     box_len
     bury 1
@@ -2769,7 +2812,7 @@ proveRoot_bool_true@10:
     intc_1 // 1
 
 proveRoot_bool_merge@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:218-221
+    // smart_contracts/dnssec_oracle/contract.algo.ts:221-224
     // loggedAssert(
     //   anchor.exists && (anchor.value.state === ANCHOR_VALID || anchor.value.state === ANCHOR_MISSING),
     //   errAnchor,
@@ -2780,7 +2823,7 @@ proveRoot_bool_merge@12:
     err // ERR:ANC
 
 proveRoot_after_assert@14:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:222
+    // smart_contracts/dnssec_oracle/contract.algo.ts:225
     // verify(signedData, signature, hint, s.algorithm, publicKey)
     uncover 9
     uncover 9
@@ -2788,13 +2831,13 @@ proveRoot_after_assert@14:
     dig 3
     uncover 5
     callsub verify
-    // smart_contracts/dnssec_oracle/contract.algo.ts:224
+    // smart_contracts/dnssec_oracle/contract.algo.ts:227
     // this.writeCache(s, TYPE_DNSKEY, s.expiration, bits, this.rootEpoch.value)
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:224
+    // smart_contracts/dnssec_oracle/contract.algo.ts:227
     // this.writeCache(s, TYPE_DNSKEY, s.expiration, bits, this.rootEpoch.value)
     app_global_get_ex
     assert // check GlobalState exists
@@ -2819,7 +2862,7 @@ proveRoot_after_assert@14:
     txn Sender
     swap
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:210
+    // smart_contracts/dnssec_oracle/contract.algo.ts:213
     // public proveRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
     intc_1 // 1
     return
@@ -2835,7 +2878,7 @@ proveRoot_bool_false@4:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveDs[routing]() -> void:
 proveDs:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:234
+    // smart_contracts/dnssec_oracle/contract.algo.ts:237
     // public proveDs(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
     txna ApplicationArgs 1
     dup
@@ -2893,14 +2936,14 @@ proveDs:
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
     extract 2 0
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:235
+    // smart_contracts/dnssec_oracle/contract.algo.ts:238
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     swap
     cover 7
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:237
+    // smart_contracts/dnssec_oracle/contract.algo.ts:240
     // const s = parseSignedData(signedData, TYPE_DS, 0, Global.latestTimestamp)
     global LatestTimestamp
     swap
@@ -2921,18 +2964,18 @@ proveDs:
     cover 6
     cover 5
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:239
+    // smart_contracts/dnssec_oracle/contract.algo.ts:242
     // loggedAssert(isAncestor(s.signer, s.owner, true), errSigner)
     swap
     intc_1 // 1
     callsub isAncestor
     bnz proveDs_after_assert@3
-    bytec 5 // "ERR:SGN"
+    bytec 6 // "ERR:SGN"
     log
     err // ERR:SGN
 
 proveDs_after_assert@3:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:240
+    // smart_contracts/dnssec_oracle/contract.algo.ts:243
     // loggedAssert(s.owner.length > 1, errRoot)
     dig 2
     len
@@ -2944,7 +2987,7 @@ proveDs_after_assert@3:
     err // ERR:ROT
 
 proveDs_after_assert@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:242
+    // smart_contracts/dnssec_oracle/contract.algo.ts:245
     // const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
     swap
     dup
@@ -2958,7 +3001,7 @@ proveDs_after_assert@5:
     cover 4
     cover 3
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:243
+    // smart_contracts/dnssec_oracle/contract.algo.ts:246
     // const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
     intc_0 // 0
     pushint 48
@@ -2968,13 +3011,13 @@ proveDs_after_assert@5:
     pop
     cover 2
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:244
+    // smart_contracts/dnssec_oracle/contract.algo.ts:247
     // const [publicKey, bits] = checkKey(key, s.algorithm)
     uncover 5
     dup
     cover 2
     callsub checkKey
-    // smart_contracts/dnssec_oracle/contract.algo.ts:245
+    // smart_contracts/dnssec_oracle/contract.algo.ts:248
     // verify(signedData, signature, hint, s.algorithm, publicKey)
     uncover 14
     uncover 14
@@ -2982,7 +3025,7 @@ proveDs_after_assert@5:
     dig 5
     uncover 5
     callsub verify
-    // smart_contracts/dnssec_oracle/contract.algo.ts:542
+    // smart_contracts/dnssec_oracle/contract.algo.ts:559
     // return a < b ? a : b
     uncover 8
     dup
@@ -2999,7 +3042,7 @@ proveDs_after_assert@5:
     uncover 4
     uncover 2
     select
-    // smart_contracts/dnssec_oracle/contract.algo.ts:247
+    // smart_contracts/dnssec_oracle/contract.algo.ts:250
     // this.writeCache(s, TYPE_DS, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits), cached.epoch)
     uncover 3
     uncover 7
@@ -3020,7 +3063,7 @@ proveDs_after_assert@5:
     txn Sender
     swap
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:234
+    // smart_contracts/dnssec_oracle/contract.algo.ts:237
     // public proveDs(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
     intc_1 // 1
     return
@@ -3031,7 +3074,7 @@ proveDnskey:
     intc_0 // 0
     bytec_0 // ""
     dupn 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:257-264
+    // smart_contracts/dnssec_oracle/contract.algo.ts:260-267
     // public proveDnskey(
     //   signedData: bytes,
     //   signature: bytes,
@@ -3103,14 +3146,14 @@ proveDnskey:
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
     extract 2 0
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:265
+    // smart_contracts/dnssec_oracle/contract.algo.ts:268
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     swap
     cover 5
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:267
+    // smart_contracts/dnssec_oracle/contract.algo.ts:270
     // const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
     global LatestTimestamp
     uncover 2
@@ -3131,16 +3174,16 @@ proveDnskey:
     cover 8
     cover 7
     cover 6
-    // smart_contracts/dnssec_oracle/contract.algo.ts:268
+    // smart_contracts/dnssec_oracle/contract.algo.ts:271
     // loggedAssert(s.signer === s.owner, errSigner)
     ==
     bnz proveDnskey_after_assert@3
-    bytec 5 // "ERR:SGN"
+    bytec 6 // "ERR:SGN"
     log
     err // ERR:SGN
 
 proveDnskey_after_assert@3:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:270
+    // smart_contracts/dnssec_oracle/contract.algo.ts:273
     // loggedAssert(s.owner.length > 1, errRoot)
     dig 1
     len
@@ -3152,7 +3195,7 @@ proveDnskey_after_assert@3:
     err // ERR:ROT
 
 proveDnskey_after_assert@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:272
+    // smart_contracts/dnssec_oracle/contract.algo.ts:275
     // const cached = this.parentEntry(s.owner, TYPE_DS, parent)
     dig 1
     pushint 43
@@ -3165,7 +3208,7 @@ proveDnskey_after_assert@5:
     bury 20
     bury 20
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:273
+    // smart_contracts/dnssec_oracle/contract.algo.ts:276
     // const [, , ds] = walkRRset(parent, 0, TYPE_DS, dsIndex, false)
     intc_0 // 0
     pushint 43
@@ -3177,7 +3220,7 @@ proveDnskey_after_assert@5:
     cover 3
     bury 21
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:626
+    // smart_contracts/dnssec_oracle/contract.algo.ts:643
     // loggedAssert(ds.length === 36 && op.getByte(ds, 3) === 2, errDsDigest)
     len
     pushint 36
@@ -3192,7 +3235,7 @@ proveDnskey_after_assert@5:
     intc_1 // 1
 
 proveDnskey_bool_merge@10:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:626
+    // smart_contracts/dnssec_oracle/contract.algo.ts:643
     // loggedAssert(ds.length === 36 && op.getByte(ds, 3) === 2, errDsDigest)
     bnz proveDnskey_after_assert@12
     pushbytes "ERR:DSD"
@@ -3200,7 +3243,7 @@ proveDnskey_bool_merge@10:
     err // ERR:DSD
 
 proveDnskey_after_assert@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:628
+    // smart_contracts/dnssec_oracle/contract.algo.ts:645
     // op.extractUint16(ds, 0) === keyTag(dnskey) &&
     dig 17
     intc_0 // 0
@@ -3269,14 +3312,14 @@ proveDnskey_after_if_else@17:
     // return acc & 0xffff
     intc 6 // 65535
     &
-    // smart_contracts/dnssec_oracle/contract.algo.ts:628
+    // smart_contracts/dnssec_oracle/contract.algo.ts:645
     // op.extractUint16(ds, 0) === keyTag(dnskey) &&
     ==
-    // smart_contracts/dnssec_oracle/contract.algo.ts:628-629
+    // smart_contracts/dnssec_oracle/contract.algo.ts:645-646
     // op.extractUint16(ds, 0) === keyTag(dnskey) &&
     //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
     bz proveDnskey_bool_false@21
-    // smart_contracts/dnssec_oracle/contract.algo.ts:629
+    // smart_contracts/dnssec_oracle/contract.algo.ts:646
     // op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
     dig 17
     intc_2 // 2
@@ -3285,11 +3328,11 @@ proveDnskey_after_if_else@17:
     pushint 3
     getbyte
     ==
-    // smart_contracts/dnssec_oracle/contract.algo.ts:628-629
+    // smart_contracts/dnssec_oracle/contract.algo.ts:645-646
     // op.extractUint16(ds, 0) === keyTag(dnskey) &&
     //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
     bz proveDnskey_bool_false@21
-    // smart_contracts/dnssec_oracle/contract.algo.ts:630
+    // smart_contracts/dnssec_oracle/contract.algo.ts:647
     // op.extract(ds, 4, 32) === op.sha256(owner.concat(dnskey)),
     dig 17
     extract 4 32
@@ -3298,7 +3341,7 @@ proveDnskey_after_if_else@17:
     concat
     sha256
     ==
-    // smart_contracts/dnssec_oracle/contract.algo.ts:628-630
+    // smart_contracts/dnssec_oracle/contract.algo.ts:645-647
     // op.extractUint16(ds, 0) === keyTag(dnskey) &&
     //   op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
     //   op.extract(ds, 4, 32) === op.sha256(owner.concat(dnskey)),
@@ -3306,7 +3349,7 @@ proveDnskey_after_if_else@17:
     intc_1 // 1
 
 proveDnskey_bool_merge@22:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:627-632
+    // smart_contracts/dnssec_oracle/contract.algo.ts:644-649
     // loggedAssert(
     //   op.extractUint16(ds, 0) === keyTag(dnskey) &&
     //     op.getByte(ds, 2) === op.getByte(dnskey, 3) &&
@@ -3319,14 +3362,14 @@ proveDnskey_bool_merge@22:
     err // ERR:DSM
 
 proveDnskey_after_assert@24:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:275
+    // smart_contracts/dnssec_oracle/contract.algo.ts:278
     // const [publicKey, bits] = checkKey(s.indexed, s.algorithm)
     dup
     dig 3
     dup
     cover 2
     callsub checkKey
-    // smart_contracts/dnssec_oracle/contract.algo.ts:276
+    // smart_contracts/dnssec_oracle/contract.algo.ts:279
     // verify(signedData, signature, hint, s.algorithm, publicKey)
     dig 15
     dig 15
@@ -3334,7 +3377,7 @@ proveDnskey_after_assert@24:
     dig 5
     uncover 5
     callsub verify
-    // smart_contracts/dnssec_oracle/contract.algo.ts:542
+    // smart_contracts/dnssec_oracle/contract.algo.ts:559
     // return a < b ? a : b
     dig 6
     dup
@@ -3354,7 +3397,7 @@ proveDnskey_after_assert@24:
     uncover 4
     uncover 2
     select
-    // smart_contracts/dnssec_oracle/contract.algo.ts:277
+    // smart_contracts/dnssec_oracle/contract.algo.ts:280
     // this.writeCache(s, TYPE_DNSKEY, min(s.expiration, cached.expiry), min(bits, cached.weakestKeyBits), cached.epoch)
     uncover 3
     dig 7
@@ -3375,7 +3418,7 @@ proveDnskey_after_assert@24:
     txn Sender
     dig 8
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:257-264
+    // smart_contracts/dnssec_oracle/contract.algo.ts:260-267
     // public proveDnskey(
     //   signedData: bytes,
     //   signature: bytes,
@@ -3399,7 +3442,7 @@ proveDnskey_bool_false@9:
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.proveTxt[routing]() -> void:
 proveTxt:
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:287
+    // smart_contracts/dnssec_oracle/contract.algo.ts:290
     // public proveTxt(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
     txna ApplicationArgs 1
     dup
@@ -3457,7 +3500,7 @@ proveTxt:
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
     extract 2 0
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:289
+    // smart_contracts/dnssec_oracle/contract.algo.ts:292
     // const s = parseSignedData(signedData, TYPE_TXT, 0, Global.latestTimestamp)
     global LatestTimestamp
     swap
@@ -3476,17 +3519,17 @@ proveTxt:
     cover 4
     uncover 2
     uncover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:291
+    // smart_contracts/dnssec_oracle/contract.algo.ts:294
     // loggedAssert(isAncestor(s.signer, s.owner, false), errSigner)
     intc_0 // 0
     callsub isAncestor
     bnz proveTxt_after_assert@3
-    bytec 5 // "ERR:SGN"
+    bytec 6 // "ERR:SGN"
     log
     err // ERR:SGN
 
 proveTxt_after_assert@3:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:292
+    // smart_contracts/dnssec_oracle/contract.algo.ts:295
     // loggedAssert(s.owner.length > 1, errRoot)
     dig 10
     len
@@ -3498,7 +3541,7 @@ proveTxt_after_assert@3:
     err // ERR:ROT
 
 proveTxt_after_assert@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:293
+    // smart_contracts/dnssec_oracle/contract.algo.ts:296
     // const cached = this.parentEntry(s.signer, TYPE_DNSKEY, parent)
     uncover 3
     pushint 48
@@ -3511,7 +3554,7 @@ proveTxt_after_assert@5:
     cover 7
     cover 4
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:294
+    // smart_contracts/dnssec_oracle/contract.algo.ts:297
     // const [, , key] = walkRRset(parent, 0, TYPE_DNSKEY, keyIndex, false)
     intc_0 // 0
     pushint 48
@@ -3521,14 +3564,14 @@ proveTxt_after_assert@5:
     pop
     cover 2
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:295
+    // smart_contracts/dnssec_oracle/contract.algo.ts:298
     // const [publicKey, bits] = checkKey(key, s.algorithm)
     uncover 3
     dup
     cover 2
     callsub checkKey
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:296
+    // smart_contracts/dnssec_oracle/contract.algo.ts:299
     // verify(signedData, signature, hint, s.algorithm, publicKey)
     uncover 11
     uncover 11
@@ -3536,7 +3579,7 @@ proveTxt_after_assert@5:
     uncover 4
     uncover 4
     callsub verify
-    // smart_contracts/dnssec_oracle/contract.algo.ts:298
+    // smart_contracts/dnssec_oracle/contract.algo.ts:301
     // loggedAssert(ATTESTATION_HEADER + s.records.length <= MAX_VALUE, errTooBig)
     dig 6
     len
@@ -3550,23 +3593,23 @@ proveTxt_after_assert@5:
     err // ERR:BIG
 
 proveTxt_after_assert@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:300
+    // smart_contracts/dnssec_oracle/contract.algo.ts:303
     // const box = this.attestations(op.sha256(s.owner))
     dig 7
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:146
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
     // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
-    bytec 8 // "t"
+    bytec 7 // "t"
     swap
     concat
     dup
     cover 5
-    // smart_contracts/dnssec_oracle/contract.algo.ts:301
+    // smart_contracts/dnssec_oracle/contract.algo.ts:304
     // if (box.exists) {
     box_len
     bury 1
     bz proveTxt_after_if_else@13
-    // smart_contracts/dnssec_oracle/contract.algo.ts:304
+    // smart_contracts/dnssec_oracle/contract.algo.ts:307
     // const old = box.value
     dig 4
     box_get
@@ -3579,13 +3622,13 @@ proveTxt_after_assert@7:
     // return op.extractUint64(value, 24)
     pushint 24
     extract_uint64
-    // smart_contracts/dnssec_oracle/contract.algo.ts:305
+    // smart_contracts/dnssec_oracle/contract.algo.ts:308
     // if (attestationParentEpoch(old) >= this.rootEpoch.value) {
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:305
+    // smart_contracts/dnssec_oracle/contract.algo.ts:308
     // if (attestationParentEpoch(old) >= this.rootEpoch.value) {
     app_global_get_ex
     assert // check GlobalState exists
@@ -3596,7 +3639,7 @@ proveTxt_after_assert@7:
     dig 9
     intc_0 // 0
     extract_uint64
-    // smart_contracts/dnssec_oracle/contract.algo.ts:306
+    // smart_contracts/dnssec_oracle/contract.algo.ts:309
     // loggedAssert(s.inception >= attestationInception(old), errOld)
     dig 1
     <=
@@ -3606,23 +3649,23 @@ proveTxt_after_assert@7:
     err // ERR:OLD
 
 proveTxt_after_if_else@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:308
+    // smart_contracts/dnssec_oracle/contract.algo.ts:311
     // this.deleteAttestation(s.owner)
     dig 8
     callsub deleteAttestation
 
 proveTxt_after_if_else@13:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:311
+    // smart_contracts/dnssec_oracle/contract.algo.ts:314
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-313
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-316
     // box.value = op
     //   .itob(s.inception)
     swap
     itob
-    // smart_contracts/dnssec_oracle/contract.algo.ts:542
+    // smart_contracts/dnssec_oracle/contract.algo.ts:559
     // return a < b ? a : b
     uncover 4
     dup
@@ -3633,15 +3676,15 @@ proveTxt_after_if_else@13:
     swap
     cover 2
     select
-    // smart_contracts/dnssec_oracle/contract.algo.ts:314
+    // smart_contracts/dnssec_oracle/contract.algo.ts:317
     // .concat(op.itob(min(s.expiration, cached.expiry)))
     itob
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-314
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-317
     // box.value = op
     //   .itob(s.inception)
     //   .concat(op.itob(min(s.expiration, cached.expiry)))
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:542
+    // smart_contracts/dnssec_oracle/contract.algo.ts:559
     // return a < b ? a : b
     uncover 2
     dup
@@ -3652,30 +3695,30 @@ proveTxt_after_if_else@13:
     swap
     cover 2
     select
-    // smart_contracts/dnssec_oracle/contract.algo.ts:315
+    // smart_contracts/dnssec_oracle/contract.algo.ts:318
     // .concat(op.itob(min(bits, cached.weakestKeyBits)))
     itob
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-315
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-318
     // box.value = op
     //   .itob(s.inception)
     //   .concat(op.itob(min(s.expiration, cached.expiry)))
     //   .concat(op.itob(min(bits, cached.weakestKeyBits)))
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:316
+    // smart_contracts/dnssec_oracle/contract.algo.ts:319
     // .concat(op.itob(cached.epoch))
     uncover 3
     itob
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-316
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-319
     // box.value = op
     //   .itob(s.inception)
     //   .concat(op.itob(min(s.expiration, cached.expiry)))
     //   .concat(op.itob(min(bits, cached.weakestKeyBits)))
     //   .concat(op.itob(cached.epoch))
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:317
+    // smart_contracts/dnssec_oracle/contract.algo.ts:320
     // .concat(Txn.sender.bytes)
     txn Sender
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-317
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-320
     // box.value = op
     //   .itob(s.inception)
     //   .concat(op.itob(min(s.expiration, cached.expiry)))
@@ -3683,7 +3726,7 @@ proveTxt_after_if_else@13:
     //   .concat(op.itob(cached.epoch))
     //   .concat(Txn.sender.bytes)
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:312-318
+    // smart_contracts/dnssec_oracle/contract.algo.ts:315-321
     // box.value = op
     //   .itob(s.inception)
     //   .concat(op.itob(min(s.expiration, cached.expiry)))
@@ -3704,7 +3747,7 @@ proveTxt_after_if_else@13:
     txn Sender
     swap
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:287
+    // smart_contracts/dnssec_oracle/contract.algo.ts:290
     // public proveTxt(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64, parent: bytes): void {
     intc_1 // 1
     return
@@ -3712,7 +3755,7 @@ proveTxt_after_if_else@13:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.updateAnchor[routing]() -> void:
 updateAnchor:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:342
+    // smart_contracts/dnssec_oracle/contract.algo.ts:345
     // public updateAnchor(rrset: bytes, keyHash: bytes<32>): void {
     txna ApplicationArgs 1
     dup
@@ -3733,16 +3776,16 @@ updateAnchor:
     pushint 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // smart_contracts/dnssec_oracle/contract.algo.ts:343
+    // smart_contracts/dnssec_oracle/contract.algo.ts:346
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     swap
     cover 4
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:346
+    // smart_contracts/dnssec_oracle/contract.algo.ts:349
     // const cached = this.parentEntry(ROOT, TYPE_DNSKEY, rrset)
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     pushint 48
     uncover 2
     callsub parentEntry
@@ -3750,13 +3793,13 @@ updateAnchor:
     dup
     uncover 2
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:348
+    // smart_contracts/dnssec_oracle/contract.algo.ts:351
     // loggedAssert(cached.inception >= this.rollInception.value, errOld)
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:131
+    // smart_contracts/dnssec_oracle/contract.algo.ts:134
     // rollInception = GlobalState<uint64>({ key: 'rollInception' })
     bytec 12 // "rollInception"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:348
+    // smart_contracts/dnssec_oracle/contract.algo.ts:351
     // loggedAssert(cached.inception >= this.rollInception.value, errOld)
     app_global_get_ex
     assert // check GlobalState exists
@@ -3767,25 +3810,25 @@ updateAnchor:
     err // ERR:OLD
 
 updateAnchor_after_assert@3:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:131
+    // smart_contracts/dnssec_oracle/contract.algo.ts:134
     // rollInception = GlobalState<uint64>({ key: 'rollInception' })
     bytec 12 // "rollInception"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:349
+    // smart_contracts/dnssec_oracle/contract.algo.ts:352
     // this.rollInception.value = cached.inception
     swap
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:551
+    // smart_contracts/dnssec_oracle/contract.algo.ts:568
     // let at: uint64 = 0
     intc_0 // 0
 
 updateAnchor_while_top@34:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:552
+    // smart_contracts/dnssec_oracle/contract.algo.ts:569
     // while (at < rrset.length) {
     dig 2
     len
     dig 1
     >
-    // smart_contracts/dnssec_oracle/contract.algo.ts:552-559
+    // smart_contracts/dnssec_oracle/contract.algo.ts:569-576
     // while (at < rrset.length) {
     //   // owner (1), type (2), class (2), TTL (4), then RDLENGTH
     //   const rdlength = op.extractUint16(rrset, at + 9)
@@ -3795,7 +3838,7 @@ updateAnchor_while_top@34:
     //   at += 11 + rdlength
     // }
     bz updateAnchor_after_while@38
-    // smart_contracts/dnssec_oracle/contract.algo.ts:554
+    // smart_contracts/dnssec_oracle/contract.algo.ts:571
     // const rdlength = op.extractUint16(rrset, at + 9)
     dupn 2
     pushint 9
@@ -3807,7 +3850,7 @@ updateAnchor_while_top@34:
     extract_uint16
     dup
     cover 4
-    // smart_contracts/dnssec_oracle/contract.algo.ts:555
+    // smart_contracts/dnssec_oracle/contract.algo.ts:572
     // const rdata = op.extract(rrset, at + 11, rdlength)
     swap
     pushint 11
@@ -3818,7 +3861,7 @@ updateAnchor_while_top@34:
     extract3
     dup
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:557
+    // smart_contracts/dnssec_oracle/contract.algo.ts:574
     // if (anchorKey(op.getByte(rdata, 3), op.extract(rdata, 4, rdlength - 4)) === keyHash) return [rdata, true]
     dup
     pushint 3
@@ -3830,7 +3873,7 @@ updateAnchor_while_top@34:
     pushint 4
     uncover 2
     extract3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:565
+    // smart_contracts/dnssec_oracle/contract.algo.ts:582
     // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
     swap
     itob
@@ -3838,7 +3881,7 @@ updateAnchor_while_top@34:
     swap
     concat
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:557
+    // smart_contracts/dnssec_oracle/contract.algo.ts:574
     // if (anchorKey(op.getByte(rdata, 3), op.extract(rdata, 4, rdlength - 4)) === keyHash) return [rdata, true]
     dig 4
     ==
@@ -3851,7 +3894,7 @@ updateAnchor_while_top@34:
     swap
 
 updateAnchor_after_inlined_smart_contracts/dnssec_oracle/contract.algo.ts::findKey@39:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:353
+    // smart_contracts/dnssec_oracle/contract.algo.ts:356
     // const present = found && (op.extractUint16(key, 0) & FLAG_REVOKE) === 0
     swap
     bz updateAnchor_bool_false@6
@@ -3865,23 +3908,23 @@ updateAnchor_after_inlined_smart_contracts/dnssec_oracle/contract.algo.ts::findK
     swap
 
 updateAnchor_bool_merge@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:354
+    // smart_contracts/dnssec_oracle/contract.algo.ts:357
     // const now = Global.latestTimestamp
     global LatestTimestamp
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:142
+    // smart_contracts/dnssec_oracle/contract.algo.ts:145
     // anchors = BoxMap<bytes<32>, AnchorEntry>({ keyPrefix: 'a' })
-    bytec 7 // "a"
+    bytec 9 // "a"
     uncover 4
     concat
     dup
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:356
+    // smart_contracts/dnssec_oracle/contract.algo.ts:359
     // if (!box.exists) {
     box_len
     bury 1
     bnz updateAnchor_else_body@15
-    // smart_contracts/dnssec_oracle/contract.algo.ts:358
+    // smart_contracts/dnssec_oracle/contract.algo.ts:361
     // loggedAssert(present && op.extractUint16(key, 0) === ANCHOR_FLAGS, errRoll)
     swap
     bz updateAnchor_bool_false@11
@@ -3894,7 +3937,7 @@ updateAnchor_bool_merge@7:
     intc_1 // 1
 
 updateAnchor_bool_merge@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:358
+    // smart_contracts/dnssec_oracle/contract.algo.ts:361
     // loggedAssert(present && op.extractUint16(key, 0) === ANCHOR_FLAGS, errRoll)
     bnz updateAnchor_after_assert@14
     bytec 22 // "ERR:ROL"
@@ -3902,14 +3945,14 @@ updateAnchor_bool_merge@12:
     err // ERR:ROL
 
 updateAnchor_after_assert@14:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:359
+    // smart_contracts/dnssec_oracle/contract.algo.ts:362
     // checkKey(key, op.getByte(key, 3))
     dup
     pushint 3
     getbyte
     callsub checkKey
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:360
+    // smart_contracts/dnssec_oracle/contract.algo.ts:363
     // box.value = { state: ANCHOR_ADDPEND, since: now }
     intc_1 // 1
     itob
@@ -3924,7 +3967,7 @@ updateAnchor_after_if_else@32:
     txn Sender
     dig 1
     callsub settleMbrCredits
-    // smart_contracts/dnssec_oracle/contract.algo.ts:342
+    // smart_contracts/dnssec_oracle/contract.algo.ts:345
     // public updateAnchor(rrset: bytes, keyHash: bytes<32>): void {
     intc_1 // 1
     return
@@ -3935,7 +3978,7 @@ updateAnchor_bool_false@11:
 
 updateAnchor_else_body@15:
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:362
+    // smart_contracts/dnssec_oracle/contract.algo.ts:365
     // const anchor = box.value
     dig 1
     box_get
@@ -3949,14 +3992,14 @@ updateAnchor_else_body@15:
     pushint 8
     extract_uint64
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:363
+    // smart_contracts/dnssec_oracle/contract.algo.ts:366
     // if (anchor.state === ANCHOR_REVOKED) {
     pushint 4
     ==
     bz updateAnchor_else_body@19
     bury 1
     bury 1
-    // smart_contracts/dnssec_oracle/contract.algo.ts:365
+    // smart_contracts/dnssec_oracle/contract.algo.ts:368
     // loggedAssert(now >= anchor.since + HOLD_DOWN_SECONDS, errHoldDown)
     intc 5 // 2592000
     +
@@ -3968,14 +4011,14 @@ updateAnchor_else_body@15:
     err // ERR:HLD
 
 updateAnchor_after_assert@18:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:366
+    // smart_contracts/dnssec_oracle/contract.algo.ts:369
     // box.delete()
     box_del
     pop
     b updateAnchor_after_if_else@32
 
 updateAnchor_else_body@19:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:367
+    // smart_contracts/dnssec_oracle/contract.algo.ts:370
     // } else if (anchor.state === ANCHOR_ADDPEND && !present) {
     dig 2
     intc_1 // 1
@@ -3986,19 +4029,19 @@ updateAnchor_else_body@19:
     bnz updateAnchor_else_body@22
     popn 4
     bury 1
-    // smart_contracts/dnssec_oracle/contract.algo.ts:369
+    // smart_contracts/dnssec_oracle/contract.algo.ts:372
     // box.delete()
     box_del
     pop
     b updateAnchor_after_if_else@32
 
 updateAnchor_else_body@22:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:370
+    // smart_contracts/dnssec_oracle/contract.algo.ts:373
     // } else if (anchor.state === ANCHOR_ADDPEND) {
     bz updateAnchor_else_body@26
     bury 1
     bury 1
-    // smart_contracts/dnssec_oracle/contract.algo.ts:372
+    // smart_contracts/dnssec_oracle/contract.algo.ts:375
     // loggedAssert(now >= anchor.since + HOLD_DOWN_SECONDS, errHoldDown)
     intc 5 // 2592000
     +
@@ -4010,7 +4053,7 @@ updateAnchor_else_body@22:
     err // ERR:HLD
 
 updateAnchor_after_assert@25:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:373
+    // smart_contracts/dnssec_oracle/contract.algo.ts:376
     // box.value = { state: ANCHOR_VALID, since: now }
     intc_2 // 2
     itob
@@ -4022,7 +4065,7 @@ updateAnchor_after_assert@25:
 
 updateAnchor_else_body@26:
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:376
+    // smart_contracts/dnssec_oracle/contract.algo.ts:379
     // loggedAssert(present === (anchor.state === ANCHOR_MISSING), errRoll)
     swap
     pushint 3
@@ -4035,7 +4078,7 @@ updateAnchor_else_body@26:
     err // ERR:ROL
 
 updateAnchor_after_assert@28:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:377
+    // smart_contracts/dnssec_oracle/contract.algo.ts:380
     // box.value = { state: present ? ANCHOR_VALID : ANCHOR_MISSING, since: now }
     pushint 3
     intc_2 // 2
@@ -4055,7 +4098,7 @@ updateAnchor_bool_false@6:
 
 updateAnchor_after_if_else@37:
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:558
+    // smart_contracts/dnssec_oracle/contract.algo.ts:575
     // at += 11 + rdlength
     pushint 11
     uncover 2
@@ -4066,18 +4109,18 @@ updateAnchor_after_if_else@37:
 updateAnchor_after_while@38:
     pop
     bury 1
-    // smart_contracts/dnssec_oracle/contract.algo.ts:560
+    // smart_contracts/dnssec_oracle/contract.algo.ts:577
     // return [Bytes(), false]
     intc_0 // 0
     bytec_0 // 0x
-    // smart_contracts/dnssec_oracle/contract.algo.ts:351
+    // smart_contracts/dnssec_oracle/contract.algo.ts:354
     // const [key, found] = findKey(rrset, keyHash)
     b updateAnchor_after_inlined_smart_contracts/dnssec_oracle/contract.algo.ts::findKey@39
 
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.revokeRoot[routing]() -> void:
 revokeRoot:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:393
+    // smart_contracts/dnssec_oracle/contract.algo.ts:396
     // public revokeRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -4122,7 +4165,7 @@ revokeRoot:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // smart_contracts/dnssec_oracle/contract.algo.ts:395
+    // smart_contracts/dnssec_oracle/contract.algo.ts:398
     // const s = parseSignedData(signedData, TYPE_DNSKEY, keyIndex, Global.latestTimestamp)
     global LatestTimestamp
     uncover 2
@@ -4137,27 +4180,27 @@ revokeRoot:
     cover 8
     popn 2
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:396
+    // smart_contracts/dnssec_oracle/contract.algo.ts:399
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     ==
     bz revokeRoot_bool_false@4
     dig 5
-    bytec_3 // 0x00
+    bytec_2 // 0x00
     ==
     bz revokeRoot_bool_false@4
     intc_1 // 1
 
 revokeRoot_bool_merge@5:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:396
+    // smart_contracts/dnssec_oracle/contract.algo.ts:399
     // loggedAssert(s.owner === ROOT && s.signer === ROOT, errSigner)
     bnz revokeRoot_after_assert@7
-    bytec 5 // "ERR:SGN"
+    bytec 6 // "ERR:SGN"
     log
     err // ERR:SGN
 
 revokeRoot_after_assert@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:397
+    // smart_contracts/dnssec_oracle/contract.algo.ts:400
     // loggedAssert(op.extractUint16(s.indexed, 0) === REVOKED_FLAGS, errRevoke)
     dup
     intc_0 // 0
@@ -4170,7 +4213,7 @@ revokeRoot_after_assert@7:
     err // ERR:RVK
 
 revokeRoot_after_assert@9:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:399
+    // smart_contracts/dnssec_oracle/contract.algo.ts:402
     // const [publicKey] = checkKey(op.replace(s.indexed, 0, Bytes.fromHex('0101')), s.algorithm)
     pushbytes 0x0101
     replace2 0
@@ -4182,21 +4225,21 @@ revokeRoot_after_assert@9:
     dup
     cover 2
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:565
+    // smart_contracts/dnssec_oracle/contract.algo.ts:582
     // return op.sha256(op.extract(op.itob(algorithm), 7, 1).concat(publicKey))
     itob
     extract 7 1
     swap
     concat
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:142
+    // smart_contracts/dnssec_oracle/contract.algo.ts:145
     // anchors = BoxMap<bytes<32>, AnchorEntry>({ keyPrefix: 'a' })
-    bytec 7 // "a"
+    bytec 9 // "a"
     swap
     concat
     dup
     cover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:402
+    // smart_contracts/dnssec_oracle/contract.algo.ts:405
     // loggedAssert(box.exists && box.value.state !== ANCHOR_REVOKED, errAnchor)
     box_len
     bury 1
@@ -4212,7 +4255,7 @@ revokeRoot_after_assert@9:
     intc_1 // 1
 
 revokeRoot_bool_merge@13:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:402
+    // smart_contracts/dnssec_oracle/contract.algo.ts:405
     // loggedAssert(box.exists && box.value.state !== ANCHOR_REVOKED, errAnchor)
     bnz revokeRoot_after_assert@15
     bytec 21 // "ERR:ANC"
@@ -4220,7 +4263,7 @@ revokeRoot_bool_merge@13:
     err // ERR:ANC
 
 revokeRoot_after_assert@15:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:403
+    // smart_contracts/dnssec_oracle/contract.algo.ts:406
     // verify(signedData, signature, hint, s.algorithm, publicKey)
     uncover 5
     uncover 5
@@ -4228,7 +4271,7 @@ revokeRoot_after_assert@15:
     uncover 3
     uncover 5
     callsub verify
-    // smart_contracts/dnssec_oracle/contract.algo.ts:404
+    // smart_contracts/dnssec_oracle/contract.algo.ts:407
     // const trusted = box.value.state !== ANCHOR_ADDPEND
     dup
     box_get
@@ -4237,7 +4280,7 @@ revokeRoot_after_assert@15:
     extract_uint64
     intc_1 // 1
     !=
-    // smart_contracts/dnssec_oracle/contract.algo.ts:406
+    // smart_contracts/dnssec_oracle/contract.algo.ts:409
     // box.value = { state: ANCHOR_REVOKED, since: Global.latestTimestamp }
     global LatestTimestamp
     pushint 4
@@ -4248,20 +4291,20 @@ revokeRoot_after_assert@15:
     uncover 2
     swap
     box_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:408
+    // smart_contracts/dnssec_oracle/contract.algo.ts:411
     // if (trusted) this.rootEpoch.value = this.nextEpoch()
     bz revokeRoot_after_if_else@17
     callsub nextEpoch
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:408
+    // smart_contracts/dnssec_oracle/contract.algo.ts:411
     // if (trusted) this.rootEpoch.value = this.nextEpoch()
     swap
     app_global_put
 
 revokeRoot_after_if_else@17:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:393
+    // smart_contracts/dnssec_oracle/contract.algo.ts:396
     // public revokeRoot(signedData: bytes, signature: bytes, hint: bytes, keyIndex: uint64): void {
     intc_1 // 1
     return
@@ -4280,7 +4323,7 @@ prune:
     intc_0 // 0
     bytec_0 // ""
     dupn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:420
+    // smart_contracts/dnssec_oracle/contract.algo.ts:423
     // public prune(name: bytes, rrtype: uint64): void {
     txna ApplicationArgs 1
     dup
@@ -4313,34 +4356,34 @@ prune:
     swap
     len
     ==
-    bnz prune_after_assert@27
-    bytec 6 // "ERR:WIR"
+    bnz prune_after_assert@25
+    bytec 8 // "ERR:WIR"
     log
     err // ERR:WIR
 
-prune_after_assert@27:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:423
+prune_after_assert@25:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:426
     // const now = Global.latestTimestamp
     global LatestTimestamp
     bury 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:424
+    // smart_contracts/dnssec_oracle/contract.algo.ts:427
     // if (rrtype === TYPE_TXT) {
     dup
     pushint 16
     ==
     bz prune_else_body@13
     pop
-    // smart_contracts/dnssec_oracle/contract.algo.ts:425
+    // smart_contracts/dnssec_oracle/contract.algo.ts:428
     // const box = this.attestations(op.sha256(name))
     dup
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:146
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
     // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
-    bytec 8 // "t"
+    bytec 7 // "t"
     swap
     concat
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:426
+    // smart_contracts/dnssec_oracle/contract.algo.ts:429
     // loggedAssert(box.exists, errMissing)
     box_len
     bury 1
@@ -4350,7 +4393,7 @@ prune_after_assert@27:
     err // ERR:MIS
 
 prune_after_assert@4:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:427
+    // smart_contracts/dnssec_oracle/contract.algo.ts:430
     // const value = box.value
     dup
     box_get
@@ -4364,7 +4407,7 @@ prune_after_assert@4:
     pushint 8
     extract_uint64
     bury 4
-    // smart_contracts/dnssec_oracle/contract.algo.ts:430
+    // smart_contracts/dnssec_oracle/contract.algo.ts:433
     // (Txn.sender === attestationPayer(value) && now > expiration) ||
     txn Sender
     // smart_contracts/dnssec_oracle/reader.algo.ts:58
@@ -4373,7 +4416,7 @@ prune_after_assert@4:
     pushint 32
     dup
     box_extract
-    // smart_contracts/dnssec_oracle/contract.algo.ts:430
+    // smart_contracts/dnssec_oracle/contract.algo.ts:433
     // (Txn.sender === attestationPayer(value) && now > expiration) ||
     ==
     bz prune_or_contd@6
@@ -4383,14 +4426,14 @@ prune_after_assert@4:
     bnz prune_bool_true@8
 
 prune_or_contd@6:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:431
+    // smart_contracts/dnssec_oracle/contract.algo.ts:434
     // now > expiration + PRUNE_GRACE_SECONDS ||
     dig 2
     intc 5 // 2592000
     +
     dig 2
     <
-    // smart_contracts/dnssec_oracle/contract.algo.ts:430-431
+    // smart_contracts/dnssec_oracle/contract.algo.ts:433-434
     // (Txn.sender === attestationPayer(value) && now > expiration) ||
     //   now > expiration + PRUNE_GRACE_SECONDS ||
     bnz prune_bool_true@8
@@ -4399,18 +4442,18 @@ prune_or_contd@6:
     dig 4
     pushint 24
     extract_uint64
-    // smart_contracts/dnssec_oracle/contract.algo.ts:432
+    // smart_contracts/dnssec_oracle/contract.algo.ts:435
     // attestationParentEpoch(value) < this.rootEpoch.value,
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:432
+    // smart_contracts/dnssec_oracle/contract.algo.ts:435
     // attestationParentEpoch(value) < this.rootEpoch.value,
     app_global_get_ex
     assert // check GlobalState exists
     <
-    // smart_contracts/dnssec_oracle/contract.algo.ts:430-432
+    // smart_contracts/dnssec_oracle/contract.algo.ts:433-435
     // (Txn.sender === attestationPayer(value) && now > expiration) ||
     //   now > expiration + PRUNE_GRACE_SECONDS ||
     //   attestationParentEpoch(value) < this.rootEpoch.value,
@@ -4420,7 +4463,7 @@ prune_bool_true@8:
     intc_1 // 1
 
 prune_bool_merge@10:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:429-434
+    // smart_contracts/dnssec_oracle/contract.algo.ts:432-437
     // loggedAssert(
     //   (Txn.sender === attestationPayer(value) && now > expiration) ||
     //     now > expiration + PRUNE_GRACE_SECONDS ||
@@ -4433,12 +4476,12 @@ prune_bool_merge@10:
     err // ERR:PRN
 
 prune_after_assert@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:436
+    // smart_contracts/dnssec_oracle/contract.algo.ts:439
     // this.deleteAttestation(name)
     callsub deleteAttestation
 
 prune_after_if_else@22:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:420
+    // smart_contracts/dnssec_oracle/contract.algo.ts:423
     // public prune(name: bytes, rrtype: uint64): void {
     intc_1 // 1
     return
@@ -4453,16 +4496,16 @@ prune_else_body@13:
     itob
     extract 6 2
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:439
+    // smart_contracts/dnssec_oracle/contract.algo.ts:442
     // const box = this.caches(op.sha256(nameType(name, rrtype)))
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:144
+    // smart_contracts/dnssec_oracle/contract.algo.ts:147
     // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
-    bytec 9 // "r"
+    bytec 4 // "r"
     swap
     concat
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:440
+    // smart_contracts/dnssec_oracle/contract.algo.ts:443
     // loggedAssert(box.exists, errMissing)
     box_len
     bury 1
@@ -4472,7 +4515,7 @@ prune_else_body@13:
     err // ERR:MIS
 
 prune_after_assert@15:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:441
+    // smart_contracts/dnssec_oracle/contract.algo.ts:444
     // const entry = box.value
     dup
     box_get
@@ -4484,16 +4527,16 @@ prune_after_assert@15:
     pushint 56
     extract_uint64
     bury 5
-    // smart_contracts/dnssec_oracle/contract.algo.ts:442
+    // smart_contracts/dnssec_oracle/contract.algo.ts:445
     // loggedAssert(now > entry.expiry || entry.epoch < this.rootEpoch.value, errPrune)
     dig 2
     <
     bnz prune_bool_true@17
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:442
+    // smart_contracts/dnssec_oracle/contract.algo.ts:445
     // loggedAssert(now > entry.expiry || entry.epoch < this.rootEpoch.value, errPrune)
     app_global_get_ex
     assert // check GlobalState exists
@@ -4505,7 +4548,7 @@ prune_bool_true@17:
     intc_1 // 1
 
 prune_bool_merge@19:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:442
+    // smart_contracts/dnssec_oracle/contract.algo.ts:445
     // loggedAssert(now > entry.expiry || entry.epoch < this.rootEpoch.value, errPrune)
     bnz prune_after_assert@21
     bytec 25 // "ERR:PRN"
@@ -4513,12 +4556,12 @@ prune_bool_merge@19:
     err // ERR:PRN
 
 prune_after_assert@21:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:443
+    // smart_contracts/dnssec_oracle/contract.algo.ts:446
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:444
+    // smart_contracts/dnssec_oracle/contract.algo.ts:447
     // box.delete()
     swap
     box_del
@@ -4537,7 +4580,7 @@ prune_bool_false@18:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.logAttestations[routing]() -> void:
 logAttestations:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:455-456
+    // smart_contracts/dnssec_oracle/contract.algo.ts:459-460
     // @readonly
     // public logAttestations(names: bytes[]): void {
     txna ApplicationArgs 1
@@ -4556,7 +4599,7 @@ logAttestations:
     intc_0 // 0
 
 logAttestations_for_header@1:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:455-456
+    // smart_contracts/dnssec_oracle/contract.algo.ts:459-460
     // @readonly
     // public logAttestations(names: bytes[]): void {
     dup
@@ -4591,7 +4634,7 @@ logAttestations_for_header@1:
 
 logAttestations_after_for@4:
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:455-456
+    // smart_contracts/dnssec_oracle/contract.algo.ts:459-460
     // @readonly
     // public logAttestations(names: bytes[]): void {
     intc_2 // 2
@@ -4601,7 +4644,7 @@ logAttestations_after_for@4:
     intc_0 // 0
 
 logAttestations_for_header@6:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:457
+    // smart_contracts/dnssec_oracle/contract.algo.ts:461
     // for (const name of names) {
     dup
     dig 2
@@ -4611,18 +4654,18 @@ logAttestations_for_header@6:
     dig 1
     callsub dynamic_array_read_byte_length_element
     extract 2 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:458
+    // smart_contracts/dnssec_oracle/contract.algo.ts:462
     // const [value, exists] = this.attestations(op.sha256(name)).maybe()
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:146
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
     // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
-    bytec 8 // "t"
+    bytec 7 // "t"
     swap
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:458
+    // smart_contracts/dnssec_oracle/contract.algo.ts:462
     // const [value, exists] = this.attestations(op.sha256(name)).maybe()
     box_get
-    // smart_contracts/dnssec_oracle/contract.algo.ts:459
+    // smart_contracts/dnssec_oracle/contract.algo.ts:463
     // log(exists ? value : Bytes())
     bytec_0 // 0x
     cover 2
@@ -4633,16 +4676,346 @@ logAttestations_for_header@6:
     b logAttestations_for_header@6
 
 logAttestations_after_for@9:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:455-456
+    // smart_contracts/dnssec_oracle/contract.algo.ts:459-460
     // @readonly
     // public logAttestations(names: bytes[]): void {
     intc_1 // 1
     return
 
 
+// smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.hasRecord[routing]() -> void:
+hasRecord:
+    intc_0 // 0
+    bytec_0 // ""
+    dup
+    // smart_contracts/dnssec_oracle/contract.algo.ts:473-474
+    // @readonly
+    // public hasRecord(name: bytes, rdata: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    txna ApplicationArgs 1
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    txna ApplicationArgs 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    extract 2 0
+    swap
+    txna ApplicationArgs 3
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    swap
+    txna ApplicationArgs 4
+    dup
+    len
+    pushint 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    swap
+    txna ApplicationArgs 5
+    dup
+    cover 2
+    dup
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    dup
+    cover 3
+    intc_2 // 2
+    *
+    swap
+    dup
+    len
+    cover 2
+    extract 2 0
+    intc_0 // 0
+
+hasRecord_for_header@1:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:473-474
+    // @readonly
+    // public hasRecord(name: bytes, rdata: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    dup
+    dig 6
+    <
+    bz hasRecord_after_for@4
+    dup
+    intc_2 // 2
+    *
+    dig 2
+    dup
+    uncover 2
+    extract_uint16 // on error: invalid array encoding
+    dup
+    uncover 5
+    dup
+    cover 4
+    ==
+    assert // invalid tail pointer for (len+(len+uint8[])[])
+    dig 1
+    len
+    substring3
+    intc_0 // 0
+    extract_uint16 // on error: invalid array length header
+    intc_2 // 2
+    +
+    +
+    cover 2
+    intc_1 // 1
+    +
+    b hasRecord_for_header@1
+
+hasRecord_after_for@4:
+    popn 2
+    // smart_contracts/dnssec_oracle/contract.algo.ts:473-474
+    // @readonly
+    // public hasRecord(name: bytes, rdata: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    intc_2 // 2
+    +
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<bytes>
+    // smart_contracts/dnssec_oracle/contract.algo.ts:475
+    // const self = Global.currentApplicationId
+    global CurrentApplicationID
+    dup
+    bury 8
+    // smart_contracts/dnssec_oracle/reader.algo.ts:38
+    // return op.AppBox.get(oracle, Bytes('t').concat(op.sha256(name)))
+    swap
+    sha256
+    bytec 7 // "t"
+    swap
+    concat
+    app_box_get
+    swap
+    bury 9
+    // smart_contracts/dnssec_oracle/contract.algo.ts:477
+    // return exists && attestationUsable(self, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, rdata)
+    bz hasRecord_bool_false@9
+    // smart_contracts/dnssec_oracle/reader.algo.ts:105
+    // const now = Global.latestTimestamp
+    global LatestTimestamp
+    dup
+    bury 8
+    // smart_contracts/dnssec_oracle/reader.algo.ts:46
+    // return op.extractUint64(value, 8)
+    dig 8
+    pushint 8
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:107
+    // now <= attestationExpiration(value) &&
+    <=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:107-108
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    bz hasRecord_bool_false@27
+    // smart_contracts/dnssec_oracle/reader.algo.ts:42
+    // return op.extractUint64(value, 0)
+    dig 7
+    intc_0 // 0
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:108
+    // now <= attestationInception(value) + maxAge &&
+    dig 4
+    +
+    dig 7
+    >=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:107-108
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    bz hasRecord_bool_false@27
+    // smart_contracts/dnssec_oracle/reader.algo.ts:50
+    // return op.extractUint64(value, 16)
+    dig 7
+    pushint 16
+    extract_uint64
+    // smart_contracts/dnssec_oracle/reader.algo.ts:109
+    // attestationWeakestKeyBits(value) >= minKeyBits &&
+    dig 3
+    >=
+    // smart_contracts/dnssec_oracle/reader.algo.ts:107-109
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    // attestationWeakestKeyBits(value) >= minKeyBits &&
+    bz hasRecord_bool_false@27
+    // smart_contracts/dnssec_oracle/reader.algo.ts:54
+    // return op.extractUint64(value, 24)
+    dig 7
+    pushint 24
+    extract_uint64
+    intc_0 // 0
+
+hasRecord_for_header@23:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:84
+    // for (const zone of zones) {
+    dup
+    dig 3
+    <
+    bz hasRecord_after_for@25
+    dig 3
+    dig 1
+    callsub dynamic_array_read_byte_length_element
+    extract 2 0
+    // smart_contracts/dnssec_oracle/reader.algo.ts:86
+    // epoch = linkUp(oracle, zone, TYPE_DNSKEY, epoch)
+    dig 8
+    dup
+    cover 2
+    dig 1
+    pushint 48
+    uncover 6
+    callsub linkUp
+    // smart_contracts/dnssec_oracle/reader.algo.ts:87
+    // epoch = linkUp(oracle, zone, TYPE_DS, epoch)
+    cover 2
+    pushint 43
+    uncover 3
+    callsub linkUp
+    swap
+    intc_1 // 1
+    +
+    b hasRecord_for_header@23
+
+hasRecord_after_for@25:
+    pop
+    // smart_contracts/dnssec_oracle/reader.algo.ts:89
+    // return linkUp(oracle, ROOT, TYPE_DNSKEY, epoch) === oracleRootEpoch(oracle)
+    dig 6
+    dup
+    bytec_2 // 0x00
+    pushint 48
+    uncover 4
+    callsub linkUp
+    // smart_contracts/dnssec_oracle/reader.algo.ts:63
+    // const [epoch] = op.AppGlobal.getExUint64(oracle, Bytes('rootEpoch'))
+    swap
+    bytec_1 // "rootEpoch"
+    app_global_get_ex
+    pop
+    // smart_contracts/dnssec_oracle/reader.algo.ts:89
+    // return linkUp(oracle, ROOT, TYPE_DNSKEY, epoch) === oracleRootEpoch(oracle)
+    ==
+    // smart_contracts/dnssec_oracle/reader.algo.ts:107-110
+    // now <= attestationExpiration(value) &&
+    // now <= attestationInception(value) + maxAge &&
+    // attestationWeakestKeyBits(value) >= minKeyBits &&
+    // attestationChainLive(oracle, value, zones)
+    bz hasRecord_bool_false@27
+    intc_1 // 1
+
+hasRecord_bool_merge@28:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:477
+    // return exists && attestationUsable(self, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, rdata)
+    bz hasRecord_bool_false@9
+    // smart_contracts/dnssec_oracle/reader.algo.ts:116
+    // let at = ATTESTATION_HEADER
+    intc_3 // 64
+
+hasRecord_while_top@12:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:117
+    // while (at < value.length) {
+    dig 8
+    len
+    dig 1
+    >
+    // smart_contracts/dnssec_oracle/reader.algo.ts:117-121
+    // while (at < value.length) {
+    //   const length = op.extractUint16(value, at)
+    //   if (length === rdata.length && op.extract(value, at + 2, length) === rdata) return true
+    //   at += length + 2
+    // }
+    bz hasRecord_after_while@17
+    // smart_contracts/dnssec_oracle/reader.algo.ts:118
+    // const length = op.extractUint16(value, at)
+    dig 8
+    dig 1
+    extract_uint16
+    dup
+    // smart_contracts/dnssec_oracle/reader.algo.ts:119
+    // if (length === rdata.length && op.extract(value, at + 2, length) === rdata) return true
+    dig 7
+    len
+    ==
+    bz hasRecord_after_if_else@16
+    dig 1
+    intc_2 // 2
+    +
+    dig 10
+    swap
+    dig 2
+    extract3
+    dig 7
+    ==
+    bz hasRecord_after_if_else@16
+    popn 2
+    intc_1 // 1
+
+hasRecord_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@18:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:477
+    // return exists && attestationUsable(self, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, rdata)
+    bz hasRecord_bool_false@9
+    intc_1 // 1
+
+hasRecord_bool_merge@10:
+    // smart_contracts/dnssec_oracle/contract.algo.ts:473-474
+    // @readonly
+    // public hasRecord(name: bytes, rdata: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    bytec_2 // 0x00
+    intc_0 // 0
+    uncover 2
+    setbit
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_1 // 1
+    return
+
+hasRecord_bool_false@9:
+    intc_0 // 0
+    b hasRecord_bool_merge@10
+
+hasRecord_after_if_else@16:
+    // smart_contracts/dnssec_oracle/reader.algo.ts:120
+    // at += length + 2
+    intc_2 // 2
+    +
+    +
+    b hasRecord_while_top@12
+
+hasRecord_after_while@17:
+    pop
+    // smart_contracts/dnssec_oracle/reader.algo.ts:122
+    // return false
+    intc_0 // 0
+    // smart_contracts/dnssec_oracle/contract.algo.ts:477
+    // return exists && attestationUsable(self, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, rdata)
+    b hasRecord_after_inlined_smart_contracts/dnssec_oracle/reader.algo.ts::attestationHasRecord@18
+
+hasRecord_bool_false@27:
+    intc_0 // 0
+    b hasRecord_bool_merge@28
+
+
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.logCaches[routing]() -> void:
 logCaches:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:467-468
+    // smart_contracts/dnssec_oracle/contract.algo.ts:484-485
     // @readonly
     // public logCaches(keys: bytes[]): void {
     txna ApplicationArgs 1
@@ -4661,7 +5034,7 @@ logCaches:
     intc_0 // 0
 
 logCaches_for_header@1:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:467-468
+    // smart_contracts/dnssec_oracle/contract.algo.ts:484-485
     // @readonly
     // public logCaches(keys: bytes[]): void {
     dup
@@ -4696,7 +5069,7 @@ logCaches_for_header@1:
 
 logCaches_after_for@4:
     popn 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:467-468
+    // smart_contracts/dnssec_oracle/contract.algo.ts:484-485
     // @readonly
     // public logCaches(keys: bytes[]): void {
     intc_2 // 2
@@ -4706,7 +5079,7 @@ logCaches_after_for@4:
     intc_0 // 0
 
 logCaches_for_header@6:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:469
+    // smart_contracts/dnssec_oracle/contract.algo.ts:486
     // for (const key of keys) {
     dup
     dig 2
@@ -4716,14 +5089,14 @@ logCaches_for_header@6:
     dig 1
     callsub dynamic_array_read_byte_length_element
     extract 2 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:471
+    // smart_contracts/dnssec_oracle/contract.algo.ts:488
     // const [value, exists] = op.Box.get(this.caches.keyPrefix.concat(op.sha256(key)))
     sha256
-    bytec 9 // "r"
+    bytec 4 // "r"
     swap
     concat
     box_get
-    // smart_contracts/dnssec_oracle/contract.algo.ts:472
+    // smart_contracts/dnssec_oracle/contract.algo.ts:489
     // log(exists ? value : Bytes())
     bytec_0 // 0x
     cover 2
@@ -4734,7 +5107,7 @@ logCaches_for_header@6:
     b logCaches_for_header@6
 
 logCaches_after_for@9:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:467-468
+    // smart_contracts/dnssec_oracle/contract.algo.ts:484-485
     // @readonly
     // public logCaches(keys: bytes[]): void {
     intc_1 // 1
@@ -4851,7 +5224,7 @@ depositCredits_after_assert@3:
 depositCredits_after_assert@5:
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     uncover 2
     dup
     cover 2
@@ -4926,7 +5299,7 @@ logCredits_for_header@2:
     extract3 // on error: index access is out of bounds
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     swap
     concat
     dup
@@ -4973,7 +5346,7 @@ withdrawCredits:
     assert // account funded
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:122
     // loggedAssert(this.userCredits(Txn.sender).exists, errAmt)
     txn Sender
@@ -4992,7 +5365,7 @@ withdrawCredits:
 withdrawCredits_after_assert@3:
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:123
     // const credit: uint64 = this.userCredits(Txn.sender).value
     txn Sender
@@ -5006,7 +5379,7 @@ withdrawCredits_after_assert@3:
     btoi
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:125
     // this.userCredits(Txn.sender).delete()
     txn Sender
@@ -5067,14 +5440,14 @@ withdrawCredits_after_assert@3:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.onlyAdmin() -> void:
 onlyAdmin:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:166
+    // smart_contracts/dnssec_oracle/contract.algo.ts:169
     // loggedAssert(Txn.sender === this.admin.value, errAdmin)
     txn Sender
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:127
+    // smart_contracts/dnssec_oracle/contract.algo.ts:130
     // admin = GlobalState<Account>({ key: 'admin' })
     bytec 10 // "admin"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:166
+    // smart_contracts/dnssec_oracle/contract.algo.ts:169
     // loggedAssert(Txn.sender === this.admin.value, errAdmin)
     app_global_get_ex
     assert // check GlobalState exists
@@ -5090,7 +5463,7 @@ onlyAdmin_after_assert@2:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.parentEntry(name: bytes, rrtype: uint64, parent: bytes) -> bytes, uint64, uint64, uint64, uint64, uint64:
 parentEntry:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:483
+    // smart_contracts/dnssec_oracle/contract.algo.ts:500
     // private parentEntry(name: bytes, rrtype: uint64, parent: bytes): CacheEntry {
     proto 3 6
     // smart_contracts/dnssec_oracle/wire.algo.ts:173
@@ -5101,16 +5474,16 @@ parentEntry:
     frame_dig -3
     swap
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:485
+    // smart_contracts/dnssec_oracle/contract.algo.ts:502
     // const box = this.caches(op.sha256(nameType(name, rrtype)))
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:144
+    // smart_contracts/dnssec_oracle/contract.algo.ts:147
     // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
-    bytec 9 // "r"
+    bytec 4 // "r"
     swap
     concat
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:486
+    // smart_contracts/dnssec_oracle/contract.algo.ts:503
     // loggedAssert(box.exists, errParent)
     box_len
     bury 1
@@ -5120,7 +5493,7 @@ parentEntry:
     err // ERR:PAR
 
 parentEntry_after_assert@2:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:487
+    // smart_contracts/dnssec_oracle/contract.algo.ts:504
     // const entry = box.value
     box_get
     assert // Box must have value
@@ -5148,16 +5521,16 @@ parentEntry_after_assert@2:
     intc_3 // 64
     extract_uint64
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:488
+    // smart_contracts/dnssec_oracle/contract.algo.ts:505
     // loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch >= this.rootEpoch.value, errStale)
     global LatestTimestamp
     >=
     bz parentEntry_bool_false@5
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:488
+    // smart_contracts/dnssec_oracle/contract.algo.ts:505
     // loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch >= this.rootEpoch.value, errStale)
     app_global_get_ex
     assert // check GlobalState exists
@@ -5167,7 +5540,7 @@ parentEntry_after_assert@2:
     intc_1 // 1
 
 parentEntry_bool_merge@6:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:488
+    // smart_contracts/dnssec_oracle/contract.algo.ts:505
     // loggedAssert(Global.latestTimestamp <= entry.expiry && entry.epoch >= this.rootEpoch.value, errStale)
     bnz parentEntry_after_assert@8
     pushbytes "ERR:STL"
@@ -5175,7 +5548,7 @@ parentEntry_bool_merge@6:
     err // ERR:STL
 
 parentEntry_after_assert@8:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:489
+    // smart_contracts/dnssec_oracle/contract.algo.ts:506
     // loggedAssert(op.sha256(parent) === entry.hash, errParent)
     frame_dig -1
     sha256
@@ -5187,7 +5560,7 @@ parentEntry_after_assert@8:
     err // ERR:PAR
 
 parentEntry_after_assert@10:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:490
+    // smart_contracts/dnssec_oracle/contract.algo.ts:507
     // return entry
     swap
     uncover 5
@@ -5204,7 +5577,7 @@ parentEntry_bool_false@5:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.writeCache(s.algorithm: uint64, s.inception: uint64, s.expiration: uint64, s.signer: bytes, s.owner: bytes, s.ownerLabels: uint64, s.rrset: bytes, s.indexed: bytes, s.records: bytes, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64, parentEpoch: uint64) -> void:
 writeCache:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:502
+    // smart_contracts/dnssec_oracle/contract.algo.ts:519
     // private writeCache(s: SignedData, rrtype: uint64, expiry: uint64, weakestKeyBits: uint64, parentEpoch: uint64): void {
     proto 13 0
     intc_0 // 0
@@ -5218,25 +5591,25 @@ writeCache:
     frame_dig -9
     swap
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:503
+    // smart_contracts/dnssec_oracle/contract.algo.ts:520
     // const box = this.caches(op.sha256(nameType(s.owner, rrtype)))
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:144
+    // smart_contracts/dnssec_oracle/contract.algo.ts:147
     // caches = BoxMap<bytes<32>, CacheEntry>({ keyPrefix: 'r' })
-    bytec 9 // "r"
+    bytec 4 // "r"
     swap
     concat
     dup
-    // smart_contracts/dnssec_oracle/contract.algo.ts:504
+    // smart_contracts/dnssec_oracle/contract.algo.ts:521
     // const hash = op.sha256(s.rrset)
     frame_dig -7
     sha256
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:505
+    // smart_contracts/dnssec_oracle/contract.algo.ts:522
     // let epoch: uint64 = 0
     intc_0 // 0
     cover 3
-    // smart_contracts/dnssec_oracle/contract.algo.ts:506
+    // smart_contracts/dnssec_oracle/contract.algo.ts:523
     // if (box.exists && box.value.epoch >= this.rootEpoch.value) {
     box_len
     bury 1
@@ -5247,16 +5620,16 @@ writeCache:
     pushint 56
     extract_uint64
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:139
+    // smart_contracts/dnssec_oracle/contract.algo.ts:142
     // rootEpoch = GlobalState<uint64>({ key: 'rootEpoch' })
     bytec_1 // "rootEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:506
+    // smart_contracts/dnssec_oracle/contract.algo.ts:523
     // if (box.exists && box.value.epoch >= this.rootEpoch.value) {
     app_global_get_ex
     assert // check GlobalState exists
     >=
     bz writeCache_after_if_else@16
-    // smart_contracts/dnssec_oracle/contract.algo.ts:507
+    // smart_contracts/dnssec_oracle/contract.algo.ts:524
     // const old = box.value
     dig 1
     box_get
@@ -5285,7 +5658,7 @@ writeCache:
     intc_3 // 64
     extract_uint64
     swap
-    // smart_contracts/dnssec_oracle/contract.algo.ts:509
+    // smart_contracts/dnssec_oracle/contract.algo.ts:526
     // loggedAssert(s.inception >= old.inception, errOld)
     frame_dig -12
     <=
@@ -5295,12 +5668,12 @@ writeCache:
     err // ERR:OLD
 
 writeCache_after_assert@4:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:510
+    // smart_contracts/dnssec_oracle/contract.algo.ts:527
     // if (old.parentEpoch === parentEpoch) {
     frame_dig -1
     ==
     bz writeCache_after_if_else@16
-    // smart_contracts/dnssec_oracle/contract.algo.ts:511
+    // smart_contracts/dnssec_oracle/contract.algo.ts:528
     // if (old.hash === hash) epoch = old.epoch
     frame_dig 0
     dig 1
@@ -5310,7 +5683,7 @@ writeCache_after_assert@4:
     frame_bury 5
 
 writeCache_after_if_else@7:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:513
+    // smart_contracts/dnssec_oracle/contract.algo.ts:530
     // s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
     frame_dig -12
     frame_dig 3
@@ -5329,7 +5702,7 @@ writeCache_bool_true@10:
     intc_1 // 1
 
 writeCache_bool_merge@12:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:512-515
+    // smart_contracts/dnssec_oracle/contract.algo.ts:529-532
     // loggedAssert(
     //   s.inception > old.inception || (expiry >= old.expiry && weakestKeyBits >= old.weakestKeyBits),
     //   errWorse,
@@ -5340,7 +5713,7 @@ writeCache_bool_merge@12:
     err // ERR:WRS
 
 writeCache_after_if_else@16:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:518
+    // smart_contracts/dnssec_oracle/contract.algo.ts:535
     // if (epoch === 0) epoch = this.nextEpoch()
     frame_dig 5
     bnz writeCache_after_if_else@18
@@ -5348,7 +5721,7 @@ writeCache_after_if_else@16:
     frame_bury 5
 
 writeCache_after_if_else@18:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:519
+    // smart_contracts/dnssec_oracle/contract.algo.ts:536
     // box.value = { hash, inception: s.inception, expiry, weakestKeyBits, epoch, parentEpoch }
     frame_dig -12
     itob
@@ -5375,42 +5748,42 @@ writeCache_bool_false@11:
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.nextEpoch() -> uint64:
 nextEpoch:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:523
+    // smart_contracts/dnssec_oracle/contract.algo.ts:540
     // this.lastEpoch.value += 1
     intc_0 // 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:133
+    // smart_contracts/dnssec_oracle/contract.algo.ts:136
     // lastEpoch = GlobalState<uint64>({ key: 'lastEpoch' })
     bytec 13 // "lastEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:523
+    // smart_contracts/dnssec_oracle/contract.algo.ts:540
     // this.lastEpoch.value += 1
     app_global_get_ex
     assert // check GlobalState exists
     intc_1 // 1
     +
-    // smart_contracts/dnssec_oracle/contract.algo.ts:133
+    // smart_contracts/dnssec_oracle/contract.algo.ts:136
     // lastEpoch = GlobalState<uint64>({ key: 'lastEpoch' })
     bytec 13 // "lastEpoch"
-    // smart_contracts/dnssec_oracle/contract.algo.ts:523
+    // smart_contracts/dnssec_oracle/contract.algo.ts:540
     // this.lastEpoch.value += 1
     dig 1
     app_global_put
-    // smart_contracts/dnssec_oracle/contract.algo.ts:524
+    // smart_contracts/dnssec_oracle/contract.algo.ts:541
     // return this.lastEpoch.value
     retsub
 
 
 // smart_contracts/dnssec_oracle/contract.algo.ts::DnssecOracle.deleteAttestation(name: bytes) -> void:
 deleteAttestation:
-    // smart_contracts/dnssec_oracle/contract.algo.ts:532
+    // smart_contracts/dnssec_oracle/contract.algo.ts:549
     // private deleteAttestation(name: bytes): void {
     proto 1 0
-    // smart_contracts/dnssec_oracle/contract.algo.ts:533
+    // smart_contracts/dnssec_oracle/contract.algo.ts:550
     // const box = this.attestations(op.sha256(name))
     frame_dig -1
     sha256
-    // smart_contracts/dnssec_oracle/contract.algo.ts:146
+    // smart_contracts/dnssec_oracle/contract.algo.ts:149
     // attestations = BoxMap<bytes<32>, bytes>({ keyPrefix: 't' })
-    bytec 8 // "t"
+    bytec 7 // "t"
     swap
     concat
     // smart_contracts/dnssec_oracle/reader.algo.ts:58
@@ -5421,23 +5794,23 @@ deleteAttestation:
     box_extract
     dup
     uncover 2
-    // smart_contracts/dnssec_oracle/contract.algo.ts:535
+    // smart_contracts/dnssec_oracle/contract.algo.ts:552
     // const mbrBefore = Global.currentApplicationAddress.minBalance
     global CurrentApplicationAddress
     acct_params_get AcctMinBalance
     swap
     cover 3
     assert // account funded
-    // smart_contracts/dnssec_oracle/contract.algo.ts:536
+    // smart_contracts/dnssec_oracle/contract.algo.ts:553
     // box.delete()
     box_del
     pop
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     swap
     concat
-    // smart_contracts/dnssec_oracle/contract.algo.ts:537
+    // smart_contracts/dnssec_oracle/contract.algo.ts:554
     // if (this.userCredits(payer).exists) this.settleMbrCredits(payer, mbrBefore)
     box_len
     bury 1
@@ -5484,7 +5857,7 @@ settleMbrCredits_else_body@2:
     dup
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     frame_dig -2
     concat
     dup
@@ -5525,7 +5898,7 @@ settleMbrCredits_else_body@6:
     -
     // node_modules/@d13co/puya-ts-utils/src/mbrManager.algo.ts:51
     // public userCredits = BoxMap<Account, uint64>({ keyPrefix: 'c' })
-    bytec_2 // "c"
+    bytec_3 // "c"
     frame_dig -2
     concat
     dup

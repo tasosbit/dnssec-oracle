@@ -40,7 +40,7 @@ contract re-derives every name, key and link from those bytes.
 | `.../dnssec_oracle/reader.algo.ts` | Reference reader for consumers: attestation layout and chain walk |
 | `.../dnssec_oracle/errors.algo.ts` | Three-letter error codes, logged by `loggedAssert` |
 | `.../base/base.algo.ts` | `BaseContract.increaseBudget`: op-up through no-op inner app calls |
-| `.../consumer/contract.algo.ts` | Example consumer that reads attestation boxes directly |
+| `.../consumer/contract.algo.ts` | Example consumer: direct box reads, or `hasRecord` by inner call |
 | `projects/dnssec-oracle-sdk/src/prover/` | DNS client, canonical form, chain builder, root anchors |
 | `projects/dnssec-oracle-sdk/src/sdkReader.ts`, `sdk.ts` | Reader (simulate-only) and writer SDK, proof orchestration, `maintainAnchors` |
 | `projects/cli/` | Operator CLI over the SDK |
@@ -123,6 +123,7 @@ layout is the public API and is documented byte by byte in `reader.algo.ts`.
 | `prune`         | deletes an expired or pre-revocation box (see [Box rent](#box-rent)) | – |
 | `setAdmin`      | sender is `admin`; the zero address renounces               | – |
 | `logAttestations`, `logCaches` | read-only: log raw boxes for simulate reads  | – |
+| `hasRecord`     | read-only: `attestationUsable` and the TXT RDATA, for contracts calling in | – |
 | inherited       | `increaseBudget`, `depositCredits`, `withdrawCredits`, `logCredits` | – |
 
 Every proving method performs exactly one signature verification, and all of them are
@@ -219,6 +220,10 @@ If a payer withdrew their credit box, their refund stays with the app.
   `attestationUsable(oracle, value, maxAge, minKeyBits, zones)`. For `_tag.example.com`
   the transaction needs 6 box references: the attestation, each zone's DNSKEY and DS, and
   the root DNSKEY.
+- **By call.** Contracts that would rather not carry the reader call `hasRecord(name,
+  rdata, maxAge, minKeyBits, zones)`: the same box references, plus the oracle app
+  reference and one inner call's fee. It returns a boolean, not the box: an app call logs
+  at most 1024 bytes and attestations run to 4096. The app ID must still be pinned.
 - **Off-chain.** The SDK reads point lookups by simulating `logAttestations`/`logCaches`,
   and lists boxes with algod's prefix scan. `chainLive` and `attestationZones` mirror the
   on-chain walk.
@@ -243,9 +248,8 @@ Library figures for one verification, with hint:
 On LocalNet (consensus v42), group usage stayed at the 1,000,000 baseline, so each fee is
 the transaction count at the minimum fee. Refreshing the root and one RSA TLD takes three
 RSA-2048 checks, about 0.4 Algo, once per signing period. A `.com` domain on an ECDSA DNS
-provider costs about 0.01 Algo for its three remaining steps. The approval program was
-6,017 bytes at e4e451b: two extra pages, 127 bytes short of needing a third (AVM 13 allows
-16 KB). Other Phase 0 measurements are in the [README](../README.md#phase-0-results).
+provider costs about 0.01 Algo for its three remaining steps. The approval program is
+6,393 bytes with `hasRecord`: three extra pages (AVM 13 allows 16 KB). Other Phase 0 measurements are in the [README](../README.md#phase-0-results).
 
 ## Limitations
 

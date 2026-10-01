@@ -1,8 +1,12 @@
 import { Application, assert, bytes, Contract, GlobalState, readonly, uint64 } from '@algorandfoundation/algorand-typescript'
-import { abimethod } from '@algorandfoundation/algorand-typescript/arc4'
+import { abiCall, abimethod } from '@algorandfoundation/algorand-typescript/arc4'
+import type { DnssecOracle } from '../dnssec_oracle/contract.algo'
 import { attestationHasRecord, attestationUsable, readAttestation, txtRdata } from '../dnssec_oracle/reader.algo'
 
-/** Example consumer: reads the oracle's attestation boxes directly, through the reference reader. */
+/**
+ * Example consumer: reads the oracle's attestation boxes directly, through the reference reader
+ * (`hasTxt`), or asks the oracle's `hasRecord` by inner call (`hasTxtByCall`).
+ */
 export class AttestationConsumer extends Contract {
   /** The oracle, pinned at create: an app the caller names could hold forged boxes. */
   oracle = GlobalState<Application>({ key: 'oracle' })
@@ -24,5 +28,19 @@ export class AttestationConsumer extends Contract {
     const oracle = this.oracle.value
     const [value, exists] = readAttestation(oracle, name)
     return exists && attestationUsable(oracle, value, maxAge, minKeyBits, zones) && attestationHasRecord(value, txtRdata(text))
+  }
+
+  /**
+   * `hasTxt` through the oracle's `hasRecord`, which walks the chain itself. Same box
+   * references, plus one inner call's fee. The pin still matters: an app the caller names
+   * could return anything.
+   */
+  @readonly
+  public hasTxtByCall(name: bytes, text: bytes, maxAge: uint64, minKeyBits: uint64, zones: bytes[]): boolean {
+    assert(text.length <= 255, 'text over 255 bytes')
+    return abiCall<typeof DnssecOracle.prototype.hasRecord>({
+      appId: this.oracle.value,
+      args: [name, txtRdata(text), maxAge, minKeyBits, zones],
+    }).returnValue
   }
 }
