@@ -12,6 +12,7 @@ import {
   Resolver,
   RRType,
   anchorHash,
+  ancestors,
   bytesEqual,
   canonicalRRset,
   capturedResolver,
@@ -163,8 +164,8 @@ function keySize(rdata: Uint8Array): string {
 
 /**
  * A zone's DNSKEY and DS RRsets as DNS serves them, next to what the oracle holds: whether each
- * cache entry is the RRset DNS serves and still usable as a parent, each key's role, size and
- * whether the oracle accepts it, which DS vouches for which key, and for the root each key's
+ * cache entry is the RRset DNS serves and still usable, both as a parent and by consumers whose
+ * walk runs through it to the root; each key's role, size and whether the oracle accepts it; which DS vouches for which key, and for the root each key's
  * anchor state.
  */
 export async function zoneKeysReport(
@@ -185,16 +186,24 @@ export async function zoneKeysReport(
   // the contract's checkDs: digest type 2, then key tag, algorithm and sha256(owner ‖ RDATA)
   const vouches = (d: Ds, rdata: Uint8Array) =>
     d.digestType === 2 && d.keyTag === keyTag(rdata) && d.algorithm === parseDnskey(rdata).algorithm && bytesEqual(d.digest, dsDigest(zone, rdata))
-  // the contract refuses a parent from before the last revocation; consumers' walk also needs each link current
-  // `ds`: the zone's DS entry a DNSKEY entry must link to, null if there is none; absent for the root and DS
-  const staleness = (entry?: CacheEntry, ds?: CacheEntry | null): string | undefined => {
+  // the contract refuses a parent from before the last revocation; consumers' walk (attestationChainLive)
+  // also needs every link up to the root current: DNSKEY to its DS, DS to the parent's DNSKEY, root to rootEpoch
+  const staleness = async (entry: CacheEntry | undefined, type: number): Promise<string | undefined> => {
     if (!entry) return undefined
     if (entry.epoch < rootEpoch) return 'predates a root key revocation'
-    if (ds === null) return 'no DS entry above it'
-    if (ds && entry.parentEpoch !== ds.epoch) return 'proven under an older DS entry'
+    let [at, atType, atEntry, where] = [zone, type, entry, '']
+    while (at.length > 1 || atType !== RRType.DNSKEY) {
+      const [up, upType] = atType === RRType.DNSKEY ? [at, RRType.DS] : [ancestors(at)[1], RRType.DNSKEY]
+      const parent = await lookups.cache(up, upType)
+      const label = `${nameFromWire(up)} ${typeName(upType)} entry`
+      if (!parent) return `${where}no ${label} above it`
+      if (atEntry.parentEpoch !== parent.epoch) return `${where}proven under an older ${label}`
+      ;[at, atType, atEntry, where] = [up, upType, parent, `${label}: `]
+    }
+    if (atEntry.parentEpoch !== rootEpoch) return `${where}proven under an older anchor set`
   }
 
-  const lines = [`${name} DNSKEY: ${cacheStatus(dnskeyEntry, dnskey, now, staleness(dnskeyEntry, root ? undefined : (dsEntry ?? null)))}`]
+  const lines = [`${name} DNSKEY: ${cacheStatus(dnskeyEntry, dnskey, now, await staleness(dnskeyEntry, RRType.DNSKEY))}`]
   for (const rdata of dnskey.rdatas) {
     const key = parseDnskey(rdata)
     const usable = keyProblem(rdata, key.algorithm) ?? 'usable by the oracle'
@@ -210,7 +219,7 @@ export async function zoneKeysReport(
   }
 
   if (!ds) return lines
-  lines.push(`${name} DS: ${cacheStatus(dsEntry, ds, now, staleness(dsEntry))}`)
+  lines.push(`${name} DS: ${cacheStatus(dsEntry, ds, now, await staleness(dsEntry, RRType.DS))}`)
   for (const d of dsRecords) {
     const head = `  DS ${d.keyTag}, alg ${d.algorithm}, digest type ${d.digestType}`
     if (d.digestType !== 2) {

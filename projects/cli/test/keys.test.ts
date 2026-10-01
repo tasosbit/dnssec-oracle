@@ -87,9 +87,31 @@ describe('zoneKeysReport', () => {
     expect(lines.filter((l) => l.startsWith('  DS'))).toEqual([expect.stringMatching(/digest type 2: vouches for KSK \d+$/)])
 
     const relinked = { ...empty, cache: async (_: Uint8Array, type: number) => entry(new Uint8Array(32), type === RRType.DS ? 7 : 8, 5) }
-    expect((await zoneKeysReport('com', resolver, relinked, now))[0]).toMatch(/\(stale: proven under an older DS entry\)$/)
+    expect((await zoneKeysReport('com', resolver, relinked, now))[0]).toMatch(/\(stale: proven under an older com\. DS entry\)$/)
     const orphan = { ...empty, cache: async (_: Uint8Array, type: number) => (type === RRType.DS ? undefined : entry(new Uint8Array(32))) }
-    expect((await zoneKeysReport('com', resolver, orphan, now))[0]).toMatch(/\(stale: no DS entry above it\)$/)
+    expect((await zoneKeysReport('com', resolver, orphan, now))[0]).toMatch(/\(stale: no com\. DS entry above it\)$/)
+  })
+
+  it('walks every link up to the root, as a consumer does', async () => {
+    // epochs by entry: . DNSKEY 2 under rootEpoch 1, com. DS 3 under 2, com. DNSKEY 4 under 3
+    const chain = (overrides: Record<string, Partial<CacheEntry> | null> = {}): KeyLookups => ({
+      ...empty,
+      cache: async (zone, type) => {
+        const id = `${zone.length === 1 ? '.' : 'com.'} ${type === RRType.DS ? 'DS' : 'DNSKEY'}`
+        const [epoch, parentEpoch] = ({ '. DNSKEY': [2, 1], 'com. DS': [3, 2], 'com. DNSKEY': [4, 3] } as Record<string, number[]>)[id]
+        return overrides[id] === null ? undefined : { ...entry(new Uint8Array(32), epoch, parentEpoch), ...overrides[id] }
+      },
+    })
+    const stale = async (lookups: KeyLookups) => (await zoneKeysReport('com', resolver, lookups, now)).filter((l) => /^com\. (DNSKEY|DS):/.test(l))
+    for (const line of await stale(chain())) expect(line).not.toMatch(/stale/)
+
+    const reroot = await stale(chain({ '. DNSKEY': { epoch: 9 } }))
+    expect(reroot[0]).toMatch(/\(stale: com\. DS entry: proven under an older \. DNSKEY entry\)$/)
+    expect(reroot[1]).toMatch(/^com\. DS: .*\(stale: proven under an older \. DNSKEY entry\)$/)
+    const unrooted = await stale(chain({ '. DNSKEY': null }))
+    expect(unrooted[1]).toMatch(/\(stale: no \. DNSKEY entry above it\)$/)
+    const reanchored = await stale(chain({ '. DNSKEY': { parentEpoch: 7 } }))
+    expect(reanchored[0]).toMatch(/\(stale: \. DNSKEY entry: proven under an older anchor set\)$/)
   })
 
   it('does not link a DS whose digest is wrong, and ignores digest types other than 2', async () => {
