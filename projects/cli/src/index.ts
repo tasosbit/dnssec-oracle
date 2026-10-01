@@ -22,6 +22,9 @@ import {
   handleWithdrawCredits,
 } from './commands'
 
+// read at runtime from dist/, inlined by esbuild in the npx bundle (whose nearest package.json has no version)
+const { version } = require('../package.json')
+
 // Every handler shares one error path: message to stderr, exit 1
 const run = (handler: (argv: any) => Promise<void>) => async (argv: any) => {
   try {
@@ -179,5 +182,6 @@ yargs(hideBin(process.argv))
   )
   .demandCommand(1, 'Specify a command')
   .strict()
+  .version(version)
   .help()
   .parse()
