@@ -80,19 +80,39 @@ export class DnssecOracleReaderSDK {
 
   /**
    * The attestation for `name`, through the contract's logAttestations logger, or undefined.
-   * Stale ones included: check chainLive.
+   * Unvalidated: stale, expired or weak ones included. getVerifiedAttestation checks them.
    */
   @wrapErrors()
-  async getAttestation(name: NameLike): Promise<Attestation | undefined> {
-    const [attestation] = await this.getAttestations([name])
+  async getRawAttestation(name: NameLike): Promise<Attestation | undefined> {
+    const [attestation] = await this.getRawAttestations([name])
     return attestation
   }
 
-  /** Batch getAttestation, index-aligned with the input. */
+  /** Batch getRawAttestation, index-aligned with the input. */
   @wrapErrors()
-  async getAttestations(names: NameLike[]): Promise<(Attestation | undefined)[]> {
+  async getRawAttestations(names: NameLike[]): Promise<(Attestation | undefined)[]> {
     const raw = await this._logAttestationsChunked(names.map(toWire))
     return raw.map((value) => value && decodeAttestation(value))
+  }
+
+  /**
+   * The attestation for `name` and the zones its chain runs through, if usable now: the
+   * off-chain twin of reader.algo.ts's attestationUsable. Undefined if missing, stale, expired,
+   * signed more than `maxAge` seconds ago, or with a key on its path weaker than `minKeyBits`.
+   * `now` defaults to the wall clock; on-chain it is the latest block's timestamp, which lags
+   * (on an idle dev LocalNet, arbitrarily). Pass that for exact parity near a boundary.
+   */
+  @wrapErrors()
+  async getVerifiedAttestation(
+    name: NameLike,
+    { maxAge, minKeyBits, now = Math.floor(Date.now() / 1000) }: { maxAge: number; minKeyBits: number; now?: number },
+  ): Promise<{ attestation: Attestation; zones: Uint8Array[] } | undefined> {
+    const attestation = await this.getRawAttestation(name)
+    if (!attestation) return undefined
+    const { expiration, inception, weakestKeyBits } = attestation
+    if (now > expiration || now > inception + maxAge || weakestKeyBits < minKeyBits) return undefined
+    const zones = await this.attestationZones(name, attestation)
+    return zones && { attestation, zones }
   }
 
   /** Raw attestation box values through the logger: undefined where there is none. */
@@ -113,10 +133,10 @@ export class DnssecOracleReaderSDK {
   /**
    * Every attestation, by the algod prefix scan, keyed by `sha256(name)` hex: box names
    * hold only the hash, so names are for the caller to match. Stale ones included: check
-   * chainLive.
+   * attestationChainLive.
    */
   @wrapErrors()
-  async listAttestations(): Promise<Map<string, Attestation>> {
+  async listRawAttestations(): Promise<Map<string, Attestation>> {
     const boxes = await this.scanRaw('t')
     return new Map([...boxes].map(([hash, value]) => [hash, decodeAttestation(value)]))
   }
@@ -133,9 +153,9 @@ export class DnssecOracleReaderSDK {
    * of reader.algo.ts's attestationChainLive. `zones` runs from the signer's zone up to the TLD.
    */
   @wrapErrors()
-  async chainLive(attestation: Attestation, zones: NameLike[]): Promise<boolean> {
+  async attestationChainLive(attestation: Attestation, zones: NameLike[]): Promise<boolean> {
     const [entries, { rootEpoch }] = await Promise.all([
-      this.getCaches(chainLinks(zones.map(toWire))),
+      this.getRawCaches(chainLinks(zones.map(toWire))),
       this.getState(),
     ])
     let epoch = attestation.parentEpoch
@@ -148,7 +168,7 @@ export class DnssecOracleReaderSDK {
 
   /**
    * The zones `name`'s attestation chains through, signer first, found by matching epochs up
-   * the name's ancestors: what chainLive and a consumer's hasTxt take. Undefined if its chain
+   * the name's ancestors: what attestationChainLive and a consumer's hasTxt take. Undefined if its chain
    * is not current.
    */
   @wrapErrors()
@@ -156,10 +176,10 @@ export class DnssecOracleReaderSDK {
     const all = ancestors(toWire(name))
     // every ancestor's DNSKEY then DS, the root's DNSKEY last, in one read: entries[2i] is
     // all[i]'s DNSKEY, entries[2i + 1] its DS
-    const [entries, { rootEpoch }] = await Promise.all([this.getCaches(chainLinks(all.slice(0, -1))), this.getState()])
+    const [entries, { rootEpoch }] = await Promise.all([this.getRawCaches(chainLinks(all.slice(0, -1))), this.getState()])
     const zones: Uint8Array[] = []
     let epoch = attestation.parentEpoch
-    // the same walk as chainLive, in one pass: each box is read once
+    // the same walk as attestationChainLive, in one pass: each box is read once
     for (const [i, zone] of all.entries()) {
       const keys = entries[2 * i]
       // epochs are unique: only the zone that signed the link below matches
@@ -173,16 +193,16 @@ export class DnssecOracleReaderSDK {
     return undefined
   }
 
-  /** The cache entry for `name type`, or undefined. */
+  /** The cache entry for `name type`, or undefined. Unvalidated: stale or expired ones included. */
   @wrapErrors()
-  async getCache(name: NameLike, type: number): Promise<CacheEntry | undefined> {
-    const [entry] = await this.getCaches([[name, type]])
+  async getRawCache(name: NameLike, type: number): Promise<CacheEntry | undefined> {
+    const [entry] = await this.getRawCaches([[name, type]])
     return entry
   }
 
-  /** Batch getCache, index-aligned with the input, through the contract's logCaches logger. */
+  /** Batch getRawCache, index-aligned with the input, through the contract's logCaches logger. */
   @wrapErrors()
-  async getCaches(links: [NameLike, number][]): Promise<(CacheEntry | undefined)[]> {
+  async getRawCaches(links: [NameLike, number][]): Promise<(CacheEntry | undefined)[]> {
     const raw = await this._logCachesChunked(links.map(([name, type]) => concat(toWire(name), u16(type))))
     return raw.map((value) => value && decodeCache(value))
   }
@@ -203,7 +223,7 @@ export class DnssecOracleReaderSDK {
 
   /** Every cache entry, keyed by `sha256(name ‖ type)` hex. */
   @wrapErrors()
-  async listCaches(): Promise<Map<string, CacheEntry>> {
+  async listRawCaches(): Promise<Map<string, CacheEntry>> {
     const boxes = await this.scanRaw('r')
     return new Map([...boxes].map(([hash, value]) => [hash, decodeCache(value)]))
   }
@@ -269,5 +289,5 @@ export class DnssecOracleReaderSDK {
   }
 }
 
-/** sha256(name) hex: the key listAttestations uses. */
+/** sha256(name) hex: the key listRawAttestations uses. */
 export const attestationKey = (name: NameLike) => toHex(sha256(toWire(name)))

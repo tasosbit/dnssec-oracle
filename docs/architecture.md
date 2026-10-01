@@ -225,7 +225,7 @@ If a payer withdrew their credit box, their refund stays with the app.
   reference and one inner call's fee. It returns a boolean, not the box: an app call logs
   at most 1024 bytes and attestations run to 4096. The app ID must still be pinned.
 - **Off-chain.** The SDK reads point lookups by simulating `logAttestations`/`logCaches`,
-  and lists boxes with algod's prefix scan. `chainLive` and `attestationZones` mirror the
+  and lists boxes with algod's prefix scan. `attestationChainLive` and `attestationZones` mirror the
   on-chain walk.
 
 ## Cost
