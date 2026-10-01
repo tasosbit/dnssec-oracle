@@ -18,7 +18,7 @@ importers:
         specifier: ^9.2.2
         version: 9.2.2(algosdk@3.8.0)
       '@d13co/dnssec-oracle-sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../dnssec-oracle-sdk
       algosdk:
         specifier: ^3.8.0
