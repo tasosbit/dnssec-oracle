@@ -1,6 +1,5 @@
 import { createPublicKey, verify } from 'node:crypto'
-// copied from @d13co/puya-ts-utils/rsaHint at prebuild: the library ships TypeScript source only
-import { rsaMontgomeryHint } from '../generated/rsaHint.js'
+import { rsaMontgomeryHint } from '@d13co/puya-ts-utils/rsaHint'
 import { MAX_VALUE_BYTES } from '../constants.js'
 import { parseResponse, Resolver } from './dns.js'
 import {

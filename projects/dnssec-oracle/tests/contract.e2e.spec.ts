@@ -809,7 +809,7 @@ describe('DnssecOracle e2e', () => {
     test('a sender without credits cannot create boxes', async () => {
       const { sdk, chain } = await deploy()
       const { other } = await otherSdk(sdk, 0)
-      await expect(other.proveStep({ step: find(await chain('_tag.example.com'), 'root') })).rejects.toThrow(code('CRD'))
+      await expect(other.proveStep({ step: find(await chain('_tag.example.com'), 'root') })).rejects.toThrow(code('crd'))
     })
 
     test('replacing an attestation refunds the old payer; a payer who withdrew leaves it with the app', async () => {
@@ -860,7 +860,7 @@ describe('DnssecOracle e2e', () => {
 
       // cache: anyone once expired, refund to the pruner, who needs a credit box
       const { other: noBox } = await otherSdk(sdk, 0)
-      await expect(noBox.prune({ name: 'short.com', type: RRType.DS })).rejects.toThrow(code('RCV'))
+      await expect(noBox.prune({ name: 'short.com', type: RRType.DS })).rejects.toThrow(code('rcv'))
       const { other, account } = await otherSdk(sdk)
       const before = await other.getCredits(account.toString())
       await other.prune({ name: 'short.com', type: RRType.DS })

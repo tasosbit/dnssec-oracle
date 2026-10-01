@@ -30,10 +30,8 @@ algokit project run test    # emulator suites, then LocalNet e2e through the SDK
 
 Rebuild the SDK after every contract change: the e2e tests import its `dist`.
 
-`@d13co/puya-ts-utils` is pinned to the v0.3.0 commit (`8f453eb`) of the local repository
-until it is on npm. It ships TypeScript source only, so the SDK's `prebuild` copies
-`rsaHint.ts` in beside the generated client, and vitest inlines the package so the
-emulator can run it.
+`@d13co/puya-ts-utils` ships its contract subroutines as TypeScript source; vitest
+inlines the package so the emulator can run it.
 
 ## Proving a name
 

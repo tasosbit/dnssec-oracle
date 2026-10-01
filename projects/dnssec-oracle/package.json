@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@algorandfoundation/algorand-typescript": "1.3.1",
-    "@d13co/puya-ts-utils": "git+file:///home/bit/code/puya-ts-utils#183713f&path:/projects/puya-ts-utils",
+    "@d13co/puya-ts-utils": "^0.2.0",
     "dnssec-oracle-sdk": "link:../dnssec-oracle-sdk"
   },
   "devDependencies": {

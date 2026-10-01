@@ -15,9 +15,9 @@ if (!sdkRoot) {
 }
 
 // `export const errX = 'CODE' // Message`
-const trailing = /export const \w+ = '([A-Z0-9_]+)'\s*\/\/\s*(.+)$/gm
+const trailing = /export const \w+ = '([A-Za-z0-9_]+)'\s*\/\/\s*(.+)$/gm
 // `/** Message */ export const errX = 'CODE'`, or 'ERR:CODE' for plain asserts (rsaErrors)
-const jsdoc = /\/\*\*\s*((?:(?!\*\/).)+?)\s*\*\/\s*export const \w+ = '(?:ERR:)?([A-Z0-9_]+)'/gs
+const jsdoc = /\/\*\*\s*((?:(?!\*\/).)+?)\s*\*\/\s*export const \w+ = '(?:ERR:)?([A-Za-z0-9_]+)'/gs
 
 const sources: { path: string; regex: RegExp; code: 1 | 2 }[] = [
   { path: '../dnssec-oracle/smart_contracts/dnssec_oracle/errors.algo.ts', regex: trailing, code: 1 },
