@@ -20,8 +20,8 @@ mkdir -p "$OUT"
 # cron starts with a bare PATH
 export PATH="$HOME/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-# One name per target TLD.
-NAMES=(_dmarc.publicnode.com _dmarc.nodely.io _dmarc.folks.finance _dmarc.mercury.co)
+# One name per target TLD, plus llamanodes.com: an apex TXT signed by an RSA-1024 ZSK under com.
+NAMES=(_dmarc.publicnode.com _dmarc.nodely.io _dmarc.folks.finance _dmarc.mercury.co llamanodes.com)
 
 {
   echo "; captured $(date -u +%FT%TZ)"
