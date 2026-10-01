@@ -62,8 +62,11 @@ dnssec-oracle anchors               # root anchors: AddPend, Valid, Missing or R
 dnssec-oracle get <name>...         # attestations: TXT text, validity, key strength, payer
 dnssec-oracle list                  # every attestation, by sha256(wire name)
 dnssec-oracle caches                # every DNSKEY/DS cache entry
+dnssec-oracle keys <zone>           # a zone's DNSKEY/DS in DNS vs the oracle: cache, KSK/ZSK, DS links, anchors
 dnssec-oracle credits [address]
 ```
+
+`keys` takes `--resolver` and `--captured` like `prove`. To check its output against IANA's trust anchors and plain dig, see [Verifying anchors and zone keys](../../README.md#verifying-anchors-and-zone-keys).
 
 ### Admin
 

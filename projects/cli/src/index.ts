@@ -11,6 +11,7 @@ import {
   handleCredits,
   handleDepositCredits,
   handleGet,
+  handleKeys,
   handleList,
   handleMaintainAnchors,
   handleProve,
@@ -77,6 +78,16 @@ yargs(hideBin(process.argv))
   )
   .command('list', 'List every attestation box', {}, run(handleList))
   .command('caches', 'List every cached DNSKEY/DS entry', {}, run(handleCaches))
+  .command(
+    'keys <zone>',
+    "Compare a zone's DNSKEY and DS RRsets in DNS with the oracle: cache, KSK/ZSK, DS links, root anchors",
+    (y) =>
+      y
+        .positional('zone', { type: 'string', demandOption: true, description: 'Zone name, e.g. ., com or example.com' })
+        .option('resolver', { type: 'string', default: '1.1.1.1', description: 'DNS server, queried over TCP' })
+        .option('captured', { type: 'string', description: 'Read a captures/<date>/chains.json instead of querying DNS' }),
+    run(handleKeys),
+  )
   .command(
     'credits [account]',
     "Show an account's MBR credits, or every account's",

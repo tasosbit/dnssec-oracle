@@ -194,6 +194,9 @@ old keys has to become unusable, at every level below.
   proved anything.
 - Hold-downs count on-chain time from the call that entered the state. Watchers run
   `maintainAnchors` daily (see [RFC compliance](#rfc-compliance-and-divergence)).
+- To check the anchors against IANA's trust anchor file, or any zone's keys and DS against
+  what the oracle has cached, see the README's
+  [Verifying anchors and zone keys](../README.md#verifying-anchors-and-zone-keys).
 
 ## Box rent
 

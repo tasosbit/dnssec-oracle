@@ -198,6 +198,93 @@ await sdk.maintainAnchors() // revocations, then the root proof, then every even
 
 or `dnssec-oracle maintain-anchors`.
 
+## Verifying anchors and zone keys
+
+The oracle is only as trustworthy as its root anchors, and a consumer that pins an app ID
+should check them once. `dnssec-oracle keys <zone>` shows what DNS serves for a zone
+alongside what the oracle holds, at any level. The dig commands below are the
+independent check. They are bash, and `dnssec-dsfromkey` comes with BIND's tools
+(`bind9-utils` on Debian and Ubuntu).
+
+### Root anchors against IANA
+
+```bash
+dnssec-oracle anchors   # each anchor's id, sha256(alg ‖ pubkey), and RFC 5011 state
+dnssec-oracle keys .    # root DNSKEYs: role, key tag, size, anchor state, the same id
+```
+
+```
+. DNSKEY: cache matches DNS; inception 2026-09-19T00:00:00.000Z, expiry 2026-10-10T00:00:00.000Z, epoch 2
+  ZSK 8763, RSA-2048 (alg 8): usable by the oracle; not an anchor, id 7830bac1…
+  ZSK 57780, RSA-2048 (alg 8): usable by the oracle; not an anchor, id a51d365c…
+  KSK 20326, RSA-2048 (alg 8): usable by the oracle; anchor Valid since 2026-09-30T22:54:52.000Z, id bcd10e3a…
+  KSK 38696, RSA-2048 (alg 8): usable by the oracle; anchor Valid since 2026-09-30T22:54:52.000Z, id 093b9779…
+```
+
+Ids are shortened here; the command prints all 64 hex digits. The same ids from dig, and
+the root KSKs' DS digests compared with IANA's trust anchor
+file:
+
+```bash
+# anchor ids: sha256 of the algorithm byte and the public key, for each root KSK
+dig +noall +answer . DNSKEY | awk '$5 == 257 || $5 == 385 { key = ""; for (i = 8; i <= NF; i++) key = key $i; print $7, key }' |
+  while read alg key; do { printf '%02x' "$alg" | xxd -r -p; echo "$key" | base64 -d; } | sha256sum; done
+
+# key tag and DS digest of each root KSK, then IANA's list
+dig +noall +answer . DNSKEY | dnssec-dsfromkey -a SHA-256 -f - .
+curl -s https://data.iana.org/root-anchors/root-anchors.xml | grep -E 'KeyTag|Digest>'
+```
+
+Every Valid or AddPend anchor in `dnssec-oracle anchors` should match a key that `keys .`
+lists with the same id, and that key's tag and digest from `dnssec-dsfromkey` should
+appear in `root-anchors.xml`. A Missing anchor is still trusted but has left the root
+DNSKEY RRset, so neither `keys .` nor dig lists it: check that one by hand, by finding
+the key in IANA's file or an older capture and computing its id. The file also lists
+retired keys (19036, KSK-2010), which the oracle does not anchor.
+
+### Any zone: KSK, ZSK and DS
+
+```bash
+dnssec-oracle keys com
+dnssec-oracle keys example.com --resolver 9.9.9.9
+```
+
+```
+com. DNSKEY: cache matches DNS; inception 2026-09-24T13:57:35.000Z, expiry 2026-10-09T14:02:35.000Z, epoch 4
+  ZSK 41446, P-256 (alg 13): usable by the oracle; no DS
+  KSK 19718, P-256 (alg 13): usable by the oracle; DS matches
+com. DS: cache matches DNS; inception 2026-09-30T19:00:00.000Z, expiry 2026-10-10T00:00:00.000Z, epoch 3
+  DS 19718, alg 13, digest type 2: vouches for KSK 19718
+```
+
+- **Cache line.** `cache matches DNS` means the oracle's entry is exactly the RRset DNS
+  serves now. `differs` means it holds another one: an older one, which the next proof
+  replaces, or a newer one than this resolver serves. `not cached` means nobody has proven
+  it yet. `(stale: …)` marks an entry the oracle or a consumer's chain walk would refuse,
+  even if it matches: one from before a root key revocation, or a DNSKEY entry no longer
+  linked to the zone's current DS entry. When DNS serves no such RRset, serves it
+  unsigned or answers with a CNAME, the line says so instead.
+- **Key lines.** Each key's role, tag and size, and why the oracle would refuse it, if it
+  would (`RSA-4096 is outside 1024 to 2048 bits` for `pl`'s KSK). `DS matches` marks the
+  keys that the parent's DS vouches for. ZSKs normally show `no DS`.
+- **DS lines.** The key each DS vouches for. Digest types other than 2 are listed as
+  ignored.
+
+dig shows the same records, and validates them locally:
+
+```bash
+dig +multi +noall +answer com DNSKEY | grep 'key id'       # role, algorithm and tag of each key
+dig +noall +answer com DS                                  # the DS records in the parent zone
+dig +noall +answer com DNSKEY | dnssec-dsfromkey -a SHA-256 -f - com   # the DS each KSK should have
+delv com DNSKEY                                            # "; fully validated" from the root down
+```
+
+One check needs the CLI: comparing with the oracle's cache. The oracle stores only
+`sha256` of the canonical wire-format RRset, which dig cannot reproduce. Replay a capture
+with `--captured captures/<date>/chains.json` to see the keys as they were on that date.
+Its key and DS lines are exact, but cache lines only mean something live: they compare
+today's cache with the capture, and judge expiry at the capture's time.
+
 ## Daily capture
 
 The capture runs from the user crontab at 03:17 local time and logs to `captures/cron.log`.
