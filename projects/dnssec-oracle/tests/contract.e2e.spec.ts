@@ -256,6 +256,39 @@ describe('DnssecOracle e2e', () => {
       expect(await ask('hello com')).toBe(true)
     })
 
+    test('batch reads preserve large attestations and missing names across chunks', async () => {
+      const { sdk, world, exampleCom, chain } = await deploy({ credits: 12_000_000 })
+      await sdk.proveChain((await chain('_tag.example.com')).slice(0, 5))
+      const names = Array.from({ length: 5 }, (_, i) => `_large${i}.example.com`)
+      for (const name of names) {
+        world.txt(exampleCom, name, [bigRdata(3950)])
+        await sdk.proveStep({ step: find(await chain(name), 'txt') })
+      }
+      const large = await sdk.getAttestations(names)
+      for (const attestation of large) expect(attestation?.records[0].length).toBe(3950)
+      const input = Array.from({ length: 133 }, (_, i) => i % 6 === 5 ? '_missing.example.com' : names[i % 6])
+      const batch = await sdk.getAttestations(input)
+      expect(batch).toHaveLength(input.length)
+      for (const [i, value] of batch.entries()) {
+        expect(value).toEqual(i % 6 === 5 ? undefined : large[i % 6])
+      }
+    })
+
+    test('batch cache and credit reads accept repeated calls across chunks', async () => {
+      const { sdk, prove } = await deploy()
+      await prove('_tag.example.com')
+      const expectedCache = await sdk.getCache('.', RRType.DNSKEY)
+      const links: [string, number][] = Array.from({ length: 133 }, () => ['.', RRType.DNSKEY])
+      const entries = await sdk.getCaches(links)
+      expect(entries).toHaveLength(133)
+      for (const entry of entries) expect(entry).toEqual(expectedCache)
+      const admin = localnet.context.testAccount.toString()
+      const expectedCredits = await sdk.getCredits(admin)
+      const credits = await sdk._logCreditsChunked(Array.from({ length: 133 }, () => admin))
+      expect(credits).toHaveLength(133)
+      for (const credit of credits) expect(credit).toBe(expectedCredits)
+    })
+
     test('setup charges exactly the MBR constants the SDK mirrors', async () => {
       const { sdk } = await deploy({ credits: 1_000_000 })
       const needed = CREDIT_BOX_MBR_MICROALGOS + ANCHOR_BOX_MBR_MICROALGOS

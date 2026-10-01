@@ -18,6 +18,7 @@ import { ReaderConstructorArgs } from './types.js'
 import { chunk } from './util/chunk.js'
 import { chunked } from './util/chunked.js'
 import { SIMULATE_PARAMS } from './util/increaseBudget.js'
+import { noteNonce } from './util/noteNonce.js'
 import { scanBoxes } from './util/scanBoxes.js'
 import { errorTransformer, wrapErrors } from './util/wrapErrors.js'
 
@@ -122,7 +123,7 @@ export class DnssecOracleReaderSDK {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
     for (const call of chunk(names, NAMES_PER_CALL)) {
-      builder = builder.logAttestations({ args: { names: call } })
+      builder = builder.logAttestations({ args: { names: call }, note: `${noteNonce()}` })
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
@@ -214,7 +215,7 @@ export class DnssecOracleReaderSDK {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
     for (const call of chunk(keys, KEYS_PER_CALL)) {
-      builder = builder.logCaches({ args: { keys: call } })
+      builder = builder.logCaches({ args: { keys: call }, note: `${noteNonce()}` })
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
@@ -271,7 +272,7 @@ export class DnssecOracleReaderSDK {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
     for (const call of chunk(accounts, ACCOUNTS_PER_CALL)) {
-      builder = builder.logCredits({ args: { accounts: call } })
+      builder = builder.logCredits({ args: { accounts: call }, note: `${noteNonce()}` })
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
