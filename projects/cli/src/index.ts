@@ -2,7 +2,7 @@
 
 import yargs, { Argv } from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { getConfig } from './config'
+import { getConfig, NETWORKS } from './config'
 import {
   handleAnchors,
   handleCaches,
@@ -33,7 +33,14 @@ const run = (handler: (argv: any) => Promise<void>) => async (argv: any) => {
   }
 }
 
-const config = getConfig()
+// the network picks the other options' defaults, so it is read before they are declared
+const parsed = yargs(hideBin(process.argv))
+  .option('network', { alias: 'n', type: 'string' })
+  .help(false)
+  .version(false)
+  .parseSync()
+// a repeated -n arrives as an array: the last one wins, as for any other flag
+const config = getConfig([parsed.network].flat().at(-1))
 
 // shared by deploy and setup
 const setupOptions = (y: Argv) =>
@@ -44,6 +51,12 @@ const setupOptions = (y: Argv) =>
 
 yargs(hideBin(process.argv))
   .scriptName('dnssec-oracle')
+  .option('network', {
+    alias: 'n',
+    type: 'string',
+    choices: Object.keys(NETWORKS),
+    description: 'Preset node and app ID (testnet: Nodely, app 772959888); explicit flags override it',
+  })
   .option('algod-host', { type: 'string', default: config.algodHost, description: 'Algorand node host' })
   .option('algod-port', { type: 'number', default: config.algodPort, description: 'Algorand node port (443 → https)' })
   .option('algod-token', {
@@ -140,7 +153,12 @@ yargs(hideBin(process.argv))
         .positional('name', { type: 'string', demandOption: true })
         .option('resolver', { type: 'string', default: '1.1.1.1', description: 'DNS server, queried over TCP' })
         .option('captured', { type: 'string', description: 'Replay a captures/<date>/chains.json instead of querying DNS' })
-        .option('refresh-margin', { type: 'number', description: 'Re-prove cache entries this close to expiry, seconds (SDK default: 3600)' }),
+        .option('refresh-margin', { type: 'number', description: 'Re-prove cache entries this close to expiry, seconds (SDK default: 3600)' })
+        .option('auto-credits', {
+          type: 'boolean',
+          default: true,
+          description: 'Deposit the estimated box MBR +10% as credits (after confirming), withdraw them once proven. --no-auto-credits uses credits already held',
+        }),
     run(handleProve),
   )
   .command(

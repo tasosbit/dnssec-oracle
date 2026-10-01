@@ -14,8 +14,20 @@ export interface Config {
   debug?: boolean
 }
 
-// LocalNet defaults: point ALGOD_* at a real node for testnet/mainnet
-export function getConfig(): Config {
+/** `--network` presets: they override the environment, explicit flags override them. */
+export const NETWORKS: Record<string, Partial<Config>> = {
+  testnet: { algodHost: 'testnet-api.4160.nodely.dev', algodPort: 443, algodToken: '', appId: '772959888' },
+}
+
+// LocalNet defaults: point ALGOD_* at a real node, or pick a --network
+export function getConfig(network?: string): Config {
+  return {
+    ...envConfig(),
+    ...(network ? NETWORKS[network] : {}),
+  }
+}
+
+function envConfig(): Config {
   return {
     algodHost: process.env.ALGOD_HOST || 'localhost',
     algodPort: parseInt(process.env.ALGOD_PORT || '4001'),

@@ -1,5 +1,7 @@
 import { generateAccount, secretKeyToMnemonic } from 'algosdk'
 import { describe, expect, it } from 'vitest'
+import { CACHE_BOX_MBR_MICROALGOS, CREDIT_BOX_MBR_MICROALGOS, ProofStep, attestationBoxMbrMicroAlgos } from '@d13co/dnssec-oracle-sdk'
+import { proveDeposit, proveMbrEstimate } from '../src/commands'
 import { createWriterAccount, formatAlgo, parseAlgo } from '../src/utils'
 
 describe('parseAlgo', () => {
@@ -45,5 +47,25 @@ describe('createWriterAccount', () => {
   it('rejects a bad mnemonic and a bad address', () => {
     expect(() => createWriterAccount('not a mnemonic')).toThrow(/Invalid mnemonic/)
     expect(() => createWriterAccount(mnemonic, 'nope')).toThrow()
+  })
+})
+
+describe('prove auto-credits', () => {
+  const step = (kind: string, rrset = new Uint8Array()) => ({ kind, rrset }) as unknown as ProofStep
+  // one TXT RR: root owner (1), type/class/TTL (8), RDLENGTH 4, RDATA "\x03abc"
+  const txt = step('txt', new Uint8Array([0, 0, 16, 0, 1, 0, 0, 0, 60, 0, 4, 3, 97, 98, 99]))
+  const attestation = BigInt(attestationBoxMbrMicroAlgos(4, 1))
+
+  it('charges a cache box only where none exists, plus the attestation', () => {
+    const steps = [step('root'), step('ds'), step('dnskey'), txt]
+    expect(proveMbrEstimate(steps, [true, false, false])).toBe(2n * BigInt(CACHE_BOX_MBR_MICROALGOS) + attestation)
+    expect(proveMbrEstimate(steps, [true, true, true])).toBe(attestation)
+  })
+
+  it('pads 10%, adds a new credit box, nets out credits held', () => {
+    expect(proveDeposit(1000n, undefined)).toBe(1100n + BigInt(CREDIT_BOX_MBR_MICROALGOS))
+    expect(proveDeposit(1001n, 0n)).toBe(1102n) // rounds up
+    expect(proveDeposit(1000n, 600n)).toBe(500n)
+    expect(proveDeposit(1000n, 5000n)).toBe(0n)
   })
 })

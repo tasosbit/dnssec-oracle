@@ -1,18 +1,24 @@
 import { readFileSync } from 'fs'
+import { createInterface } from 'readline/promises'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
 import {
   AnchorEntry,
   AnchorState,
   Attestation,
+  CACHE_BOX_MBR_MICROALGOS,
+  CREDIT_BOX_MBR_MICROALGOS,
   CacheEntry,
   DnssecOracleSDK,
   Ds,
+  ProofStep,
   ROOT_KSK_2017,
   ROOT_KSK_2024,
   Resolver,
   RRType,
   anchorHash,
   ancestors,
+  attestationBoxMbrMicroAlgos,
+  buildTxtChain,
   bytesEqual,
   canonicalRRset,
   capturedResolver,
@@ -26,6 +32,7 @@ import {
   parseDs,
   parseResponse,
   parseRrsig,
+  rdataOf,
   sha256,
   tcpResolver,
   toHex,
@@ -316,14 +323,84 @@ export async function handleWithdrawCredits(argv: Argv) {
   printTxIds((await makeSdk(argv, { write: true }).withdrawCredits({})).txIds)
 }
 
+/**
+ * Box rent a chain can draw from credits, at most: a new cache box per cache step whose box
+ * does not exist yet, plus the full attestation box (a replaced one refunds its own payer).
+ * An existing cache box is overwritten at the same size, or pruned for a refund first.
+ */
+export function proveMbrEstimate(steps: ProofStep[], cacheExists: boolean[]): bigint {
+  let mbr = 0
+  for (const [i, step] of steps.filter((s) => s.kind !== 'txt').entries()) {
+    if (!cacheExists[i]) mbr += CACHE_BOX_MBR_MICROALGOS
+  }
+  const txt = steps.find((s) => s.kind === 'txt')
+  if (txt) {
+    const records = rdataOf(txt.rrset)
+    mbr += attestationBoxMbrMicroAlgos(records.reduce((n, r) => n + r.length, 0), records.length)
+  }
+  return BigInt(mbr)
+}
+
+/** µAlgo to deposit: the estimate +10%, a new credit box's own MBR, less credits already held. */
+export function proveDeposit(estimate: bigint, credit: bigint | undefined): bigint {
+  const padded = (estimate * 11n + 9n) / 10n // ceil(estimate * 1.1)
+  const deposit = credit === undefined ? padded + BigInt(CREDIT_BOX_MBR_MICROALGOS) : padded - credit
+  return deposit > 0n ? deposit : 0n
+}
+
+async function confirm(question: string): Promise<boolean> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  // stdin at EOF (cron, </dev/null) never answers: without this the process just exits 0
+  const eof = new Promise<string>((resolve) => rl.once('close', () => resolve('')))
+  try {
+    return /^y(es)?$/i.test((await Promise.race([rl.question(`${question} [y/N] `), eof])).trim())
+  } finally {
+    rl.close()
+  }
+}
+
 export async function handleProve(argv: Argv) {
-  const { proven, cached, txIds } = await makeSdk(argv, { write: true }).proveTxt(argv.name, {
-    resolver: resolverOf(argv),
-    refreshMarginSeconds: argv.refreshMargin,
-  })
-  for (const step of cached) console.log(`cached  ${step.kind} ${nameFromWire(step.owner)}`)
-  for (const step of proven) console.log(`proven  ${step.kind} ${nameFromWire(step.owner)}`)
-  printTxIds(txIds)
+  const sdk = makeSdk(argv, { write: true })
+  const steps = await buildTxtChain(argv.name, resolverOf(argv), { anchors: await sdk.trustedAnchors() })
+  const sender = sdk.writerAccount!.sender.toString()
+
+  let deposited = false
+  if (argv.autoCredits) {
+    const cacheSteps = steps.filter((s) => s.kind !== 'txt')
+    const caches = await sdk.getRawCaches(cacheSteps.map((s): [Uint8Array, number] => [s.owner, s.type]))
+    const estimate = proveMbrEstimate(steps, caches.map(Boolean))
+    const credit = await sdk.getCredits(sender)
+    const deposit = proveDeposit(estimate, credit)
+    console.log(`Estimated box MBR: ${formatAlgo(estimate)} ALGO, before the 10% padding`)
+    console.log(`Credits held: ${credit === undefined ? 'none' : `${formatAlgo(credit)} ALGO`}`)
+    if (deposit > 0n) {
+      const note = credit === undefined ? ', credit box MBR included' : ''
+      if (!(await confirm(`Deposit ${formatAlgo(deposit)} ALGO of credits${note}, and withdraw all of your credits after proving?`))) {
+        throw new Error('Aborted: nothing sent. Pass --no-auto-credits to prove from credits already held')
+      }
+      printTxIds((await sdk.depositCredits({ amount: deposit })).txIds)
+      deposited = true
+    }
+  }
+
+  let proved = false
+  try {
+    const { proven, cached, txIds } = await sdk.proveChain(steps, { refreshMarginSeconds: argv.refreshMargin })
+    for (const step of cached) console.log(`cached  ${step.kind} ${nameFromWire(step.owner)}`)
+    for (const step of proven) console.log(`proven  ${step.kind} ${nameFromWire(step.owner)}`)
+    printTxIds(txIds)
+    proved = true
+    if (!deposited) return
+    const left = (await sdk.getCredits(sender)) ?? 0n
+    printTxIds((await sdk.withdrawCredits({})).txIds)
+    console.log(`Withdrew ${formatAlgo(left + BigInt(CREDIT_BOX_MBR_MICROALGOS))} ALGO (credits and credit box MBR)`)
+  } catch (error) {
+    if (!deposited) throw error
+    throw new Error(
+      `${(error as Error).message}\nThe credits deposited for ${sender} are still in the app: ` +
+        `${proved ? '' : 'retry `prove`, or '}reclaim them with \`dnssec-oracle withdraw-credits\``,
+    )
+  }
 }
 
 export async function handlePrune(argv: Argv) {
