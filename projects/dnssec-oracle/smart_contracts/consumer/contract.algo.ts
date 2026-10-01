@@ -6,6 +6,10 @@ import { attestationHasRecord, attestationUsable, readAttestation, txtRdata } fr
 /**
  * Example consumer: reads the oracle's attestation boxes directly, through the reference reader
  * (`hasTxt`), or asks the oracle's `hasRecord` by inner call (`hasTxtByCall`).
+ *
+ * It imports the oracle by relative path, being in this repo. Contracts elsewhere import
+ * the same sources from the SDK package: `import type { DnssecOracle } from
+ * 'dnssec-oracle-sdk/contract'` types `abiCall`, and `dnssec-oracle-sdk/reader` is the reader.
  */
 export class AttestationConsumer extends Contract {
   /** The oracle, pinned at create: an app the caller names could hold forged boxes. */
