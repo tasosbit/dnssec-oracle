@@ -1,8 +1,142 @@
 # DNSSEC oracle on Algorand
 
-Proves on-chain, with no trusted relayer, that a TXT record exists at a DNS name: the
-contract verifies the DNSSEC chain from the root down, one signature per call. Design and
-trust model: [plan.md](./plan.md).
+> [!WARNING]
+> **Experimental and unaudited.** Neither the contract nor the RSA and box-rent libraries it
+> depends on have had a security audit. The contract cannot be updated, so a bug cannot be
+> patched: it takes a redeployment. Do not rely on it for anything of value.
+
+Proves on-chain, with no trusted relayer, that a TXT record exists at a DNS name. The
+contract verifies the DNSSEC signature chain from the root trust anchor down to the TXT
+RRset, one signature per call, and stores the result in a box that any Algorand app can read
+directly.
+
+- **Trustless submission.** Anyone can submit a proof. The submitter is not trusted: the
+  contract parses every byte it hashes and checks every signature itself (RSA/SHA-256 and
+  ECDSA P-256).
+- **Shared cache.** Root, DS and DNSKEY RRsets are cached as hashes, so a TLD's keys are
+  paid for once per signing period and reused by every name below it.
+- **Root key rollover on-chain.** Anchors follow RFC 5011: anyone can apply Add, Promote,
+  Miss, Return, Reset, Retire and self-signed revocation. The admin uploads the initial
+  anchors once and has no say in them after that.
+- **Immutable.** No update or delete methods. A rule change means a new deployment.
+
+Architecture, RFC compliance and the full list of limitations:
+[docs/architecture.md](./docs/architecture.md). Design history and trust model:
+[docs/plan.md](./docs/plan.md).
+
+## What an attestation says
+
+The box `t ‖ sha256(name)` holds the TXT RDATA set as signed, plus a header:
+
+| Field            | Meaning                                                              |
+|------------------|----------------------------------------------------------------------|
+| `inception`      | when the zone signed this RRset (the TXT RRSIG's inception)           |
+| `expiration`     | the earliest RRSIG expiration on the chain, root included            |
+| `weakestKeyBits` | the weakest key on the chain (P-256 counts as 3072)                  |
+| `parentEpoch`    | links the attestation to the cache entries above it, for the chain walk |
+| `payer`          | who paid the box rent                                                |
+
+It means *this RRset was validly signed at `inception`*, not that the record still exists
+now. The consumer decides how old is too old (`maxAge`) and how weak is too weak
+(`minKeyBits`), and walks the chain to check that no key above has been replaced since.
+The reference reader `smart_contracts/dnssec_oracle/reader.algo.ts` does all three in
+`attestationUsable`.
+
+## Usage models
+
+### Prove once
+
+The consumer checks the attestation once and records its own fact, with an expiry of its
+own choosing. After that it no longer reads the oracle, and the attestation can expire and
+be pruned.
+
+```ts
+// consumer contract, sketch: the TXT text holds the claimant's address and this app's ID
+public claim(name: bytes, text: bytes, zones: bytes[]): void {
+  const [value, exists] = readAttestation(ORACLE, name)            // ORACLE: pinned app ID
+  assert(exists && attestationUsable(ORACLE, value, 3600, 2048, zones))
+  assert(attestationHasRecord(value, txtRdata(text)))
+  this.claims(name).value = { text, until: Global.latestTimestamp + 365 * 86_400 }
+}
+```
+
+- Cost: one chain proof, at claim time. Nobody has to keep anything fresh afterwards.
+- `maxAge` here only bounds how stale the proof may be *at claim time*. Keep it short,
+  but longer than the zone's re-signing interval, or there may be no signature recent
+  enough to submit.
+- The consumer does not see later changes until its own expiry: a removed record, a
+  domain transfer (new DS) or a root key revocation. Choose the expiry with that in
+  mind, or let the owner re-claim to extend it.
+- Suits registrations, one-time ownership checks and allowlists that are reviewed
+  periodically anyway.
+
+### Continuous attestations
+
+The consumer reads the oracle box on every use, as the example `AttestationConsumer.hasTxt`
+does, so the data must stay proven the whole time it is relied on.
+
+```bash
+# from cron, more often than the consumer's maxAge
+dnssec-oracle prove _algorand.example.com
+```
+
+```ts
+await sdk.proveTxt('_algorand.example.com') // fresh cache steps are skipped; op-up is automatic
+```
+
+- Someone (the name owner, the consumer's operator or any keeper) must re-prove before
+  the attestation fails any of the following:
+  - **`maxAge` on `inception`.** Consumers reject anything signed longer ago than this,
+    so it must be longer than the zone's re-signing interval: Cloudflare signs on the
+    fly, while other zones re-sign weekly.
+  - **`expiration`.** The earliest RRSIG expiration on the chain, often a root signature,
+    which lasts two to three weeks.
+  - **The chain walk.** Any new RRset above the name (a root or TLD ZSK roll, a new DS)
+    stales everything below it, a few times a quarter at the root alone. `proveTxt`
+    re-proves the stale links first.
+- Cost: each refresh pays for the TXT step, plus any cache steps that expired or changed
+  since the last refresh, which every name under the same TLD shares. The figures are
+  under [Phase 0 results](#phase-0-results). Box rent is unchanged: replacing an
+  attestation refunds the old payer and charges the new one.
+- Suits access control, payments routed by DNS name and anything else that must stop
+  trusting a record soon after it is withdrawn. Removal still takes up to `maxAge` to
+  take effect: the oracle cannot prove that a record is absent.
+
+Both models need the root DNSKEY entry kept fresh. `dnssec-oracle maintain-anchors`
+(daily, see [Root KSK rollover](#root-ksk-rollover)) does that as well as the RFC 5011
+work.
+
+## Limitations
+
+Summary only. The reasons behind each one are in
+[docs/architecture.md](./docs/architecture.md#limitations).
+
+- **RSA keys of 1024 to 2048 bits, exponent 65537.** The 2048-bit cap keeps one RSA
+  check (about 92k opcodes) inside a single transaction group's op-up pool (190,400).
+  Larger keys could be verified over several groups, carrying the modular exponentiation
+  forward in a box between them. That option has not been implemented, to keep the
+  contract simple. On 2026-09-28, 19 of 1,351 signed TLDs published an RSA key above
+  2048 bits (`pl`, `ar` and `lv` among them). Names under such a TLD are provable only
+  while its DS links to a key of 2048 bits or fewer.
+- **Algorithms 8 (RSA/SHA-256) and 13 (ECDSA P-256/SHA-256) only; DS digest type 2
+  (SHA-256) only.** 36 TLDs also use other algorithms.
+- **4,096 bytes per signed RRset and per attestation.** `sha256` cannot stream, and an
+  AVM byte value holds at most 4,096 bytes. A TXT RRset whose signed data or attestation
+  is larger cannot be proven. Apex TXT sets (SPF, verification tokens) are where this
+  bites: one measured apex is already at 2,844 bytes.
+  - **Tip:** if you control the zone, put the records the oracle should prove at a
+    dedicated subdomain such as `_algorand.example.com`, never at the apex. The RRset
+    then holds only your records: about 4,000 bytes of RDATA, or some 44 records of one
+    Algorand address each. See [research/sha256-limit](./research/sha256-limit/README.md).
+- **TXT, positive answers only.** No NSEC/NSEC3, so the oracle cannot prove that a record
+  or a name does not exist. No CNAME or DNAME following, and no wildcards.
+- **The record existed, not that it still exists.** Freshness is the consumer's `maxAge`.
+- **Liveness depends on watchers.** Someone has to re-prove the root DNSKEY RRset before
+  its signature expires (about every three weeks), and send RFC 5011 events within 30 days
+  of a change.
+- **The clock is the block timestamp.** DNSSEC's 32-bit times wrap in 2106.
+- **Fixed code.** A new root algorithm, a root key above 2048 bits or a bug all need a
+  redeployment, and consumers then have to pin the new app ID.
 
 ## Layout
 
@@ -15,8 +149,11 @@ projects/dnssec-oracle/          contract (PuyaTs, AVM 13), unit + e2e tests
 projects/dnssec-oracle-sdk/      reader/writer SDK and the off-chain prover
   src/prover/                    DNS over TCP, canonical signed data, chain building
 projects/cli/                    `dnssec-oracle` operator CLI over the SDK (yargs, bun executables)
+research/sha256-limit/           RRset sizes across every signed TLD vs the 4,096-byte limit
 scripts/capture-root.sh          daily capture for rollover test data (cron)
 captures/<date>/                 dig.txt (presentation) and chains.json (wire)
+docs/architecture.md             architecture, RFC compliance, limitations
+docs/plan.md                     design plan, decisions and trust model
 ```
 
 ## Build and test
@@ -33,41 +170,42 @@ Rebuild the SDK after every contract change: the e2e tests import its `dist`.
 `@d13co/puya-ts-utils` ships its contract subroutines as TypeScript source; vitest
 inlines the package so the emulator can run it.
 
-## Proving a name
+## Deploy and prove
 
 ```ts
 const sdk = new DnssecOracleSDK({ algorand, appId, writerAccount })
 await sdk.depositCredits({ amount: 1_000_000 }) // box rent
 await sdk.proveTxt('_algorand.example.com')     // skips fresh cached steps, op-up is automatic
 const attestation = await sdk.getAttestation('_algorand.example.com')
+const zones = await sdk.attestationZones('_algorand.example.com', attestation!) // undefined if stale
 ```
 
-Deploying is two steps from the admin: `DnssecOracleSDK.create(...)`, then
-`sdk.setup({ anchors: ROOT_ANCHORS })`, which funds the app, deposits the admin's credits
-and uploads the anchors (KSK-2017 and KSK-2024) in one group. Any TLD can be proven:
-consumers choose which names, and so which registries, they trust.
+Deploying takes two steps, both from the admin: `DnssecOracleSDK.create(...)`, then
+`sdk.setup({ anchors: ROOT_ANCHORS })`. `setup` funds the app, deposits the admin's credits
+and uploads the anchors (KSK-2017 and KSK-2024) in one group. Any TLD can be proven.
+Consumers choose which names, and therefore which registries, they trust. The CLI wraps
+all of this: [projects/cli/README.md](./projects/cli/README.md).
 
 ## Root KSK rollover
 
-Anchors follow RFC 5011 on-chain: `updateAnchor` applies Add, Promote (after a 30-day
-hold-down), Reset, Miss, Return and Retire from the cached root DNSKEY RRset, and
-`revokeRoot` takes an anchor's self-signed revocation. All permissionless. Run the watcher
-daily next to the capture cron:
+`updateAnchor` applies RFC 5011's Add, Promote (after a 30-day hold-down), Reset, Miss,
+Return and Retire from the cached root DNSKEY RRset. `revokeRoot` takes an anchor's
+self-signed revocation. Both are permissionless. Run the watcher daily:
 
 ```ts
 await sdk.maintainAnchors() // revocations, then the root proof, then every event it implies
 ```
 
-or `dnssec-oracle maintain-anchors`. Design: plan.md, "Root anchors: rollover".
+or `dnssec-oracle maintain-anchors`.
 
 ## Daily capture
 
-Installed in the user crontab at 03:17 local time, logging to `captures/cron.log`. Keep it
-running until KSK-2017 is seen revoked, about 2027-01-11. Each run writes the root DNSKEY
-RRset straight from a root server and a full chain for one name under each of `com`, `io`,
-`finance` and `co`, and writes `alerts.txt` (exit code 2) when a zone moves off the
-contract's deployment assumptions or the root DNSKEY RRset is signed by a key other than
-20326.
+The capture runs from the user crontab at 03:17 local time and logs to `captures/cron.log`.
+Keep it running until KSK-2017 is seen revoked, around 2027-01-11. Each run writes the root
+DNSKEY RRset straight from a root server, plus a full chain for one name under each of
+`com`, `io`, `finance` and `co`. It writes `alerts.txt` (exit code 2) when a zone moves off
+the contract's deployment assumptions, or when a key other than 20326 signs the root DNSKEY
+RRset.
 
 ## Phase 0 results
 

@@ -44,7 +44,7 @@ dnssec-oracle prove _dmarc.nodely.io --resolver 9.9.9.9
 dnssec-oracle prove _dmarc.nodely.io --captured ../../captures/2026-09-29/chains.json
 ```
 
-This proves the root, then the DS and DNSKEY for each zone, then the TXT. Cache entries already stored and more than `--refresh-margin` seconds (default 3600) from expiry are skipped. Running any `prove` from cron keeps the root DNSKEY entry fresh (plan.md trust point 11).
+This proves the root, then the DS and DNSKEY for each zone, then the TXT. Cache entries already stored and more than `--refresh-margin` seconds (default 3600) from expiry are skipped. Running any `prove` from cron keeps the root DNSKEY entry fresh (docs/plan.md trust point 11).
 
 ### Root rollover
 

@@ -1,6 +1,6 @@
 # Is the 4,096-byte `sha256` limit a practical concern?
 
-Measured 2026-09-28 via 1.1.1.1 (TCP, DO bit). Question raised by `plan.md`,
+Measured 2026-09-28 via 1.1.1.1 (TCP, DO bit). Question raised by `docs/plan.md`,
 "The one input format":
 
 > Hard limit: `sha256` takes one value of at most 4,096 bytes and cannot
