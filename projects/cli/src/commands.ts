@@ -67,7 +67,7 @@ export async function handleAnchors(argv: Argv) {
 export async function handleGet(argv: Argv) {
   const names: string[] = argv.names
   const sdk = makeSdk(argv)
-  const attestations = await sdk.getAttestations(names)
+  const attestations = await sdk.getRawAttestations(names)
   for (const [i, name] of names.entries()) {
     const a = attestations[i]
     if (!a) {
@@ -85,7 +85,7 @@ export async function handleGet(argv: Argv) {
 export async function handleList(argv: Argv) {
   const sdk = makeSdk(argv)
   const { rootEpoch } = await sdk.getState()
-  for (const [key, a] of await sdk.listAttestations()) {
+  for (const [key, a] of await sdk.listRawAttestations()) {
     console.log(`${key} (sha256 of wire name)`)
     printAttestation(a)
     // without the name the zones are unknown: only a revocation is visible here; `get` walks the chain
@@ -94,7 +94,7 @@ export async function handleList(argv: Argv) {
 }
 
 export async function handleCaches(argv: Argv) {
-  for (const [key, c] of await makeSdk(argv).listCaches()) {
+  for (const [key, c] of await makeSdk(argv).listRawCaches()) {
     console.log(`${key} inception=${isoTime(c.inception)} expiry=${isoTime(c.expiry)} weakestKeyBits=${c.weakestKeyBits} epoch=${c.epoch} parentEpoch=${c.parentEpoch}`)
   }
 }
@@ -226,7 +226,7 @@ export async function zoneKeysReport(
 export async function handleKeys(argv: Argv) {
   const sdk = makeSdk(argv)
   const lookups: KeyLookups = {
-    cache: (zone, type) => sdk.getCache(zone, type),
+    cache: (zone, type) => sdk.getRawCache(zone, type),
     anchor: (rdata) => sdk.getAnchor(rdata),
     rootEpoch: async () => Number((await sdk.getState()).rootEpoch),
   }

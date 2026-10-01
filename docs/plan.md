@@ -380,10 +380,10 @@ payments, so a closed account can never block a write.
   needs box references for the attestation, each zone's DNSKEY and DS, and
   the root DNSKEY: 6 for `_tag.example.com`, which fits beside the oracle app
   in one transaction's 8. Longer chains spread them over the group. The SDK
-  mirrors the walk off-chain (`chainLive`), and `attestationZones` finds the
+  mirrors the walk off-chain (`attestationChainLive`), and `attestationZones` finds the
   zones from the name by matching epochs; the CLI's `get` reports it.
 - Off-chain, SDK: point lookups simulate `logAttestations` and `logCaches`
-  (batched, `@chunked`), so `chainLive` and `attestationZones` read every
+  (batched, `@chunked`), so `attestationChainLive` and `attestationZones` read every
   link in one simulate, in one round; listing every attestation or cache
   uses the algod `scanBoxes` prefix scan. An e2e test asserts both return
   the same bytes.

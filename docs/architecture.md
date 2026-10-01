@@ -220,7 +220,7 @@ If a payer withdrew their credit box, their refund stays with the app.
   the transaction needs 6 box references: the attestation, each zone's DNSKEY and DS, and
   the root DNSKEY.
 - **Off-chain.** The SDK reads point lookups by simulating `logAttestations`/`logCaches`,
-  and lists boxes with algod's prefix scan. `chainLive` and `attestationZones` mirror the
+  and lists boxes with algod's prefix scan. `attestationChainLive` and `attestationZones` mirror the
   on-chain walk.
 
 ## Cost

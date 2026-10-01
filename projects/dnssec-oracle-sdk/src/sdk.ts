@@ -295,7 +295,7 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
     const rootEpoch = Number((await this.getState()).rootEpoch)
     for (const step of steps) {
       if (step.kind !== 'txt') {
-        const found = await this.getCache(step.owner, step.type)
+        const found = await this.getRawCache(step.owner, step.type)
         // parents come first, so this reads the parent's entry as this step will see it
         const live = found && found.parentEpoch === (await this.parentEpoch(step))
         if (live && bytesEqual(found.hash, sha256(step.rrset)) && found.expiry > now + refreshMarginSeconds) {
@@ -329,8 +329,8 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
     if (step.kind === 'root') return Number((await this.getState()).rootEpoch)
     const parent =
       step.kind === 'ds'
-        ? await this.getCache(signerOf(step), RRType.DNSKEY)
-        : await this.getCache(step.owner, RRType.DS)
+        ? await this.getRawCache(signerOf(step), RRType.DNSKEY)
+        : await this.getRawCache(step.owner, RRType.DS)
     return parent?.epoch ?? 0
   }
 

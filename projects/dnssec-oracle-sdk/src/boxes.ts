@@ -68,7 +68,7 @@ export interface Attestation {
   inception: number
   expiration: number
   weakestKeyBits: number
-  /** The signer's DNSKEY cache entry epoch when proven: see DnssecOracleReaderSDK.chainLive. */
+  /** The signer's DNSKEY cache entry epoch when proven: see DnssecOracleReaderSDK.attestationChainLive. */
   parentEpoch: number
   payer: string
   /** TXT RDATA, one per RR, in stored (canonical) order. */

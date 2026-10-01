@@ -176,9 +176,16 @@ inlines the package so the emulator can run it.
 const sdk = new DnssecOracleSDK({ algorand, appId, writerAccount })
 await sdk.depositCredits({ amount: 1_000_000 }) // box rent
 await sdk.proveTxt('_algorand.example.com')     // skips fresh cached steps, op-up is automatic
-const attestation = await sdk.getAttestation('_algorand.example.com')
-const zones = await sdk.attestationZones('_algorand.example.com', attestation!) // undefined if stale
+// undefined unless current, unexpired, signed within maxAge and no key weaker than minKeyBits
+const verified = await sdk.getVerifiedAttestation('_algorand.example.com', { maxAge: 86_400, minKeyBits: 2048 })
 ```
+
+Attestation getters say whether they validate. `getVerifiedAttestation` applies the same
+checks as the on-chain `attestationUsable`: the chain is current, the attestation is
+unexpired, it was signed within `maxAge` and no key is weaker than `minKeyBits`.
+`getRawAttestation(s)` and `listRawAttestations` return box contents as stored, stale,
+expired and weak entries included. Use them to inspect boxes, not to trust them. The cache
+getters (`getRawCache(s)`, `listRawCaches`) are raw in the same way.
 
 Deploying takes two steps, both from the admin: `DnssecOracleSDK.create(...)`, then
 `sdk.setup({ anchors: ROOT_ANCHORS })`. `setup` funds the app, deposits the admin's credits

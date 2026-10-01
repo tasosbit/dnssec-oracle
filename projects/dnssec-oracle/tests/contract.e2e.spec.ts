@@ -164,7 +164,7 @@ describe('DnssecOracle e2e', () => {
       const rows: Record<string, unknown>[] = []
       for (const name of ['_tag.example.com', '_tag.example.io']) {
         for (const step of await chain(name)) {
-          const cached = await sdk.getCache(step.owner, step.type)
+          const cached = await sdk.getRawCache(step.owner, step.type)
           if (cached && step.kind !== 'txt') continue
           const { simulateResponse } = await sdk['makeProveTxns']({ step }).simulate(SIMULATE_PARAMS)
           const group = simulateResponse.txnGroups[0]
@@ -209,15 +209,30 @@ describe('DnssecOracle e2e', () => {
       // example.com publishes a new key set: what its old one signed is stale, until proven again
       world.publishKeys(exampleCom, [ecKey({ flags: 256 }).rdata])
       await sdk.proveStep({ step: find(await chain('_tag.example.com'), 'dnskey', 'example.com') })
-      const [stale] = await sdk.getAttestations(['_tag.example.com'])
-      expect(await sdk.chainLive(stale!, ['example.com', 'com'])).toBe(false)
+      const [stale] = await sdk.getRawAttestations(['_tag.example.com'])
+      expect(await sdk.attestationChainLive(stale!, ['example.com', 'com'])).toBe(false)
       expect(await sdk.attestationZones('_tag.example.com', stale!)).toBeUndefined()
+      const policy = { maxAge: 86_400 * 3, minKeyBits: 2048 }
+      expect(await sdk.getVerifiedAttestation('_tag.example.com', policy)).toBeUndefined()
       expect(await ask('hello com')).toBe(false)
       await prove('_tag.example.com')
-      const [fresh] = await sdk.getAttestations(['_tag.example.com'])
-      expect(await sdk.chainLive(fresh!, ['example.com', 'com'])).toBe(true)
+      const [fresh] = await sdk.getRawAttestations(['_tag.example.com'])
+      expect(await sdk.attestationChainLive(fresh!, ['example.com', 'com'])).toBe(true)
       const zones = await sdk.attestationZones('_tag.example.com', fresh!)
       expect(zones?.map((z) => nameFromWire(z))).toEqual(['example.com.', 'com.'])
+      const verified = await sdk.getVerifiedAttestation('_tag.example.com', policy)
+      expect(verified?.zones.map((z) => nameFromWire(z))).toEqual(['example.com.', 'com.'])
+      expect(verified?.attestation).toEqual(fresh)
+      // boundaries are inclusive, as on-chain: usable at expiration and at inception + maxAge
+      const { inception, expiration } = fresh!
+      const at = (now: number, maxAge: number) => sdk.getVerifiedAttestation('_tag.example.com', { ...policy, maxAge, now })
+      expect(await at(expiration, expiration - inception)).toBeDefined()
+      expect(await at(expiration + 1, expiration - inception + 1)).toBeUndefined() // expired
+      expect(await at(inception + 10, 10)).toBeDefined()
+      expect(await at(inception + 11, 10)).toBeUndefined() // signed too long ago
+      // the same policy checks as the consumer's ask above
+      expect(await sdk.getVerifiedAttestation('_tag.example.com', { ...policy, maxAge: 60 })).toBeUndefined()
+      expect(await sdk.getVerifiedAttestation('_tag.example.com', { ...policy, minKeyBits: 4096 })).toBeUndefined()
       expect(await ask('hello com')).toBe(true)
     })
 
@@ -239,12 +254,12 @@ describe('DnssecOracle e2e', () => {
         expect(toHex(viaSimulate[i]!)).toBe(toHex(viaAlgod.get(attestationKey(name))!))
       }
       expect(viaAlgod.size).toBe(2)
-      expect((await sdk.listAttestations()).get(attestationKey('_tag.example.io'))?.texts).toEqual(['hello io'])
+      expect((await sdk.listRawAttestations()).get(attestationKey('_tag.example.io'))?.texts).toEqual(['hello io'])
 
       const admin = localnet.context.testAccount.toString()
       expect(await sdk.getCredits(admin)).toBe((await sdk.listCredits()).get(admin))
       // root, then DS and DNSKEY for com, io, example.com, example.io
-      const caches = await sdk.listCaches()
+      const caches = await sdk.listRawCaches()
       expect(caches.size).toBe(9)
       const links: [string, number][] = [
         ['.', RRType.DNSKEY],
@@ -252,7 +267,7 @@ describe('DnssecOracle e2e', () => {
         ['example.io', RRType.DNSKEY],
         ['missing.com', RRType.DNSKEY],
       ]
-      const viaLogger = await sdk.getCaches(links)
+      const viaLogger = await sdk.getRawCaches(links)
       expect(viaLogger[3]).toBeUndefined()
       for (const [i, [name, type]] of links.slice(0, 3).entries()) {
         expect(viaLogger[i]).toEqual(caches.get(toHex(sha256(concat(nameToWire(name), u16(type))))))
@@ -420,9 +435,9 @@ describe('DnssecOracle e2e', () => {
       const early = world.expiration - 1000
       world.publish(com.name, RRType.DS, [dsRdata(com.name, com.ksk.rdata)], root.zsk, root.name, { expiration: early })
       await sdk.proveChain(await chain('_tag.example.com'))
-      expect((await sdk.getCache('com', RRType.DS))?.expiry).toBe(early)
-      expect((await sdk.getCache('example.com', RRType.DNSKEY))?.expiry).toBe(early)
-      const attestation = await sdk.getAttestation('_tag.example.com')
+      expect((await sdk.getRawCache('com', RRType.DS))?.expiry).toBe(early)
+      expect((await sdk.getRawCache('example.com', RRType.DNSKEY))?.expiry).toBe(early)
+      const attestation = await sdk.getRawAttestation('_tag.example.com')
       expect(attestation?.expiration).toBe(early)
       expect(attestation?.inception).toBe(world.inception)
       expect(attestation?.weakestKeyBits).toBe(2048)
@@ -435,13 +450,13 @@ describe('DnssecOracle e2e', () => {
 
       world.txt(exampleCom, '_tag.example.com', [txt('newer')], { inception: world.inception + 10 })
       await sdk.proveChain(await chain('_tag.example.com'))
-      expect((await sdk.getAttestation('_tag.example.com'))?.texts).toEqual(['newer'])
+      expect((await sdk.getRawAttestation('_tag.example.com'))?.texts).toEqual(['newer'])
       await expect(sdk.proveStep({ step: old })).rejects.toThrow(code('OLD'))
 
       // the same RRset again: replaces, and the payer becomes the new sender
       const { other, account } = await otherSdk(sdk)
       await other.proveStep({ step: find(await chain('_tag.example.com'), 'txt') })
-      expect((await sdk.getAttestation('_tag.example.com'))?.payer).toBe(account.toString())
+      expect((await sdk.getRawAttestation('_tag.example.com'))?.payer).toBe(account.toString())
 
       // caches too
       const olderRoot = find(await chain('_tag.example.com'), 'root')
@@ -456,17 +471,17 @@ describe('DnssecOracle e2e', () => {
       await expect(sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })).rejects.toThrow(code('WRS'))
       world.publish(world.root.name, RRType.DNSKEY, keys, world.root.ksk, world.root.name, { expiration: world.expiration + 1000 })
       await sdk.proveStep({ step: find(await chain('_tag.example.com'), 'root') })
-      expect((await sdk.getCache('.', RRType.DNSKEY))?.expiry).toBe(world.expiration + 1000)
+      expect((await sdk.getRawCache('.', RRType.DNSKEY))?.expiry).toBe(world.expiration + 1000)
     })
 
     test('a TXT RRset replaces the whole stored set', async () => {
       const { sdk, world, exampleCom, prove } = await deploy()
       world.txt(exampleCom, '_tag.example.com', [txt('a'), txt('b'), txt('c')])
       await prove('_tag.example.com')
-      expect((await sdk.getAttestation('_tag.example.com'))?.texts).toEqual(['a', 'b', 'c'])
+      expect((await sdk.getRawAttestation('_tag.example.com'))?.texts).toEqual(['a', 'b', 'c'])
       world.txt(exampleCom, '_tag.example.com', [txt('b')], { inception: world.inception + 1 })
       await prove('_tag.example.com')
-      expect((await sdk.getAttestation('_tag.example.com'))?.texts).toEqual(['b'])
+      expect((await sdk.getRawAttestation('_tag.example.com'))?.texts).toEqual(['b'])
     })
 
     test('signer rules: self-signed DS, foreign-signed DNSKEY and TXT, and root owners', async () => {
@@ -673,7 +688,7 @@ describe('DnssecOracle e2e', () => {
       await expect(sdk.proveStep({ step: signedTxt(lower, mixedSigner) })).rejects.toThrow(code('SGN'))
       // accepted, but under its own bytes: the lowercase name is still unattested
       await sdk.proveStep({ step: signedTxt(mixedOwner, signer) })
-      expect(await sdk.getAttestation('_tag.example.com')).toBeUndefined()
+      expect(await sdk.getRawAttestation('_tag.example.com')).toBeUndefined()
       expect((await sdk.scanRaw('t')).has(attestationKey(mixedOwner))).toBe(true)
     })
 
@@ -717,7 +732,7 @@ describe('DnssecOracle e2e', () => {
     await sdk.setup({ anchors: [ROOT_KSK_2017], credits: 5_000_000 })
     for (const { name, steps } of valid) {
       await sdk.proveChain(steps)
-      const attestation = await sdk.getAttestation(name)
+      const attestation = await sdk.getRawAttestation(name)
       expect(attestation?.texts.length).toBeGreaterThan(0)
       console.log(`${name}: ${attestation?.texts[0].slice(0, 60)}… weakest ${attestation?.weakestKeyBits} bits`)
     }
@@ -764,7 +779,7 @@ describe('DnssecOracle e2e', () => {
       await prove('_tag.example.com')
       const consumer = await consumerAsk(sdk)
       const ask = () => consumer('hello com')
-      const live = async () => sdk.chainLive((await sdk.getAttestation('_tag.example.com'))!, ['example.com', 'com'])
+      const live = async () => sdk.attestationChainLive((await sdk.getRawAttestation('_tag.example.com'))!, ['example.com', 'com'])
       expect(await ask()).toBe(true)
       const { rootEpoch } = await sdk.getState()
 
@@ -773,7 +788,7 @@ describe('DnssecOracle e2e', () => {
       const { events } = await sdk.maintainAnchors({ resolver: world.resolver })
       expect(events.map((e) => [e.event, e.keyTag])).toEqual([['Revoke', keyTag(revoked.rdata)]])
       expect((await sdk.getAnchor(root.ksk.rdata))?.state).toBe(AnchorState.Revoked)
-      expect(toHex((await sdk.getCache('.', RRType.DNSKEY))!.hash)).toBe(toHex(sha256(signed.rrset)))
+      expect(toHex((await sdk.getRawCache('.', RRType.DNSKEY))!.hash)).toBe(toHex(sha256(signed.rrset)))
       expect((await sdk.getState()).rootEpoch).not.toBe(rootEpoch)
 
       // proven before the revocation: stale to the SDK's reader and to consumers
@@ -865,7 +880,7 @@ describe('DnssecOracle e2e', () => {
       const before = await other.getCredits(account.toString())
       await other.prune({ name: 'short.com', type: RRType.DS })
       expect(await other.getCredits(account.toString())).toBe(before! + BigInt(CACHE_BOX_MBR_MICROALGOS))
-      expect(await sdk.getCache('short.com', RRType.DS)).toBeUndefined()
+      expect(await sdk.getRawCache('short.com', RRType.DS)).toBeUndefined()
 
       // attestation: only the payer, until 30 days past expiry; refund to the payer
       await expect(other.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('PRN'))
@@ -873,7 +888,7 @@ describe('DnssecOracle e2e', () => {
       const payerBefore = await sdk.getCredits(payer)
       await sdk.prune({ name: '_tag.example.com', type: RRType.TXT })
       expect(await sdk.getCredits(payer)).toBe(payerBefore! + BigInt(attestationBoxMbrMicroAlgos(txt('brief').length, 1)))
-      expect(await sdk.getAttestation('_tag.example.com')).toBeUndefined()
+      expect(await sdk.getRawAttestation('_tag.example.com')).toBeUndefined()
       await expect(sdk.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('MIS'))
     })
 
