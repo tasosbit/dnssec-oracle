@@ -7,7 +7,7 @@
  * capturedResolver), and per name either the built chain or the error. Deployment
  * assumptions that changed go to <out dir>/alerts.txt and stderr, and the exit code is 2.
  */
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT_ANCHORS } from '../src/prover/anchors.js'
 import { buildTxtChain, keyProblem } from '../src/prover/chain.js'
@@ -50,6 +50,9 @@ for (const name of names) {
   }
 }
 
+// Root DNSKEY RRset signers expected during the KSK roll, beyond 20326: each alerts once
+const ROLL_SIGNERS: Record<number, string> = { 38696: 'KSK-2024', 20454: 'revoked KSK-2017' }
+
 // Assumptions the contract makes that DNSSEC does not: alert when a zone moves off them.
 for (const hex of Object.values(responses)) {
   const { answers } = parseResponse(Buffer.from(hex, 'hex'))
@@ -67,7 +70,17 @@ for (const hex of Object.values(responses)) {
     }
     if (rr.type === RRType.RRSIG && rr.owner.length === 1 && parseRrsig(rr.rdata).typeCovered === RRType.DNSKEY) {
       const sig = parseRrsig(rr.rdata)
-      if (sig.keyTag !== 20326) alerts.push(`${where}: root DNSKEY RRset signed by key ${sig.keyTag}, not 20326`)
+      const roll = ROLL_SIGNERS[sig.keyTag]
+      if (roll) {
+        // alert the first time only, the marker sits next to the day dirs
+        const seen = join(outDir, '..', `root-${sig.keyTag}-seen`)
+        if (!existsSync(seen)) {
+          writeFileSync(seen, `${new Date(capturedAt * 1000).toISOString()}\n`)
+          alerts.push(`${where}: root DNSKEY RRset now signed by ${roll} (${sig.keyTag})`)
+        }
+      } else if (sig.keyTag !== 20326) {
+        alerts.push(`${where}: root DNSKEY RRset signed by unknown key ${sig.keyTag}`)
+      }
     }
   }
 }
