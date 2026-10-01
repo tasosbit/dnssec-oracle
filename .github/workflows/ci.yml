@@ -1,0 +1,132 @@
+name: CI
+
+# Pushes to main also publish: any package whose package.json version is not yet
+# on npm gets published, so the SDK and CLI are versioned independently.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pipx install algokit==2.10.2 && algokit localnet start
+      # contracts → SDK → CLI; the contract e2e tests run against the built SDK
+      - run: pnpm --dir projects/dnssec-oracle-sdk run build:chain
+      - run: pnpm --dir projects/cli run build:ts
+      - name: Committed contract artifacts match the build
+        run: git diff --exit-code
+      - run: pnpm --dir projects/cli run test:run
+      - run: pnpm --dir projects/dnssec-oracle run test
+
+  # Unpublished package dirs, SDK first (the CLI depends on it). Runs without the
+  # npm environment so pushes with nothing to publish never wait for approval.
+  unpublished:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.check.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - id: check
+        run: |
+          dirs=""
+          for dir in projects/dnssec-oracle-sdk projects/cli; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if [ "$(npm view "$name@$version" version 2>/dev/null)" = "$version" ]; then
+              echo "$name@$version already published"
+            else
+              echo "$name@$version to publish"
+              dirs="$dirs $dir"
+            fi
+          done
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+
+  # Build and pack without id-token, so no build tool or dependency can mint the
+  # npm publish token. Tarballs are numbered to keep the SDK-first order.
+  pack:
+    needs: [test, unpublished]
+    if: needs.unpublished.outputs.dirs != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 10
+      # no pnpm cache on the publish path
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pipx install algokit==2.10.2
+      - run: pnpm --dir projects/dnssec-oracle-sdk run build:chain
+      - run: pnpm --dir projects/cli run build:ts
+      # pnpm pack rewrites workspace: deps to real versions
+      - shell: bash
+        env:
+          DIRS: ${{ needs.unpublished.outputs.dirs }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pkgs"
+          i=0
+          for dir in $DIRS; do
+            i=$((i + 1))
+            tgz=$(cd "$dir" && pnpm pack --pack-destination "$RUNNER_TEMP" | tail -1)
+            mv "$tgz" "$RUNNER_TEMP/pkgs/$i-$(basename "$tgz")"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pkgs
+          path: ${{ runner.temp }}/pkgs
+          if-no-files-found: error
+
+  # Only npm runs here: no checkout, install or build.
+  publish:
+    needs: pack
+    environment: npm
+    concurrency: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # npm trusted publishing (OIDC)
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # trusted publishing needs npm >= 11.5.1; Node 22 ships 10.x
+      - run: npm install -g npm@11.21.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: pkgs
+          path: pkgs
+      # re-checked per package so re-runs and overlapping pushes skip what's already out
+      - shell: bash
+        run: |
+          for tgz in ./pkgs/*.tgz; do # ./ so npm reads a path, not user/repo
+            read -r name version < <(tar -xOzf "$tgz" package/package.json | node -e \
+              'const p = JSON.parse(require("fs").readFileSync(0)); console.log(p.name, p.version)')
+            if [ "$(npm view "$name@$version" version 2>/dev/null)" = "$version" ]; then
+              echo "$name@$version already published, skipping"
+              continue
+            fi
+            npm publish "$tgz" --access public
+          done
