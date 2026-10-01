@@ -13,6 +13,7 @@ compiled with puya-ts:
 |------------------------------|-------------------------------------------------------------|
 | `dnssec-oracle-sdk/contract` | the `DnssecOracle` contract class, to type ABI calls into it |
 | `dnssec-oracle-sdk/reader`   | the reference reader: `readAttestation`, `attestationUsable`, `attestationHasRecord`, `txtRdata` |
+| `dnssec-oracle-sdk/base`     | `BaseContract`: `increaseBudget` over puya-ts-utils' `MbrManager`, for consumers that extend it |
 
 Call `hasRecord` by inner call, typed from the contract class:
 

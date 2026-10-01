@@ -19,6 +19,10 @@
     "./reader": {
       "types": "./contract/dnssec_oracle/reader.algo.ts",
       "default": "./contract/dnssec_oracle/reader.algo.ts"
+    },
+    "./base": {
+      "types": "./contract/base/base.algo.ts",
+      "default": "./contract/base/base.algo.ts"
     }
   },
   "typesVersions": {
@@ -28,6 +32,9 @@
       ],
       "reader": [
         "./contract/dnssec_oracle/reader.algo.ts"
+      ],
+      "base": [
+        "./contract/base/base.algo.ts"
       ]
     }
   },
