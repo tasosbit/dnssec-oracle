@@ -9,7 +9,7 @@ import { attestationHasRecord, attestationUsable, readAttestation, txtRdata } fr
  *
  * It imports the oracle by relative path, being in this repo. Contracts elsewhere import the
  * same sources from the SDK package: `import type { DnssecOracle } from
- * 'dnssec-oracle-sdk/contract'` types `abiCall`, and `dnssec-oracle-sdk/reader`
+ * '@d13co/dnssec-oracle-sdk/contract'` types `abiCall`, and `@d13co/dnssec-oracle-sdk/reader`
  * is the reader.
  */
 export class AttestationConsumer extends Contract {

@@ -29,7 +29,7 @@ import {
   sha256,
   tcpResolver,
   toHex,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { ClientArgs, createAlgorandClient, formatAlgo, isoTime, makeSdk, parseAlgo, requireWriter } from './utils'
 
 // yargs argv: the global ClientArgs plus each command's own options

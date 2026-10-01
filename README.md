@@ -42,7 +42,7 @@ now. The consumer decides how old is too old (`maxAge`) and how weak is too weak
 The reference reader `smart_contracts/dnssec_oracle/reader.algo.ts` does all three in
 `attestationUsable`. Contracts that would rather not carry it call the oracle's
 `hasRecord`, which does the same and matches the record (one inner call).
-Both ship in the SDK package (`dnssec-oracle-sdk/reader`, and `dnssec-oracle-sdk/contract`
+Both ship in the SDK package (`@d13co/dnssec-oracle-sdk/reader`, and `@d13co/dnssec-oracle-sdk/contract`
 to type the call); see its [README](projects/dnssec-oracle-sdk/README.md#on-chain-consumers).
 
 ## Usage models

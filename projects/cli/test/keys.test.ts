@@ -17,7 +17,7 @@ import {
   rdataOf,
   sha256,
   toHex,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { KeyLookups, zoneKeysReport } from '../src/commands'
 
 const capture = JSON.parse(readFileSync(join(__dirname, '../../../captures/2026-09-28/chains.json'), 'utf8'))

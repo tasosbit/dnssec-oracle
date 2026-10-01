@@ -30,7 +30,7 @@ import {
   toHex,
   u16,
   u32,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { randomBytes } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'

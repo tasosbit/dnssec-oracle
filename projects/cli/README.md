@@ -1,6 +1,6 @@
-# dnssec-oracle-cli
+# @d13co/dnssec-oracle
 
-Command-line operator for the DNSSEC oracle: deploy, admin, credits, proofs and reads, as a thin layer over `dnssec-oracle-sdk`.
+Command-line operator for the DNSSEC oracle: deploy, admin, credits, proofs and reads, as a thin layer over `@d13co/dnssec-oracle-sdk`.
 
 ## Quick start
 

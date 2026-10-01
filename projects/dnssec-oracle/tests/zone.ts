@@ -13,7 +13,7 @@ import {
   RRType,
   u16,
   u32,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 
 /*
  * A synthetic DNSSEC world for tests: keys generated and RRsets signed at test time, so

@@ -1,7 +1,7 @@
 import { AlgorandClient, Config } from '@algorandfoundation/algokit-utils'
 import { nullLogger } from '@algorandfoundation/algokit-utils/types/logging'
 import { Address, Algodv2, makeBasicAccountTransactionSigner, mnemonicToSecretKey } from 'algosdk'
-import { DnssecOracleSDK, SenderWithSigner } from 'dnssec-oracle-sdk'
+import { DnssecOracleSDK, SenderWithSigner } from '@d13co/dnssec-oracle-sdk'
 
 export interface ClientArgs {
   algodHost: string

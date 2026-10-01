@@ -13,7 +13,7 @@ import {
   sha256,
   txtStrings,
   u16,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { encodeAddress } from 'algosdk'
 import { afterEach, describe, expect, test } from 'vitest'
 import { DnssecOracle } from '../smart_contracts/dnssec_oracle/contract.algo'

@@ -17,7 +17,7 @@ import {
   sha256,
   toHex,
   u16,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { afterEach, describe, expect, test } from 'vitest'
 import { DnssecOracle } from '../smart_contracts/dnssec_oracle/contract.algo'
 import { attestationParentEpoch } from '../smart_contracts/dnssec_oracle/reader.algo'

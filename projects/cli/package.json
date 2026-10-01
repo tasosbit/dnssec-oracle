@@ -1,8 +1,13 @@
 {
-  "name": "dnssec-oracle-cli",
+  "name": "@d13co/dnssec-oracle",
   "version": "0.0.1",
   "description": "Command-line operator for the DNSSEC oracle on Algorand",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tasosbit/dnssec-oracle.git",
+    "directory": "projects/cli"
+  },
   "private": true,
   "main": "dist/index.js",
   "bin": {
@@ -25,7 +30,7 @@
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^9.2.2",
     "algosdk": "^3.8.0",
-    "dnssec-oracle-sdk": "workspace:*",
+    "@d13co/dnssec-oracle-sdk": "workspace:*",
     "dotenv": "^16.4.7",
     "yargs": "^17.7.2"
   },
@@ -35,5 +40,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

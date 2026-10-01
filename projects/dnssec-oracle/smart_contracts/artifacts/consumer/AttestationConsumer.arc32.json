@@ -50,7 +50,7 @@
     },
     "contract": {
         "name": "AttestationConsumer",
-        "desc": "Example consumer: reads the oracle's attestation boxes directly, through the reference reader\n(`hasTxt`), or asks the oracle's `hasRecord` by inner call (`hasTxtByCall`).\n\nIt imports the oracle by relative path, being in this repo. Contracts elsewhere import the\nsame sources from the SDK package: `import type { DnssecOracle } from\n'dnssec-oracle-sdk/contract'` types `abiCall`, and `dnssec-oracle-sdk/reader`\nis the reader.",
+        "desc": "Example consumer: reads the oracle's attestation boxes directly, through the reference reader\n(`hasTxt`), or asks the oracle's `hasRecord` by inner call (`hasTxtByCall`).\n\nIt imports the oracle by relative path, being in this repo. Contracts elsewhere import the\nsame sources from the SDK package: `import type { DnssecOracle } from\n'@d13co/dnssec-oracle-sdk/contract'` types `abiCall`, and `@d13co/dnssec-oracle-sdk/reader`\nis the reader.",
         "methods": [
             {
                 "name": "createApplication",

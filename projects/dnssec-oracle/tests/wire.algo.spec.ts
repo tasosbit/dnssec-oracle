@@ -11,7 +11,7 @@ import {
   RRType,
   u16,
   u32,
-} from 'dnssec-oracle-sdk'
+} from '@d13co/dnssec-oracle-sdk'
 import { afterEach, describe, expect, test } from 'vitest'
 import {
   checkName,
