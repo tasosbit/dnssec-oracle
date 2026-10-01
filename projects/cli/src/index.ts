@@ -154,6 +154,7 @@ yargs(hideBin(process.argv))
         .option('resolver', { type: 'string', default: '1.1.1.1', description: 'DNS server, queried over TCP' })
         .option('captured', { type: 'string', description: 'Replay a captures/<date>/chains.json instead of querying DNS' })
         .option('refresh-margin', { type: 'number', description: 'Re-prove cache entries this close to expiry, seconds (SDK default: 3600)' })
+        .option('reprove', { type: 'boolean', default: false, description: 'Re-prove an existing attestation without asking' })
         .option('auto-credits', {
           type: 'boolean',
           default: true,

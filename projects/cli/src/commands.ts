@@ -361,6 +361,13 @@ async function confirm(question: string): Promise<boolean> {
 
 export async function handleProve(argv: Argv) {
   const sdk = makeSdk(argv, { write: true })
+  const existing = argv.reprove ? undefined : await sdk.getRawAttestation(argv.name)
+  if (existing) {
+    const expired = existing.expiration < Date.now() / 1000 ? ' (expired)' : ''
+    console.log(`${argv.name} already has an attestation${expired}:`)
+    printAttestation(existing)
+    if (!(await confirm('Re-prove it?'))) throw new Error('Aborted: nothing sent. Pass --reprove to re-prove without asking')
+  }
   const steps = await buildTxtChain(argv.name, resolverOf(argv), { anchors: await sdk.trustedAnchors() })
   const sender = sdk.writerAccount!.sender.toString()
 

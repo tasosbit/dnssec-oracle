@@ -46,7 +46,9 @@ dnssec-oracle prove _dmarc.nodely.io --captured ../../captures/2026-09-29/chains
 
 This proves the root, then the DS and DNSKEY for each zone, then the TXT. Cache entries already stored and more than `--refresh-margin` seconds (default 3600) from expiry are skipped. Running any `prove` from cron keeps the root DNSKEY entry fresh (docs/plan.md trust point 11).
 
-By default `prove` estimates the box rent the chain needs (a cache box per entry not yet stored, plus the attestation), pads it by 10%, nets out credits already held, and asks before depositing the difference. Once proven it withdraws all of the signer's credits; if proving fails they stay deposited, for a retry or `withdraw-credits`. Withdrawing deletes the credit box, and a deleted attestation refunds its payer only into one: if your attestation may be replaced by someone else or pruned (by you included), keep a deposit, or the refund stays in the app. `--no-auto-credits` skips all of this and draws on credits already held (no prompt, for cron).
+By default `prove` estimates the box rent the chain needs (a cache box per entry not yet stored, plus the attestation), pads it by 10%, nets out credits already held, and asks before depositing the difference. Once proven it withdraws all of the signer's credits; if proving fails they stay deposited, for a retry or `withdraw-credits`. Withdrawing deletes the credit box, and a deleted attestation refunds its payer only into one: if your attestation may be replaced by someone else or pruned (by you included), keep a deposit, or the refund stays in the app. `--no-auto-credits` skips all of this and draws on credits already held.
+
+If the name already has an attestation, `prove` shows it and asks before re-proving. From cron, pass `--no-auto-credits --reprove` so it never prompts.
 
 ### Root rollover
 
