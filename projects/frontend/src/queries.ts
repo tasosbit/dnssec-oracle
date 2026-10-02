@@ -1,7 +1,7 @@
 import { DnssecOracleReaderSDK, DnssecOracleSDK, ProofStep } from '@d13co/dnssec-oracle-sdk'
 import { keepPreviousData, MutationCache, QueryClient, queryOptions } from '@tanstack/react-query'
 import { toastError } from './toasts'
-import { anchorLabels, anchorProof, DOH_RESOLVERS, dohResolver, liveChain, Network, oracleSide, provenNames } from './oracle'
+import { anchorLabels, anchorProof, anchorSources, DOH_RESOLVERS, dohResolver, liveChain, Network, oracleSide, provenNames } from './oracle'
 
 /**
  * In memory only: nothing is persisted, a reload starts cold. Failed queries show in place;
@@ -71,11 +71,12 @@ export const balanceQuery = ({ sdk, network }: Oracle, account: string) =>
     staleTime: ON_CHAIN,
   })
 
-/** An anchor's key traced to IANA's file and live DNS: both change rarely. */
+/** An anchor's key traced to IANA's file and live DNS: both change rarely, and one fetch serves every anchor. */
 export const anchorProofQuery = (id: string, resolver: Resolver = 'Cloudflare') =>
   queryOptions({
-    queryKey: ['dns', resolver, 'anchor-proof', id],
-    queryFn: () => anchorProof(id, dohResolver(DOH_RESOLVERS[resolver])),
+    queryKey: ['dns', resolver, 'anchor-sources'],
+    queryFn: () => anchorSources(dohResolver(DOH_RESOLVERS[resolver])),
+    select: (sources) => anchorProof(id, sources),
     staleTime: 60 * MINUTE,
   })
 

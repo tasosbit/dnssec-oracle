@@ -280,14 +280,12 @@ function Submit({
         description: <TxLinks txIds={txIds} network={oracle.network} />,
         action: { label: 'Verify', onClick: () => onVerify(name) },
       })
-      // the plan, state, credits and verification all moved
-      return queryClient.invalidateQueries({
-        queryKey: ['oracle', oracle.network, oracle.appId],
-      })
     },
+    // the plan, state, credits and verification all moved, also when a later group failed after
+    // earlier ones landed: a stale plan would resend them
     onSettled: () =>
       queryClient.invalidateQueries({
-        queryKey: ['oracle', oracle.network, oracle.appId, 'credits'],
+        queryKey: ['oracle', oracle.network, oracle.appId],
       }),
   })
   const count = plan.groups.length
