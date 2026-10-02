@@ -24,6 +24,10 @@ Architecture, RFC compliance and the full list of limitations:
 [docs/architecture.md](./docs/architecture.md). Design history and trust model:
 [docs/plan.md](./docs/plan.md).
 
+Explorer for the TestNet deployment (app 772959888): <https://dnssec-oracle-testnet.pages.dev>.
+Browse the oracle's cache and attestations, compare them with live DNS, and from a wallet prove,
+prune, or deposit and withdraw box-rent credits.
+
 ## What an attestation says
 
 The box `t ‖ sha256(name)` holds the TXT RDATA set as signed, plus a header:
@@ -177,6 +181,9 @@ The explorer reads TestNet by default, or a LocalNet app ID, and runs on the SDK
 pnpm --dir projects/frontend dev    # http://localhost:5173
 pnpm --dir projects/frontend test   # the browser crypto shim, against a captured chain
 ```
+
+Merges to `main` deploy it to <https://dnssec-oracle-testnet.pages.dev> (Cloudflare Pages,
+[.github/workflows/frontend.yml](.github/workflows/frontend.yml)).
 
 `@d13co/puya-ts-utils` ships its contract subroutines as TypeScript source; vitest
 inlines the package so the emulator can run it.
