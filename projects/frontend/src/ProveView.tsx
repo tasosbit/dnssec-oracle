@@ -276,9 +276,11 @@ function Submit({
     onSuccess: (_, plan) => {
       // each group's last transaction: its proof of the TXT record, or the link it proves
       const txIds = plan.groups.map((g) => g.transactions.at(-1)!.txID())
-      toast.success(`${name} proven`, {
+      const left = plan.remaining.length
+      toast.success(left ? `${name}: ${plural(left, 'more step')} to go, sign the next plan` : `${name} proven`, {
         description: <TxLinks txIds={txIds} network={oracle.network} />,
-        action: { label: 'Verify', onClick: () => onVerify(name) },
+        // a partial plan stops short of the TXT record: nothing to verify yet
+        action: left ? undefined : { label: 'Verify', onClick: () => onVerify(name) },
       })
       // the plan, state, credits and verification all moved
       return queryClient.invalidateQueries({

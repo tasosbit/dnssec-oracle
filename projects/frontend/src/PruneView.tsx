@@ -142,9 +142,11 @@ function Prunable({
   const queryClient = useQueryClient()
   const { transactionSigner } = useWallet()
   const credits = useQuery({ ...creditsQuery(oracle, account ?? ''), enabled: !!account })
-  // a cache refund goes into the pruner's credits, so it needs a credit box
+  // a cache refund goes into the pruner's credits, so it needs a credit box, known to exist
+  // (credits.data is undefined while loading or after an error, null when there is none)
   const noCreditBox = credits.data === null
-  const usable = (c: Candidate) => !!account && !!c.target && !c.from && !(noCreditBox && !c.payer)
+  const hasCreditBox = credits.data != null
+  const usable = (c: Candidate) => !!account && !!c.target && !c.from && (!!c.payer || hasCreditBox)
   const ready = list.filter(usable)
 
   const prune = useMutation({
