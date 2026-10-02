@@ -1,9 +1,16 @@
-import { DnssecOracleReaderSDK } from '@d13co/dnssec-oracle-sdk'
-import { keepPreviousData, QueryClient, queryOptions } from '@tanstack/react-query'
-import { anchorLabels, DOH_RESOLVERS, dohResolver, liveChain, Network, oracleSide, provenNames } from './oracle'
+import { DnssecOracleReaderSDK, DnssecOracleSDK, ProofStep } from '@d13co/dnssec-oracle-sdk'
+import { keepPreviousData, MutationCache, QueryClient, queryOptions } from '@tanstack/react-query'
+import { toastError } from './toasts'
+import { anchorLabels, anchorProof, DOH_RESOLVERS, dohResolver, liveChain, Network, oracleSide, provenNames } from './oracle'
 
-/** In memory only: nothing is persisted, a reload starts cold. */
-export const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } })
+/**
+ * In memory only: nothing is persisted, a reload starts cold. Failed queries show in place;
+ * failed actions (mutations) raise a toast.
+ */
+export const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1 } },
+  mutationCache: new MutationCache({ onError: toastError }),
+})
 
 /** The oracle an SDK reads, as query key material: the SDK instance itself does not serialize. */
 export interface Oracle {
@@ -56,6 +63,22 @@ export const rootKeysQuery = (resolver: Resolver = 'Cloudflare') =>
     staleTime: 60 * MINUTE,
   })
 
+/** An account's ALGO balance in µAlgo: refetched on window focus, so funding in another tab shows on return. */
+export const balanceQuery = ({ sdk, network }: Oracle, account: string) =>
+  queryOptions({
+    queryKey: ['account', network, account, 'balance'],
+    queryFn: async () => (await sdk.algorand.client.algod.accountInformation(account).do()).amount,
+    staleTime: ON_CHAIN,
+  })
+
+/** An anchor's key traced to IANA's file and live DNS: both change rarely. */
+export const anchorProofQuery = (id: string, resolver: Resolver = 'Cloudflare') =>
+  queryOptions({
+    queryKey: ['dns', resolver, 'anchor-proof', id],
+    queryFn: () => anchorProof(id, dohResolver(DOH_RESOLVERS[resolver])),
+    staleTime: 60 * MINUTE,
+  })
+
 /** The oracle's side of a verification: on-chain, so as fresh as the state view. */
 export const oracleSideQuery = ({ sdk, network, appId }: Oracle, name: string, maxAge: number, minKeyBits: number) =>
   queryOptions({
@@ -77,5 +100,33 @@ export const liveChainQuery = ({ sdk, network, appId }: Oracle, name: string, re
     queryKey: ['dns', resolver, 'chain', name, network, appId],
     queryFn: () => liveChain(sdk, name, dohResolver(DOH_RESOLVERS[resolver])),
     staleTime: 5 * MINUTE,
+    retry: false,
+  })
+
+/** One account's credits: on-chain, and a deposit or withdrawal invalidates it. */
+export const creditsQuery = ({ sdk, network, appId }: Oracle, account: string) =>
+  queryOptions({
+    queryKey: ['oracle', network, appId, 'credits', account],
+    queryFn: async () => (await sdk.getCredits(account)) ?? null, // null: no credit box (undefined means loading)
+    staleTime: ON_CHAIN,
+  })
+
+/**
+ * A proof plan: which steps of a live chain the oracle still needs, simulated and packed into
+ * groups. It holds transactions valid for 200 rounds (about 10 minutes; see makeSdk), so it is
+ * replanned every 5 minutes, and the state it reads changes with every proof: as fresh as the
+ * state view. Keyed by the chain it plans.
+ */
+export const planQuery = (
+  { network, appId }: Oracle,
+  writer: DnssecOracleSDK,
+  account: string,
+  chain: { name: string; steps: ProofStep[]; at: number },
+) =>
+  queryOptions({
+    queryKey: ['oracle', network, appId, 'plan', account, chain.name, chain.at],
+    queryFn: () => writer.planChain(chain.steps),
+    staleTime: ON_CHAIN,
+    refetchInterval: 5 * MINUTE,
     retry: false,
   })

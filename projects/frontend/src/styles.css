@@ -10,6 +10,8 @@
   --bad-bg: #fbe9e7;
   --bad: #a3321f;
   --code: #f0f0eb;
+  --warn-bg: #fdf3dc;
+  --warn: #7a5300;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -25,6 +27,8 @@
     --bad-bg: #3a1f1b;
     --bad: #f0a191;
     --code: #262a2f;
+    --warn-bg: #352a12;
+    --warn: #f2cf7c;
     color-scheme: dark;
   }
 }
@@ -36,15 +40,16 @@ body {
   color: var(--text);
   font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
-header, main, footer { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
-header { padding-top: 28px; display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; }
-h1 { margin: 0 0 4px; font-size: 24px; }
+.intro, main, footer { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+header { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); }
+header .bar { max-width: 1180px; margin: 0 auto; padding: 10px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; }
+h1 { margin: 0; font-size: 20px; }
 h2 { margin: 0 0 4px; font-size: 18px; }
 h3 { margin: 0; font-size: 15px; font-family: ui-monospace, monospace; }
 h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.brand p { margin: 0; color: var(--muted); max-width: 70ch; }
-.controls { display: flex; gap: 12px; align-items: end; }
-nav { grid-column: 1 / -1; display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-top: 12px; }
+.intro p { margin: 20px 0 0; color: var(--muted); max-width: 70ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-top: 12px; }
 nav button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 14px; }
 nav button.active { border-bottom-color: var(--accent); color: var(--accent); font-weight: 600; }
 footer { color: var(--muted); font-size: 13px; padding-bottom: 40px; }
@@ -57,7 +62,7 @@ button { cursor: pointer; }
 button:hover { border-color: var(--accent); }
 button[type='submit'] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin: 20px 0; overflow-x: auto; }
+main section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin: 20px 0; overflow-x: auto; }
 .about { margin: 0 0 14px; color: var(--muted); max-width: 90ch; }
 .muted { color: var(--muted); }
 .error { color: var(--bad); background: var(--bad-bg); padding: 10px 14px; border-radius: 8px; }
@@ -106,6 +111,31 @@ summary { cursor: pointer; color: var(--accent); }
 details ul.records { margin-top: 6px; }
 
 @media (max-width: 760px) {
-  header { grid-template-columns: 1fr; }
   .sides { grid-template-columns: 1fr; }
 }
+
+h3.sub { font-family: inherit; margin: 22px 0 8px; }
+form.credits { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+form.credits .grow { flex: 1 1 320px; }
+form.credits .grow input { font-family: ui-monospace, monospace; }
+button:disabled { opacity: 0.55; cursor: default; }
+.error { display: flex; align-items: start; gap: 10px; justify-content: space-between; }
+.error .copy { flex: none; font-size: 12px; padding: 2px 8px; color: var(--bad); border-color: currentColor; background: none; }
+ol.progress { margin: 12px 0 0; padding-left: 20px; }
+.clamp { max-height: 7.5em; overflow: hidden; }
+button.more { border: 0; background: none; padding: 2px 0; color: var(--accent); font-size: 13px; }
+.clamp.fade { mask-image: linear-gradient(to bottom, #000 65%, transparent); }
+
+[data-wallet-theme] {
+  --wui-color-primary: var(--accent);
+  --wui-color-primary-hover: color-mix(in srgb, var(--accent) 85%, #000);
+  --wui-color-primary-text: #fff;
+  --wui-color-link: var(--accent);
+}
+pre { background: var(--code); padding: 12px 14px; border-radius: 6px; overflow-x: auto; }
+pre code { padding: 0; background: none; overflow-wrap: normal; }
+ol.chain.proof { margin: 4px 0 8px; }
+ol.chain.proof > li { padding-bottom: 12px; }
+.warn { color: var(--warn); background: var(--warn-bg); padding: 10px 14px; border-radius: 8px; }
+.warn a { color: inherit; font-weight: 600; }
+.intro .warn { margin: 16px 0 0; max-width: none; }

@@ -92,6 +92,15 @@ dnssec-oracle withdraw-credits
 dnssec-oracle prune <name> [--type 16]   # 16: expired attestation; 48/43: expired DNSKEY/DS cache entry
 ```
 
+## Signing with a mnemonic
+
+Read commands need no account. Write commands (`prove`, `deposit-credits`, `prune`, `deploy` and the rest) sign with the 25-word Algorand mnemonic in `MNEMONIC` or `--mnemonic`. The CLI derives the private key in memory, signs each transaction locally and sends only the signed transactions; it never stores the mnemonic or sends it anywhere. For a rekeyed account, `MNEMONIC` is the signing key's and `ADDRESS` the account it signs for.
+
+Prefer `.env` (or `.env.testnet` with `ENV=testnet`) to `--mnemonic`, which leaves the words in your shell history and the process list. Keep that file out of git and readable only by you (`chmod 600 .env`).
+
+> [!WARNING]
+> **Never use a mnemonic that controls MainNet funds.** This CLI and the oracle are experimental and unaudited, and a mnemonic in a `.env` file or a shell is one leak away from an emptied account. Create a throwaway account for TestNet or LocalNet (`algokit goal account new`, or any wallet), fund it from a [TestNet dispenser](https://lora.algokit.io/testnet/fund), and use only that one here. The same mnemonic signs on every network.
+
 ## Configuration
 
 | Variable | Flag | Default | Description |

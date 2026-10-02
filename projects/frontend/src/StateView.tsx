@@ -1,9 +1,10 @@
-import { AnchorState } from '@d13co/dnssec-oracle-sdk'
+import { AnchorEntry, anchorHash, AnchorState, keyTag, toHex } from '@d13co/dnssec-oracle-sdk'
 import { useQuery } from '@tanstack/react-query'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
-import { isoTime } from './oracle'
-import { namesQuery, Oracle, rootKeysQuery, stateQuery } from './queries'
-import { Badge, Hash, Load, Section, Time } from './ui'
+import { Fragment, useState } from 'react'
+import { IANA_ANCHORS, isoTime, isRevoked, keyRole, keySize, rootDsDigest } from './oracle'
+import { anchorProofQuery, namesQuery, Oracle, rootKeysQuery, stateQuery } from './queries'
+import { Badge, Clamp, Hash, Load, Section, Time } from './ui'
 
 const ANCHOR_STATES: Record<AnchorState, string> = {
   [AnchorState.AddPend]: 'seen in the root key set; trusted once its 30-day hold-down ends',
@@ -24,6 +25,13 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
   // labels are best-effort: without them, boxes show as hashes
   const names = useQuery({ ...namesQuery(oracle, boxes), enabled: !!core.data })
   const anchorNames = useQuery(rootKeysQuery())
+  const [openAnchors, setOpenAnchors] = useState<Set<string>>(new Set())
+  const toggleAnchor = (id: string) =>
+    setOpenAnchors((open) => {
+      const next = new Set(open)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
   const label = (hash: string) => names.data?.get(hash)
   const now = Date.now() / 1000
 
@@ -90,22 +98,35 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
               </thead>
               <tbody>
                 {[...anchors].map(([id, a]) => (
-                  <tr key={id}>
-                    <td>
-                      {anchorNames.data?.get(id) ?? 'not in the root key set now'}
-                      <br />
-                      <Hash hex={id} />
-                    </td>
-                    <td>
-                      <Badge ok={a.state === AnchorState.Valid || a.state === AnchorState.Missing}>
-                        {AnchorState[a.state]}
-                      </Badge>
-                      <p className="muted">{ANCHOR_STATES[a.state as AnchorState]}</p>
-                    </td>
-                    <td>
-                      <Time t={a.since} />
-                    </td>
-                  </tr>
+                  <Fragment key={id}>
+                    <tr>
+                      <td>
+                        {anchorNames.data?.get(id) ?? 'not in the root key set now'}
+                        <br />
+                        <Hash hex={id} />
+                        <br />
+                        <button className="more" aria-expanded={openAnchors.has(id)} onClick={() => toggleAnchor(id)}>
+                          {openAnchors.has(id) ? '▾ Hide the proof' : '▸ Prove it is a real root key'}
+                        </button>
+                      </td>
+                      <td>
+                        <Badge ok={a.state === AnchorState.Valid || a.state === AnchorState.Missing}>
+                          {AnchorState[a.state]}
+                        </Badge>
+                        <p className="muted">{ANCHOR_STATES[a.state as AnchorState]}</p>
+                      </td>
+                      <td>
+                        <Time t={a.since} />
+                      </td>
+                    </tr>
+                    {openAnchors.has(id) && (
+                      <tr>
+                        <td colSpan={3}>
+                          <AnchorProof id={id} anchor={a} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -142,13 +163,15 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
                       <tr key={hash}>
                         <td>{name ? <strong>{name}</strong> : <Hash hex={hash} />}</td>
                         <td>
-                          <ul className="records">
-                            {a.texts.map((t, i) => (
-                              <li key={i}>
-                                <code>{t}</code>
-                              </li>
-                            ))}
-                          </ul>
+                          <Clamp>
+                            <ul className="records">
+                              {a.texts.map((t, i) => (
+                                <li key={i}>
+                                  <code>{t}</code>
+                                </li>
+                              ))}
+                            </ul>
+                          </Clamp>
                         </td>
                         <td>
                           <Time t={a.inception} />
@@ -238,6 +261,83 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
           <p className="muted">Read at {isoTime(Math.floor(core.dataUpdatedAt / 1000))}.</p>
         </>
       )}
+    </Load>
+  )
+}
+
+/** Step by step, why an anchor id is one of IANA's root keys, checked in the browser. */
+function AnchorProof({ id, anchor }: { id: string; anchor: AnchorEntry }) {
+  const proof = useQuery(anchorProofQuery(id))
+  return (
+    <Load query={proof}>
+      {({ iana, ianaKeys, live }) => {
+        const algorithm = iana?.rdata[3]
+        const computed = iana && toHex(anchorHash(iana.rdata))
+        const digest = iana && rootDsDigest(iana.rdata)
+        const tag = iana && keyTag(iana.rdata)
+        const liveOk =
+          anchor.state === AnchorState.Missing
+            ? !live
+            : anchor.state === AnchorState.Revoked
+              ? !live || isRevoked(live.flags)
+              : !!live && !isRevoked(live.flags)
+        return (
+          <ol className="chain proof">
+            <li>
+              <strong>The oracle trusts this id.</strong> Its anchor box <code>a ‖ id</code> holds only the state,{' '}
+              {AnchorState[anchor.state]} since <Time t={anchor.since} />: the key itself is known by{' '}
+              <code>sha256(algorithm ‖ public key)</code>, so a key matches only if it hashes to <Hash hex={id} />.
+            </li>
+            <li>
+              <strong>IANA publishes the root keys.</strong> Fetched just now over HTTPS from{' '}
+              <a href={IANA_ANCHORS}>root-anchors.xml</a>, the root zone's trust anchor file ({ianaKeys} keys with a
+              public key).{' '}
+              {iana ? (
+                <>
+                  Its entry for key tag <strong>{iana.tag}</strong>: algorithm {iana.algorithm}, flags{' '}
+                  {(iana.rdata[0] << 8) | iana.rdata[1]}, valid from {iana.validFrom.slice(0, 10)}
+                  {iana.validUntil && ` until ${iana.validUntil.slice(0, 10)}`}, {keySize(iana.rdata)}. Public key:
+                  <Clamp>
+                    <code>{btoa(String.fromCharCode(...iana.rdata.slice(4)))}</code>
+                  </Clamp>
+                </>
+              ) : (
+                <Badge ok={false}>No key in IANA's file hashes to this id: it is not a published root key</Badge>
+              )}
+            </li>
+            {iana && (
+              <>
+                <li>
+                  <strong>That key hashes to the anchor id.</strong> Computed in your browser:{' '}
+                  <code>sha256({algorithm} ‖ public key)</code> = <Hash hex={computed!} />{' '}
+                  <Badge ok={computed === id}>{computed === id ? 'equals the anchor id' : 'differs'}</Badge>
+                </li>
+                <li>
+                  <strong>IANA's digest vouches for the same key.</strong> The file's authoritative field is the DS
+                  digest, <code>sha256(root name ‖ DNSKEY RDATA)</code>, over flags, protocol 3, algorithm and public
+                  key: <Hash hex={digest!} /> <Badge ok={digest === iana.digest}>
+                    {digest === iana.digest ? "equals IANA's Digest" : "differs from IANA's Digest"}
+                  </Badge>{' '}
+                  Its key tag, computed the same way: {tag} <Badge ok={tag === iana.tag}>
+                    {tag === iana.tag ? 'as listed' : `IANA lists ${iana.tag}`}
+                  </Badge>
+                </li>
+              </>
+            )}
+            <li>
+              <strong>The root zone serves it now.</strong> The root DNSKEY RRset, from Cloudflare over DNS over HTTPS:{' '}
+              {live
+                ? `a ${keyRole(live.flags)}, key tag ${live.tag}${isRevoked(live.flags) ? ' (the REVOKE flag changes the tag)' : ''}.`
+                : 'it is not there.'}{' '}
+              <Badge ok={liveOk}>
+                {liveOk
+                  ? `consistent with ${AnchorState[anchor.state]}`
+                  : `${AnchorState[anchor.state]} lags DNS: the next maintain-anchors run catches up`}
+              </Badge>
+            </li>
+          </ol>
+        )
+      }}
     </Load>
   )
 }

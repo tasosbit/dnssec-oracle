@@ -15,10 +15,18 @@
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@tanstack/react-query": "^5.104.1",
+    "@txnlab/use-wallet": "^5.0.1",
+    "@txnlab/use-wallet-defly": "^5.0.1",
+    "@txnlab/use-wallet-kmd": "^5.0.1",
+    "@txnlab/use-wallet-lute": "^5.0.0",
+    "@txnlab/use-wallet-pera": "^5.0.1",
+    "@txnlab/use-wallet-react": "^5.0.1",
+    "@txnlab/use-wallet-ui-react": "^1.2.1",
     "algosdk": "^3.8.0",
     "buffer": "^6.0.3",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

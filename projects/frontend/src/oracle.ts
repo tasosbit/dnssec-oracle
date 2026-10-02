@@ -9,9 +9,12 @@ import {
   bytesEqual,
   CacheEntry,
   chainLinks,
+  DNSKEY_REVOKE,
+  dsDigest,
   concat,
   DnssecOracleReaderSDK,
   keyBits,
+  keyTag,
   nameFromWire,
   nameLength,
   nameToWire,
@@ -36,7 +39,8 @@ export type Network = 'testnet' | 'localnet'
 export const DEFAULT_APP_ID: Record<Network, string> = { testnet: '772959888', localnet: '' }
 
 export function makeSdk(network: Network, appId: string) {
-  const algorand = network === 'testnet' ? AlgorandClient.testNet() : AlgorandClient.defaultLocalNet()
+  // 200 rounds (about 10 minutes): time to sign a multi-group plan on a phone before it expires
+  const algorand = (network === 'testnet' ? AlgorandClient.testNet() : AlgorandClient.defaultLocalNet()).setDefaultValidityWindow(200)
   return new DnssecOracleReaderSDK({ algorand, appId: BigInt(appId) })
 }
 
@@ -129,6 +133,62 @@ export async function anchorLabels(resolver: Resolver): Promise<Map<string, stri
   return labels
 }
 
+export const IANA_ANCHORS = 'https://data.iana.org/root-anchors/root-anchors.xml'
+
+export interface IanaKey {
+  tag: number
+  algorithm: number
+  digest: string
+  validFrom: string
+  validUntil?: string
+  /** DNSKEY RDATA rebuilt from the entry's Flags and PublicKey. */
+  rdata: Uint8Array
+}
+
+export interface AnchorProof {
+  /** IANA's entry whose public key hashes to the anchor id. */
+  iana?: IanaKey
+  /** How many of IANA's entries carry a public key to hash. */
+  ianaKeys: number
+  /** The key in the live root DNSKEY RRset, by the same hash. */
+  live?: { flags: number; tag: number }
+}
+
+/** Finds an anchor id's key in IANA's trust anchor file and in the root key set DNS serves now. */
+export async function anchorProof(id: string, resolver: Resolver): Promise<AnchorProof> {
+  const res = await fetch(IANA_ANCHORS)
+  if (!res.ok) throw new Error(`${IANA_ANCHORS}: HTTP ${res.status}`)
+  const doc = new DOMParser().parseFromString(await res.text(), 'application/xml')
+  const keys = [...doc.querySelectorAll('KeyDigest')].flatMap((e): IanaKey[] => {
+    const text = (tag: string) => e.querySelector(tag)?.textContent?.trim() ?? ''
+    const algorithm = Number(text('Algorithm'))
+    // entries before 2017 (KSK-2010) carry only the digest
+    if (!text('PublicKey')) return []
+    const publicKey = Uint8Array.from(atob(text('PublicKey')), (c) => c.charCodeAt(0))
+    return [
+      {
+        tag: Number(text('KeyTag')),
+        algorithm,
+        digest: text('Digest').toLowerCase(),
+        validFrom: e.getAttribute('validFrom') ?? '',
+        validUntil: e.getAttribute('validUntil') ?? undefined,
+        rdata: concat(u16(Number(text('Flags'))), new Uint8Array([3, algorithm]), publicKey),
+      },
+    ]
+  })
+  const { answers } = parseResponse(await resolver(new Uint8Array([0]), RRType.DNSKEY))
+  const live = answers.find((rr) => rr.type === RRType.DNSKEY && toHex(anchorHash(rr.rdata)) === id)
+  return {
+    iana: keys.find((k) => toHex(anchorHash(k.rdata)) === id),
+    ianaKeys: keys.length,
+    live: live && { flags: parseDnskey(live.rdata).flags, tag: keyTag(live.rdata) },
+  }
+}
+
+/** IANA's DS digest of a key: SHA-256 over the root's wire name (one zero byte) and the RDATA. */
+export const rootDsDigest = (rdata: Uint8Array) => toHex(dsDigest(new Uint8Array([0]), rdata))
+export const isRevoked = (flags: number) => (flags & DNSKEY_REVOKE) !== 0
+
 // ── Oracle against live DNS ──────────────────────────────────────
 
 export interface Row {
@@ -216,11 +276,27 @@ export function compareRows(steps: ProofStep[], { raw, caches, rootEpoch }: Orac
 const sameSet = (a: Uint8Array[], b: Uint8Array[]) =>
   a.map(toHex).sort().join() === b.map(toHex).sort().join()
 
-const signingKey = (step: ProofStep) =>
+/** What a step proves, in a sentence. */
+export function explainStep(step: ProofStep) {
+  const owner = nameFromWire(step.owner)
+  const signer = rrsigOf(step).signer.length === 1 ? 'the root' : nameFromWire(rrsigOf(step).signer)
+  switch (step.kind) {
+    case 'root':
+      return "The root zone's keys, signed by a root key the oracle holds as a trust anchor."
+    case 'ds':
+      return `A DS record in ${signer} holds a digest of ${owner}'s key, signed by ${signer}'s zone key: the parent vouching for the child.`
+    case 'dnskey':
+      return `${owner}'s keys, signed by the key its DS vouches for.`
+    case 'txt':
+      return `The record set itself, signed by ${signer}'s zone key.`
+  }
+}
+
+export const signingKey = (step: ProofStep) =>
   rdataOf(step.kind === 'root' || step.kind === 'dnskey' ? step.rrset : step.parent)[step.keyIndex]
 
 /** The RRSIG fields: signed data minus the RRset it covers. */
-const rrsigOf = (step: ProofStep) => parseRrsig(step.signedData.slice(0, step.signedData.length - step.rrset.length))
+export const rrsigOf = (step: ProofStep) => parseRrsig(step.signedData.slice(0, step.signedData.length - step.rrset.length))
 
 // ── Formatting ───────────────────────────────────────────────────
 

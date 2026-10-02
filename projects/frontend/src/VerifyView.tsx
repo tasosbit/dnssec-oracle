@@ -11,18 +11,28 @@ import {
   txtStrings,
 } from '@d13co/dnssec-oracle-sdk'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FormEvent, useState } from 'react'
-import { compareRows, Comparison, DOH_RESOLVERS, duration, keyRole, keySize, Row, typeName } from './oracle'
+import { FormEvent, ReactNode, useState } from 'react'
+import { compareRows, Comparison, DOH_RESOLVERS, duration, explainStep, keyRole, keySize, Row, typeName } from './oracle'
 import { liveChainQuery, Oracle, oracleSideQuery } from './queries'
-import { Badge, Hash, Load, Section, Time } from './ui'
+import { Badge, ErrorText, Hash, Load, Section, Time } from './ui'
 
 const MAX_AGES = [3600, 86_400, 7 * 86_400, 30 * 86_400]
 const KEY_BITS = [1024, 2048]
 
-export function VerifyView({ oracle, name, onName }: { oracle: Oracle; name: string; onName: (n: string) => void }) {
+export function VerifyView({
+  oracle,
+  name,
+  onName,
+  onProve,
+}: {
+  oracle: Oracle
+  name: string
+  onName: (n: string) => void
+  onProve: (n: string) => void
+}) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState(name)
-  const [maxAge, setMaxAge] = useState(7 * 86_400)
+  const [maxAge, setMaxAge] = useState(30 * 86_400)
   const [minKeyBits, setMinKeyBits] = useState(1024)
   const [resolver, setResolver] = useState<keyof typeof DOH_RESOLVERS>('Cloudflare')
   const submit = (e: FormEvent) => {
@@ -38,7 +48,7 @@ export function VerifyView({ oracle, name, onName }: { oracle: Oracle; name: str
   return (
     <>
       <Section
-        title="Verify a name"
+        title="Verify an attestation"
         about={
           <>
             Reads the name's attestation with <code>getVerifiedAttestation</code>, the SDK's twin of the check consumer
@@ -84,7 +94,7 @@ export function VerifyView({ oracle, name, onName }: { oracle: Oracle; name: str
           <button type="submit">Verify</button>
         </form>
       </Section>
-      {name && <Result {...{ oracle, name, maxAge, minKeyBits, resolver }} />}
+      {name && <Result {...{ oracle, name, maxAge, minKeyBits, resolver, onProve }} />}
     </>
   )
 }
@@ -95,8 +105,9 @@ function Result(props: {
   maxAge: number
   minKeyBits: number
   resolver: keyof typeof DOH_RESOLVERS
+  onProve: (n: string) => void
 }) {
-  const { oracle, name, maxAge, minKeyBits, resolver } = props
+  const { oracle, name, maxAge, minKeyBits, resolver, onProve } = props
   const side = useQuery(oracleSideQuery(oracle, name, maxAge, minKeyBits))
   const chain = useQuery(liveChainQuery(oracle, name, resolver))
   return (
@@ -105,12 +116,10 @@ function Result(props: {
         const c: Comparison = { ...o, name, rows: chain.data && compareRows(chain.data, o) }
         return (
           <>
-            <Verdict c={c} maxAge={maxAge} minKeyBits={minKeyBits} />
+            <Verdict c={c} maxAge={maxAge} minKeyBits={minKeyBits} prove={(text: string) => <ProveLink {...{ oracle, name, onProve }}>{text}</ProveLink>} />
             {chain.isPending && <p className="muted">Fetching the chain from live DNS and checking its signatures…</p>}
             {chain.error && (
-              <p className="error">
-                Live DNS: {chain.error.message}. The oracle could not prove this chain from DNS as served now either.
-              </p>
+              <ErrorText>{`Live DNS: ${chain.error.message}. The oracle could not prove this chain from DNS as served now either.`}</ErrorText>
             )}
             {c.rows && <RecordCompare c={c} />}
             {c.rows && <Chain c={c} />}
@@ -121,7 +130,43 @@ function Result(props: {
   )
 }
 
-function Verdict({ c, maxAge, minKeyBits }: { c: Comparison; maxAge: number; minKeyBits: number }) {
+/** To the Prove tab for this name; a real link too, for opening in a new tab. */
+function ProveLink({
+  oracle,
+  name,
+  onProve,
+  children,
+}: {
+  oracle: Oracle
+  name: string
+  onProve: (n: string) => void
+  children: ReactNode
+}) {
+  const href = `?${new URLSearchParams({ network: oracle.network, app: oracle.appId, tab: 'prove', name })}`
+  return (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault()
+        onProve(name)
+      }}
+    >
+      {children}
+    </a>
+  )
+}
+
+function Verdict({
+  c,
+  maxAge,
+  minKeyBits,
+  prove,
+}: {
+  c: Comparison
+  maxAge: number
+  minKeyBits: number
+  prove: (text: string) => ReactNode
+}) {
   if (c.verified) {
     const zones = [...c.verified.zones.map((z) => nameFromWire(z)), '.'].join(' → ')
     return (
@@ -140,13 +185,13 @@ function Verdict({ c, maxAge, minKeyBits }: { c: Comparison; maxAge: number; min
             <li key={r}>{r}</li>
           ))}
         </ul>
-        Anyone can prove it again: <code>dnssec-oracle prove {c.name}</code>
+        {prove('Anyone can prove it again')}: <code>dnssec-oracle prove {c.name}</code>
       </div>
     )
   }
   return (
     <div className="verdict bad">
-      <strong>No attestation</strong> for {c.name}. Anyone can prove one: <code>dnssec-oracle prove {c.name}</code>
+      <strong>No attestation</strong> for {c.name}. {prove('Anyone can prove one')}: <code>dnssec-oracle prove {c.name}</code>
     </div>
   )
 }
@@ -249,21 +294,6 @@ function Chain({ c }: { c: Comparison }) {
   )
 }
 
-function explain({ step, sig }: Row) {
-  const owner = nameFromWire(step.owner)
-  const signer = nameFromWire(sig.signer)
-  switch (step.kind) {
-    case 'root':
-      return "The root zone's keys, signed by a root key the oracle holds as a trust anchor."
-    case 'ds':
-      return `${signer} vouches for ${owner}'s key: a DS record holds a digest of it, signed by ${signer}'s zone key.`
-    case 'dnskey':
-      return `${owner}'s keys, signed by the key its DS vouches for.`
-    case 'txt':
-      return `The record set itself, signed by ${signer}'s zone key.`
-  }
-}
-
 function Link({ row, c }: { row: Row; c: Comparison }) {
   const { step, sig, key, entry, same, linked } = row
   const isTxt = step.kind === 'txt'
@@ -296,7 +326,7 @@ function Link({ row, c }: { row: Row; c: Comparison }) {
           <Badge ok={false}>{isTxt ? 'not attested' : 'not cached'}</Badge>
         )}
       </div>
-      <p className="about">{explain(row)}</p>
+      <p className="about">{explainStep(step)}</p>
       <div className="sides">
         <div>
           <h4>Oracle</h4>

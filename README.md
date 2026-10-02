@@ -152,7 +152,7 @@ projects/dnssec-oracle/          contract (PuyaTs, AVM 13), unit + e2e tests
 projects/dnssec-oracle-sdk/      reader/writer SDK and the off-chain prover
   src/prover/                    DNS over TCP, canonical signed data, chain building
 projects/cli/                    `dnssec-oracle` operator CLI over the SDK (yargs, bun executables)
-projects/frontend/               Vite/React explorer: oracle state, and attestations against live DNS (DoH)
+projects/frontend/               Vite/React explorer: oracle state, proving and verifying against live DNS (DoH), credits via use-wallet
 research/sha256-limit/           RRset sizes across every signed TLD vs the 4,096-byte limit
 scripts/capture-root.sh          daily capture for rollover test data (cron)
 captures/<date>/                 dig.txt (presentation) and chains.json (wire)
