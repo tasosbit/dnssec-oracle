@@ -1,11 +1,18 @@
 import { AlgorandClient, microAlgo } from '@algorandfoundation/algokit-utils'
-import { TransactionSigner } from 'algosdk'
-import { AnchorEntry, anchorHash, AnchorState, boxNames, isTrusted } from './boxes.js'
+import { BoxReference } from '@algorandfoundation/algokit-utils/types/app-manager'
+import { Transaction, TransactionSigner } from 'algosdk'
+import { AnchorEntry, anchorHash, AnchorState, Attestation, boxNames, isTrusted } from './boxes.js'
 import {
   ANCHOR_BOX_MBR_MICROALGOS,
+  APP_CALL_BUDGET,
+  attestationBoxMbrMicroAlgos,
+  CACHE_BOX_MBR_MICROALGOS,
   CREDIT_BOX_MBR_MICROALGOS,
   DEFAULT_REFRESH_MARGIN_SECONDS,
   HOLD_DOWN_SECONDS,
+  increaseBudgetBaseCost,
+  increaseBudgetIncrementCost,
+  MAX_OP_UP_ITXNS,
   MIN_TXN_FEE_MICROALGOS,
 } from './constants.js'
 import { DnssecOracleClient, DnssecOracleComposer, DnssecOracleFactory } from './generated/DnssecOracleClient.js'
@@ -26,9 +33,10 @@ import {
 } from './prover/wire.js'
 import { DnssecOracleReaderSDK, NameLike } from './sdkReader.js'
 import { ConstructorArgs, SenderWithSigner } from './types.js'
+import { simulateUnsigned } from './util/increaseBudget.js'
 import { noteNonce } from './util/noteNonce.js'
 import { createTxnExecutor } from './util/txnExecutor.js'
-import { wrapErrors, wrapErrorsInternal } from './util/wrapErrors.js'
+import { errorTransformer, wrapErrors, wrapErrorsInternal } from './util/wrapErrors.js'
 
 // the composer's tuple type grows per chained call, so a builder handed between makers is widened
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +48,39 @@ export interface ProveChainResult {
   /** Steps skipped because the cache already held the same RRset, fresh. */
   cached: ProofStep[]
   txIds: string[]
+}
+
+/** One call of a chain plan: a proof step, or the prune that clears the way for it. */
+export interface PlanItem {
+  action: 'prove' | 'prune'
+  step: ProofStep
+}
+
+/** A group of a chain plan: an `increaseBudget` call, then its items in chain order. */
+export interface PlannedGroup {
+  items: (PlanItem & { opcodes: number })[]
+  /** Unsigned and grouped, all from the writer. */
+  transactions: Transaction[]
+  /** Opcodes the items use together, as simulated. */
+  opcodes: number
+  /** No-op inner calls the `increaseBudget` call makes, 700 opcodes each. */
+  opUps: number
+  /** µAlgo, the whole group. */
+  fee: number
+}
+
+export interface ChainPlan {
+  /** Steps skipped because the cache already holds the same RRset, fresh. */
+  cached: ProofStep[]
+  groups: PlannedGroup[]
+  /**
+   * µAlgo of credits the first group deposits for the sender, ahead of its proofs: what new
+   * boxes draw beyond the sender's credits (and its credit box's own MBR, without one). 0 if
+   * they cover it.
+   */
+  deposit: number
+  /** Steps one simulation could not reach: plan the chain again once `groups` confirm. */
+  remaining: ProofStep[]
 }
 
 export interface ProveTxtOptions {
@@ -280,48 +321,62 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
   proveStep = this.makeTxnExecutor({ maker: this.makeProveTxns })
 
   /**
-   * Prove a chain from buildTxtChain, parents before children. Cache steps whose RRset is
-   * already stored, fresh and proven under the parent's current entry are skipped; an expired
-   * entry with a newer inception is pruned first. One from before the last revocation is
-   * simply overwritten. The TXT step is always sent.
+   * What proving a chain from buildTxtChain takes, parents before children. Cache steps whose
+   * RRset is already stored, fresh and proven under the parent's entry as the run leaves it are
+   * skipped; an expired entry with a newer inception is pruned first. One from before the last
+   * revocation is simply overwritten. The TXT step is always sent.
    */
-  @wrapErrors()
-  async proveChain(
-    steps: ProofStep[],
-    { refreshMarginSeconds = DEFAULT_REFRESH_MARGIN_SECONDS }: { refreshMarginSeconds?: number } = {},
-  ): Promise<ProveChainResult> {
-    const result: ProveChainResult = { proven: [], cached: [], txIds: [] }
+  private async triage(steps: ProofStep[], refreshMarginSeconds: number) {
     const now = Math.floor(Date.now() / 1000)
     const rootEpoch = Number((await this.getState()).rootEpoch)
-    for (const step of steps) {
-      if (step.kind !== 'txt') {
-        const found = await this.getRawCache(step.owner, step.type)
-        // parents come first, so this reads the parent's entry as this step will see it
-        const live = found && found.parentEpoch === (await this.parentEpoch(step))
-        if (live && bytesEqual(found.hash, sha256(step.rrset)) && found.expiry > now + refreshMarginSeconds) {
-          result.cached.push(step)
-          continue
-        }
-        // the contract overwrites an entry from before the last revocation whatever its inception
-        const cached = found && found.epoch >= rootEpoch ? found : undefined
-        if (cached && cached.inception > step.inception) {
-          // expired: anyone may prune it, and the older RRset, still valid, proves into a fresh box
-          if (cached.expiry < now) {
-            result.txIds.push(...(await this.prune({ name: step.owner, type: step.type })).txIds)
-          } else {
-            throw new Error(
-              `${nameFromWire(step.owner)} ${step.type}: the cache holds a newer RRset (inception ` +
-                `${cached.inception} > ${step.inception}); rebuild the chain from fresh DNS data`,
-            )
-          }
-        }
+    const entries = await this.getRawCaches(steps.map((s) => [s.owner, s.type]))
+    // each entry's epoch once the run is done; NaN for a new one, which nothing cached matches
+    const epochs = new Map<string, number>()
+    const cached: ProofStep[] = []
+    const items: PlanItem[] = []
+    // credits the items draw, net of refunds to the sender: the most at any point is the rent
+    let charge = 0
+    let rent = 0
+    const draw = (micro: number) => (rent = Math.max(rent, (charge += micro)))
+    for (const [i, step] of steps.entries()) {
+      if (step.kind === 'txt') {
+        items.push({ action: 'prove', step })
+        // the old box's rent goes back to its payer, which only helps if that is the sender
+        const old = await this.getRawAttestation(step.owner)
+        draw(
+          attestationMbr({ records: rdataOf(step.rrset) }) -
+            (old?.payer === this.writer.sender.toString() ? attestationMbr(old) : 0),
+        )
+        continue
       }
-      const sent = await this.proveStep({ step })
-      if (this.debug) console.log(`proved ${step.kind} ${nameFromWire(step.owner)}`, sent.txIds)
-      result.proven.push(step)
-      result.txIds.push(...sent.txIds)
+      const found = entries[i]
+      const parentEpoch = step.kind === 'root' ? rootEpoch : (epochs.get(parentKey(step)) ?? (await this.parentEpoch(step)))
+      const same = !!found && bytesEqual(found.hash, sha256(step.rrset))
+      if (same && found.parentEpoch === parentEpoch && found.expiry > now + refreshMarginSeconds) {
+        cached.push(step)
+        epochs.set(cacheKey(step.owner, step.type), found.epoch)
+        continue
+      }
+      // the contract overwrites an entry from before the last revocation whatever its inception
+      let current = found && found.epoch >= rootEpoch ? found : undefined
+      if (current && current.inception > step.inception) {
+        // expired: anyone may prune it, and the older RRset, still valid, proves into a fresh box
+        if (current.expiry >= now) {
+          throw new Error(
+            `${nameFromWire(step.owner)} ${step.type}: the cache holds a newer RRset (inception ` +
+              `${current.inception} > ${step.inception}); rebuild the chain from fresh DNS data`,
+          )
+        }
+        items.push({ action: 'prune', step })
+        current = undefined
+      }
+      items.push({ action: 'prove', step })
+      // a new box; a pruned one refunds the sender first, so its proof draws nothing net
+      if (!found) draw(CACHE_BOX_MBR_MICROALGOS)
+      // writeCache keeps the epoch only for the same RRset under the same parent generation
+      epochs.set(cacheKey(step.owner, step.type), current && same && current.parentEpoch === parentEpoch ? current.epoch : NaN)
     }
-    return result
+    return { cached, items, rent }
   }
 
   /** The current epoch of the entry a cache step is verified against; 0 if none. */
@@ -332,6 +387,151 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
         ? await this.getRawCache(signerOf(step), RRType.DNSKEY)
         : await this.getRawCache(step.owner, RRType.DS)
     return parent?.epoch ?? 0
+  }
+
+  /**
+   * Prove a chain from buildTxtChain, one group per call, each simulated as it goes: see
+   * triage for what is skipped. planChain sends fewer groups, all signed at once.
+   */
+  @wrapErrors()
+  async proveChain(
+    steps: ProofStep[],
+    { refreshMarginSeconds = DEFAULT_REFRESH_MARGIN_SECONDS }: { refreshMarginSeconds?: number } = {},
+  ): Promise<ProveChainResult> {
+    const { cached, items } = await this.triage(steps, refreshMarginSeconds)
+    const result: ProveChainResult = { proven: [], cached, txIds: [] }
+    for (const { action, step } of items) {
+      if (action === 'prune') {
+        result.txIds.push(...(await this.prune({ name: step.owner, type: step.type })).txIds)
+        continue
+      }
+      const sent = await this.proveStep({ step })
+      if (this.debug) console.log(`proved ${step.kind} ${nameFromWire(step.owner)}`, sent.txIds)
+      result.proven.push(step)
+      result.txIds.push(...sent.txIds)
+    }
+    return result
+  }
+
+  /**
+   * Plan a chain from buildTxtChain as unsigned groups, to sign all at once and send in order.
+   * The calls triage keeps run in one simulated group behind a maximal op-up, which measures
+   * each against the state the calls before it leave (algod simulates one group at a time,
+   * and a group cannot see another still pending). Then they are packed, in order, into as
+   * few groups as one group's budget allows: 700 opcodes per app call, 16 calls and 256 op-up
+   * inner calls, 190,400 at most. An RSA-2048 check (about 92k) takes a group to itself;
+   * P-256 checks (about 2.5k) share one.
+   *
+   * Each group must confirm, or at least reach the pool, before the next is sent: every call
+   * checks the cache entry a call before it writes. A sender needs the fees, the credits for
+   * new boxes (the first group deposits any shortfall: `deposit`), and about 0.5 Algo
+   * spendable for the measuring simulation.
+   */
+  @wrapErrors()
+  async planChain(
+    steps: ProofStep[],
+    { refreshMarginSeconds = DEFAULT_REFRESH_MARGIN_SECONDS }: { refreshMarginSeconds?: number } = {},
+  ): Promise<ChainPlan> {
+    const { cached, items: all, rent } = await this.triage(steps, refreshMarginSeconds)
+    const { sender } = this.writer
+    const credits = await this.getCredits(sender.toString())
+    // refunds to the sender land only in a credit box: without one, deposit first to open it,
+    // even when refunds would cover the rent
+    const deposit = credits === undefined ? rent + CREDIT_BOX_MBR_MICROALGOS : Math.max(0, rent - Number(credits))
+    // the deposit's payment and call, behind the op-up and ahead of the first group's items
+    const depositTxns = deposit ? 2 : 0
+    const withDeposit = async (builder: NonNullable<BuilderArgs['builder']>) =>
+      deposit ? this.makeDepositCreditsTxns({ amount: deposit, builder }) : builder
+
+    const measured = all.slice(0, MAX_GROUP_SIZE - 1 - depositTxns)
+    let builder = await withDeposit(this.makeOpUp({ itxns: MAX_OP_UP_ITXNS }))
+    for (const item of measured) builder = await this.makeItemTxns(item, builder)
+    const { group, txns } = await simulateUnsigned(builder, this.algorand.client.algod, 2 * MAX_OP_UP_ITXNS * MIN_TXN_FEE_MICROALGOS)
+
+    // a call that ran out of budget (the simulation's, not a real group's) waits for the next plan
+    // the group: the op-up at 0, the deposit's transactions, then the items
+    const failedTxn = group.failedAt?.length ? Number(group.failedAt[0]) : undefined
+    const failedAt = failedTxn === undefined ? undefined : failedTxn - 1 - depositTxns
+    if (failedAt !== undefined && (failedAt < 1 || !/budget exceeded/.test(group.failureMessage ?? ''))) {
+      const failed = measured[failedAt]
+      const error = await errorTransformer(new Error(group.failureMessage))
+      error.message = `${failed ? `${failed.action} ${nameFromWire(failed.step.owner)} ${failed.step.type}` : failedTxn === 0 ? 'increaseBudget' : 'deposit'}: ${error.message}`
+      throw error
+    }
+    const items = measured.slice(0, failedAt).map((item, i) => ({
+      ...item,
+      opcodes: Number(group.txnResults[i + 1 + depositTxns].appBudgetConsumed ?? 0),
+      bytes: txns[i + 1 + depositTxns].toByte().length,
+    }))
+    // fee usage beyond the op-up, its inner calls and the deposit (one unit each), shared out by size
+    const usage = Math.max(0, Number(group.groupUsage ?? 0) / 1_000_000 - 1 - MAX_OP_UP_ITXNS - depositTxns)
+    const bytes = items.reduce((n, item) => n + item.bytes, 0)
+
+    // ponytail: greedy, in order; optimal for contiguous runs under one capacity
+    const runs: (typeof items)[] = []
+    for (const item of items) {
+      const run = runs.at(-1)
+      const room = MAX_GROUP_SIZE - 1 - (runs.length === 1 ? depositTxns : 0)
+      if (run && run.length < room && opUpsFor([...run, item]) <= MAX_OP_UP_ITXNS) run.push(item)
+      else runs.push([item])
+    }
+
+    const groups: PlannedGroup[] = []
+    for (const [g, run] of runs.entries()) {
+      const opUps = opUpsFor(run)
+      const units = 1 + opUps + (usage * run.reduce((n, item) => n + item.bytes, 0)) / bytes
+      const shortfall = Math.max(0, Math.ceil(units * MIN_TXN_FEE_MICROALGOS) - (1 + run.length + opUps) * MIN_TXN_FEE_MICROALGOS)
+      const txt = run.find((item) => item.step.kind === 'txt')
+      const opUp = this.makeOpUp({
+        itxns: opUps,
+        extraFee: opUps * MIN_TXN_FEE_MICROALGOS + shortfall,
+        boxReferences: txt && (await this.txtBoxes(txt.step, sender.toString())),
+      })
+      let groupBuilder = g === 0 ? await withDeposit(opUp) : opUp
+      for (const item of run) groupBuilder = await this.makeItemTxns(item, groupBuilder)
+      const transactions = (await (await groupBuilder.composer()).build()).transactions.map((t) => t.txn)
+      groups.push({
+        items: run.map(({ action, step, opcodes }) => ({ action, step, opcodes })),
+        transactions,
+        opcodes: run.reduce((n, item) => n + item.opcodes, 0),
+        opUps,
+        fee: transactions.reduce((n, t) => n + Number(t.fee), 0),
+      })
+    }
+    const remaining = all.slice(items.length).flatMap(({ action, step }) => (action === 'prove' ? [step] : []))
+    return { cached, groups, deposit, remaining }
+  }
+
+  private makeOpUp({ itxns, extraFee = itxns * MIN_TXN_FEE_MICROALGOS, boxReferences }: { itxns: number; extraFee?: number; boxReferences?: BoxReference[] }) {
+    const { sender, signer } = this.writer
+    return this.writeClient!.newGroup().increaseBudget({
+      args: { itxns },
+      extraFee: microAlgo(extraFee),
+      boxReferences,
+      note: `${noteNonce()}`,
+      sender,
+      signer,
+    })
+  }
+
+  private async makeItemTxns({ action, step }: PlanItem, builder: BuilderArgs['builder']) {
+    return action === 'prune'
+      ? this.makePruneTxns({ name: step.owner, type: step.type, builder })
+      : this.makeProveTxns({ step, builder })
+  }
+
+  /**
+   * The box references a TXT step needs beyond its own: the replaced attestation's payer, whose
+   * credits get the refund, and empty ones for box I/O quota, 1 KB each, since the old and the
+   * new attestation may each come near 4 KB. Placed on the op-up call: references are shared
+   * across a group. send() gets these from algokit's resource population, which simulates the
+   * group alone and so cannot run a planned group whose parent is still pending.
+   */
+  private async txtBoxes(step: ProofStep, sender: string): Promise<BoxReference[]> {
+    const payer = (await this.getRawAttestation(step.owner))?.payer
+    const refs = payer && payer !== sender ? [{ appId: 0n, name: boxNames.credit(payer) }] : []
+    while (refs.length < MAX_APP_REFERENCES) refs.push({ appId: 0n, name: new Uint8Array() })
+    return refs
   }
 
   /** Build `name TXT`'s chain from DNS and prove it: see buildTxtChain and proveChain. */
@@ -438,7 +638,38 @@ export class DnssecOracleSDK extends DnssecOracleReaderSDK {
 
   /** Delete an expired attestation (type 16) or cache entry (any other type). */
   prune = this.makeTxnExecutor({ maker: this.makePruneTxns })
+
+  private makePruneManyTxns({ targets, builder }: { targets: { name: NameLike; type: number }[] } & BuilderArgs) {
+    return targets.reduce((b, t) => this.makePruneTxns({ ...t, builder: b }), builder ?? this.writeClient!.newGroup())
+  }
+
+  /** `prune` several boxes in one group: at most 16. */
+  pruneMany = this.makeTxnExecutor({ maker: this.makePruneManyTxns })
 }
+
+/** Transactions in a group, and references (boxes included) one app call may carry. */
+const MAX_GROUP_SIZE = 16
+const MAX_APP_REFERENCES = 8
+
+const cacheKey = (owner: Uint8Array, type: number) => `${toHex(owner)} ${type}`
+
+/** The cache entry a non-root step is proven under. */
+function parentKey(step: ProofStep): string {
+  return step.kind === 'dnskey' ? cacheKey(step.owner, RRType.DS) : cacheKey(signerOf(step), RRType.DNSKEY)
+}
+
+/**
+ * The op-up inner calls a group of these calls needs, behind one `increaseBudget` call: the
+ * same sum probeOpUp does, over the calls' simulated opcodes.
+ */
+function opUpsFor(run: { opcodes: number }[]): number {
+  const opcodes = run.reduce((n, item) => n + item.opcodes, 0)
+  const own = APP_CALL_BUDGET * (run.length + 1) - increaseBudgetBaseCost
+  return Math.max(0, Math.ceil((opcodes - own) / (APP_CALL_BUDGET - increaseBudgetIncrementCost)))
+}
+
+const attestationMbr = ({ records }: Pick<Attestation, 'records'>) =>
+  attestationBoxMbrMicroAlgos(records.reduce((n, r) => n + r.length, 0), records.length)
 
 /** The signer name of a step's RRSIG: right after the 18 fixed bytes. */
 function signerOf(step: ProofStep): Uint8Array {

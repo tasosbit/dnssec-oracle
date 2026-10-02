@@ -1,6 +1,6 @@
 import { Config, microAlgo } from '@algorandfoundation/algokit-utils'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
-import { Address, TransactionSigner } from 'algosdk'
+import { Address, TransactionSigner, waitForConfirmation } from 'algosdk'
 import {
   ANCHOR_BOX_MBR_MICROALGOS,
   anchorHash,
@@ -10,6 +10,7 @@ import {
   boxNames,
   buildTxtChain,
   CACHE_BOX_MBR_MICROALGOS,
+  ChainPlan,
   CREDIT_BOX_MBR_MICROALGOS,
   capturedResolver,
   concat,
@@ -849,6 +850,91 @@ describe('DnssecOracle e2e', () => {
 
   // ── Phase 4: credits and prune ───────────────────────────────────
 
+  describe('chain plans', () => {
+    /** Sign every group at once, then send them back to back, waiting only for the last. */
+    const sendPlan = async (sdk: DnssecOracleSDK, plan: ChainPlan, signer: TransactionSigner) => {
+      const algod = sdk.algorand.client.algod
+      const signed = await Promise.all(plan.groups.map((g) => signer(g.transactions, g.transactions.map((_, i) => i))))
+      for (const group of signed) await algod.sendRawTransaction(group).do()
+      const last = plan.groups.at(-1)!.transactions.at(-1)!
+      await waitForConfirmation(algod, last.txID(), 10)
+    }
+
+    test('planChain packs the chain into the fewest groups by simulated cost', async () => {
+      const { sdk, chain, prove } = await deploy({ rootAlg: 'rsa' })
+      const { testAccount } = localnet.context
+      const steps = await chain('_tag.example.io')
+      const plan = await sdk.planChain(steps)
+      // RSA-2048 checks (root, io DS by the root ZSK, io DNSKEY) fill a group each; the
+      // RSA-1024 and P-256 checks below share the last
+      const kinds = plan.groups.map((g) => g.items.map((i) => `${i.step.kind} ${nameFromWire(i.step.owner)}`))
+      expect(kinds).toEqual([['root .'], ['ds io.'], ['dnskey io.', 'ds example.io.', 'dnskey example.io.', 'txt _tag.example.io.']])
+      for (const g of plan.groups) {
+        expect(g.transactions).toHaveLength(1 + g.items.length)
+        expect(g.opUps).toBeLessThanOrEqual(256)
+        // a large group owes a usage fee on top: the plan prices it from the simulation
+        expect(g.fee).toBeGreaterThanOrEqual((g.transactions.length + g.opUps) * 1000)
+      }
+      await sendPlan(sdk, plan, testAccount.signer)
+      expect(await sdk.getVerifiedAttestation('_tag.example.io', { maxAge: 86_400, minKeyBits: 1024 })).toBeDefined()
+
+      // proven: only the TXT step is left, and proveChain agrees
+      const again = await sdk.planChain(steps)
+      expect(again.cached).toHaveLength(5)
+      expect(again.groups.map((g) => g.items.map((i) => i.step.kind))).toEqual([['txt']])
+      expect((await prove('_tag.example.io')).cached).toHaveLength(5)
+    })
+
+    test.each([
+      ['no credit box', 0],
+      ['too few credits', 50_000],
+    ])('the first group deposits what new boxes draw beyond the credits: %s', async (_, credits) => {
+      const { sdk, chain } = await deploy()
+      const { other, account } = await otherSdk(sdk, credits)
+      const plan = await other.planChain(await chain('_tag.example.com'))
+      expect(plan.deposit).toBeGreaterThan(0)
+      const [first, ...rest] = plan.groups
+      expect(first.transactions).toHaveLength(3 + first.items.length)
+      for (const g of rest) expect(g.transactions).toHaveLength(1 + g.items.length)
+      await sendPlan(other, plan, account.signer)
+      expect(await sdk.getVerifiedAttestation('_tag.example.com', { maxAge: 86_400, minKeyBits: 1024 })).toBeDefined()
+      // exactly the rent: every credit drawn
+      expect(await other.getCredits(account.toString())).toBe(0n)
+    })
+
+    test("a planned TXT step carries the old payer's credit box and the I/O quota for 4 KB boxes", async () => {
+      const { sdk, world, exampleCom, chain } = await deploy()
+      world.txt(exampleCom, 'example.com', [bigRdata(4030)])
+      const steps = await chain('example.com')
+      await sdk.proveChain(steps)
+      const payer = localnet.context.testAccount.toString()
+      const before = await sdk.getCredits(payer)
+
+      const { other, account } = await otherSdk(sdk)
+      world.txt(exampleCom, 'example.com', [bigRdata(4029)], { inception: world.inception + 1 })
+      const plan = await other.planChain(await chain('example.com'))
+      expect(plan.groups.map((g) => g.items.map((i) => i.step.kind))).toEqual([['txt']])
+      await sendPlan(other, plan, account.signer)
+      expect((await sdk.getRawAttestation('example.com'))?.payer).toBe(account.toString())
+      expect(await sdk.getCredits(payer)).toBe(before! + BigInt(attestationBoxMbrMicroAlgos(4030, 1)))
+    })
+
+    test('a payer who withdrew re-proves their own attestation: the plan reopens the credit box first', async () => {
+      const { sdk, world, exampleCom, chain, prove } = await deploy()
+      await prove('_tag.example.com')
+      const payer = localnet.context.testAccount
+      await sdk.withdrawCredits({})
+      expect(await sdk.getCredits(payer.toString())).toBeUndefined()
+
+      // same size: the old box's refund would cover the new one, but has nowhere to land
+      world.txt(exampleCom, '_tag.example.com', [txt('hello moo')], { inception: world.inception + 1 })
+      const plan = await sdk.planChain(await chain('_tag.example.com'))
+      expect(plan.deposit).toBe(CREDIT_BOX_MBR_MICROALGOS)
+      await sendPlan(sdk, plan, payer.signer)
+      expect((await sdk.getVerifiedAttestation('_tag.example.com', { maxAge: 86_400, minKeyBits: 1024 }))?.attestation.texts).toEqual(['hello moo'])
+    })
+  })
+
   describe('phase 4: credits and prune', () => {
     test('a sender without credits cannot create boxes', async () => {
       const { sdk, chain } = await deploy()
@@ -890,7 +976,9 @@ describe('DnssecOracle e2e', () => {
       world.publishKeys(short)
       world.txt(short, 'x.short.com', [txt('x')])
       world.txt(exampleCom, '_tag.example.com', [txt('brief')], { expiration: soon })
+      world.txt(exampleCom, '_b.example.com', [txt('b')], { expiration: soon })
       await sdk.proveChain(await chain('_tag.example.com'))
+      await sdk.proveStep({ step: find(await chain('_b.example.com'), 'txt') })
       const shortSteps = await chain('x.short.com')
       await sdk.proveStep({ step: find(shortSteps, 'ds', 'short.com') })
       const shortKeys = find(shortSteps, 'dnskey', 'short.com')
@@ -915,9 +1003,12 @@ describe('DnssecOracle e2e', () => {
       await expect(other.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('prune'))
       const payer = localnet.context.testAccount.toString()
       const payerBefore = await sdk.getCredits(payer)
-      await sdk.prune({ name: '_tag.example.com', type: RRType.TXT })
-      expect(await sdk.getCredits(payer)).toBe(payerBefore! + BigInt(attestationBoxMbrMicroAlgos(txt('brief').length, 1)))
+      // several in one group
+      await sdk.pruneMany({ targets: ['_tag.example.com', '_b.example.com'].map((name) => ({ name, type: RRType.TXT })) })
+      const refund = attestationBoxMbrMicroAlgos(txt('brief').length, 1) + attestationBoxMbrMicroAlgos(txt('b').length, 1)
+      expect(await sdk.getCredits(payer)).toBe(payerBefore! + BigInt(refund))
       expect(await sdk.getRawAttestation('_tag.example.com')).toBeUndefined()
+      expect(await sdk.getRawAttestation('_b.example.com')).toBeUndefined()
       await expect(sdk.prune({ name: '_tag.example.com', type: RRType.TXT })).rejects.toThrow(code('missing'))
     })
 

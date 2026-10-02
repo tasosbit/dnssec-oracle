@@ -89,7 +89,8 @@ export function montgomeryHint(dnskeyRdata: Uint8Array): Uint8Array {
   return key.algorithm === 8 ? rsaMontgomeryHint(rsaKeyParts(key.publicKey).modulus) : new Uint8Array(0)
 }
 
-const b64url = (b: Uint8Array) => Buffer.from(b).toString('base64url')
+// base64 then url-safe, not 'base64url': browser Buffer polyfills lack that encoding
+const b64url = (b: Uint8Array) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
 /** Verify a DNSSEC signature locally: algorithm 8 or 13. */
 export function verifySignature(dnskeyRdata: Uint8Array, data: Uint8Array, signature: Uint8Array): boolean {

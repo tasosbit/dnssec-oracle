@@ -1,7 +1,7 @@
 import { microAlgo } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { TransactionComposer } from '@algorandfoundation/algokit-utils/types/composer'
-import { Algodv2, makeEmptyTransactionSigner, modelsv2, TransactionSigner } from 'algosdk'
+import { Algodv2, makeEmptyTransactionSigner, modelsv2, Transaction, TransactionSigner } from 'algosdk'
 import { APP_CALL_BUDGET, increaseBudgetBaseCost, increaseBudgetIncrementCost, MIN_TXN_FEE_MICROALGOS } from '../constants.js'
 import { noteNonce } from './noteNonce.js'
 
@@ -19,6 +19,28 @@ const simulateRequest = new modelsv2.SimulateRequest({
   txnGroups: [],
   ...SIMULATE_PARAMS,
 })
+
+/**
+ * Simulate a group without prompting anyone: every signer replaced by an empty one, and
+ * txn 0's fee raised to `fee0` so fees cannot fail the run (the sender must hold it).
+ * `ownFees` is what the group pays as built.
+ */
+export async function simulateUnsigned(
+  builder: { composer(): Promise<TransactionComposer> },
+  algod: Algodv2,
+  fee0 = 256_000, // 256x min fee
+) {
+  // maxFee/coverAppCallInnerTransactionFees does not work with builder.simulate() #algokit
+  // (need to clone the atc to make txns mutable)
+  const atc = (await (await builder.composer()).build()).atc.clone()
+  // @ts-expect-error private and readonly
+  const txns: { txn: Transaction; signer: TransactionSigner }[] = atc.transactions
+  const ownFees = txns.reduce((n, t) => n + Number(t.txn.fee), 0)
+  txns[0].txn.fee = BigInt(fee0)
+  for (const t of txns) t.signer = makeEmptyTransactionSigner()
+  const { simulateResponse } = await atc.simulate(algod, simulateRequest)
+  return { ownFees, group: simulateResponse.txnGroups[0], txns: txns.map((t) => t.txn) }
+}
 
 /**
  * Probe a transaction group's opcode budget and fee, and return what an `increaseBudget`
@@ -45,27 +67,8 @@ export async function probeOpUp(
   builder: { composer(): Promise<TransactionComposer> },
   algod: Algodv2,
 ): Promise<{ itxns: number; extraFee: number } | undefined> {
-  // maxFee/coverAppCallInnerTransactionFees does not work with builder.simulate() #algokit
-  // increase first txn's fee so the probe does not fail because of fees
-  // (need to clone the atc to make txns mutable)
-  const atc = (await (await builder.composer()).build()).atc.clone()
-  // @ts-expect-error private and readonly
-  const ownFees = atc.transactions.reduce((n, t) => n + Number(t.txn.fee), 0)
-  // @ts-expect-error private and readonly
-  atc.transactions[0].txn.fee = 256_000n // 256x min fee
-
-  // replace signers with empty signers for simulation so end users are not prompted to sign
-  // @ts-expect-error private and readonly
-  atc.transactions = atc.transactions.map((t) => {
-    t.signer = makeEmptyTransactionSigner()
-    return t
-  })
-
-  const {
-    simulateResponse: {
-      txnGroups: [{ txnResults, appBudgetConsumed = 0, groupUsage = 0 }],
-    },
-  } = await atc.simulate(algod, simulateRequest)
+  const { ownFees, group } = await simulateUnsigned(builder, algod)
+  const { txnResults, appBudgetConsumed = 0, groupUsage = 0 } = group
 
   // intentionally doing op-up even if the probe reports a failure: returning early
   // would let out-of-budget errors obscure the actual failure on send

@@ -1,6 +1,6 @@
 {
   "name": "@d13co/dnssec-oracle-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript SDK and prover for the DNSSEC oracle on Algorand",
   "license": "MIT",
   "repository": {

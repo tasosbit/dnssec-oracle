@@ -33,6 +33,19 @@ console.log(verified?.attestation.texts)
 await sdk.withdrawCredits({})
 ```
 
+For a wallet, plan instead: `planChain` simulates the steps still needed and packs them into
+the fewest groups, unsigned, to sign in one prompt and send in order. If the sender's credits
+fall short of the new boxes' rent, the first group deposits the difference (`plan.deposit`).
+
+```ts
+const plan = await sdk.planChain(await buildTxtChain('example.com', resolver, { anchors: await sdk.trustedAnchors() }))
+// use-wallet returns one flat array: split it back into the plan's groups
+const signed = await wallet.signTransactions(plan.groups.map((g) => g.transactions))
+let at = 0
+const groups = plan.groups.map((g) => signed.slice(at, (at += g.transactions.length)))
+// send each group once the one before is in the pool, a round apart; see the explorer's sendPaced
+```
+
 `getRawAttestation` skips the checks; `listRawAttestations`, `listAnchors` and `getCredits`
 read the rest of the oracle's state.
 
