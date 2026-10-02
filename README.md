@@ -364,22 +364,25 @@ verifying it inside an `eth_call`.
 |                | ENS `DNSSECImpl`                                             | This oracle                                          |
 |----------------|--------------------------------------------------------------|------------------------------------------------------|
 | Verification   | the whole chain in one `verifyRRSet` call, which returns the RRset | one signature per app call                     |
-| State          | none: every caller passes the full chain                     | cached RRset hashes, and attestation boxes any app reads |
+| State          | no proven records: every caller passes the full chain        | cached RRset hashes, and attestation boxes any app reads |
 | Root anchors   | set in the constructor, no setter (KSK-2010 and KSK-2017 in its deploy script) | RFC 5011 on-chain, permissionless |
 | Algorithms     | 5 and 7 (RSA/SHA-1), 8, 13; digest types 1 and 2. The owner can add or replace verifier contracts | 8 and 13; digest type 2. Fixed |
-| RSA keys       | any size (the `modexp` precompile)                           | 1024 to 2048 bits                                    |
-| Freshness      | RRSIG validity at `block.timestamp`; `DNSRegistrar` also rejects a proof older than the last claim | `maxAge`, `minKeyBits` and the chain walk, chosen by the consumer |
+| RSA keys       | no size check, though `modexp` caps inputs at 8192 bits; any exponent | 1024 to 2048 bits, exponent 65537; consumers can require more with `minKeyBits` |
+| Freshness      | RRSIG validity at `block.timestamp`; `DNSRegistrar` also rejects a proof older than the last claim | RRSIG validity at the block timestamp, and the newest inception wins; the consumer adds `maxAge`, the chain's `expiration` and the chain walk |
 | Absence (NSEC) | not proven                                                   | not proven                                           |
 
 The split follows from the cost of one RSA check. Ethereum's `modexp` precompile makes a
 whole chain affordable in one call, so ENS needs no cache. On Algorand an RSA-2048 check
 takes about 92k of the 190,400 opcodes a group can pool, so the six signatures behind
-`_algorand.example.com` are spread over several groups, and caching each step lets every
-name under a TLD share it. Algorand has no CCIP-Read equivalent either: a contract reads
-only what was proven on-chain first.
+`_algorand.example.com` need one group each, and caching each step lets every name under a
+TLD share it. Algorand has no CCIP-Read equivalent either: a contract reads only what was
+proven on-chain first.
 
-- `DNSRegistrar` follows the [Prove once](#prove-once) model: ENS records the owner and
-  keeps it until someone submits a newer proof.
-- A new root KSK takes a new ENS oracle, and `DNSRegistrar` and `OffchainDNSResolver` hold
-  its address as `immutable`, so they need redeploying too. KSK-2024 signs the root
-  DNSKEY RRset alone from 2026-10-11.
+- `DNSRegistrar` is the [Prove once](#prove-once) model without the expiry: ENS records
+  the owner and keeps it until someone submits a proof with a newer inception.
+  `OffchainDNSResolver` verifies a proof on every lookup and stores nothing.
+- A root KSK missing from its anchors takes a new ENS oracle, and `DNSRegistrar` and
+  `OffchainDNSResolver` hold its address as `immutable`, so they need redeploying too.
+  KSK-2024 signs the root DNSKEY RRset alone from 2026-10-11, and the last KSK-2017
+  signature expires on 2026-10-22. On 2026-10-02, ENS's mainnet oracle still anchored only
+  KSK-2010 and KSK-2017.
