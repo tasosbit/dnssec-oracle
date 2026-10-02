@@ -152,6 +152,7 @@ projects/dnssec-oracle/          contract (PuyaTs, AVM 13), unit + e2e tests
 projects/dnssec-oracle-sdk/      reader/writer SDK and the off-chain prover
   src/prover/                    DNS over TCP, canonical signed data, chain building
 projects/cli/                    `dnssec-oracle` operator CLI over the SDK (yargs, bun executables)
+projects/frontend/               Vite/React explorer: oracle state, and attestations against live DNS (DoH)
 research/sha256-limit/           RRset sizes across every signed TLD vs the 4,096-byte limit
 scripts/capture-root.sh          daily capture for rollover test data (cron)
 captures/<date>/                 dig.txt (presentation) and chains.json (wire)
@@ -169,6 +170,13 @@ algokit project run test    # emulator suites, then LocalNet e2e through the SDK
 ```
 
 Rebuild the SDK after every contract change: the e2e tests import its `dist`.
+
+The explorer reads TestNet by default, or a LocalNet app ID, and runs on the SDK's `dist`:
+
+```bash
+pnpm --dir projects/frontend dev    # http://localhost:5173
+pnpm --dir projects/frontend test   # the browser crypto shim, against a captured chain
+```
 
 `@d13co/puya-ts-utils` ships its contract subroutines as TypeScript source; vitest
 inlines the package so the emulator can run it.
