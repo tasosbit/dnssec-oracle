@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# A newer push cancels the older run, so an older build can never deploy over a newer one.
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +48,6 @@ jobs:
     environment:
       name: testnet
       url: https://dnssec-oracle-testnet.pages.dev
-    concurrency: pages-deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
