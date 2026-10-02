@@ -1,4 +1,4 @@
-import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { AlgorandClient, microAlgo } from '@algorandfoundation/algokit-utils'
 import { encodeAddress, getApplicationAddress, makeEmptyTransactionSigner } from 'algosdk'
 import {
   anchorHash,
@@ -12,27 +12,58 @@ import {
   decodeCache,
   isTrusted,
 } from './boxes.js'
+import { MAX_VALUE_BYTES, MIN_TXN_FEE_MICROALGOS } from './constants.js'
 import { APP_SPEC, DnssecOracleClient, DnssecOracleComposer } from './generated/DnssecOracleClient.js'
 import { ancestors, concat, nameToWire, sha256, toHex, u16 } from './prover/wire.js'
 import { ReaderConstructorArgs } from './types.js'
-import { chunk } from './util/chunk.js'
-import { chunked } from './util/chunked.js'
+import { chunked, deduped } from './util/chunked.js'
 import { SIMULATE_PARAMS } from './util/increaseBudget.js'
 import { scanBoxes } from './util/scanBoxes.js'
 import { errorTransformer, wrapErrors } from './util/wrapErrors.js'
 
 /**
- * Names per logAttestations call and per simulate group. Simulate supplies the box
- * references (allowUnnamedResources), up to 8 per transaction across a 16-transaction group.
+ * Simulate supplies the box references (allowUnnamedResources) and lends one call the whole
+ * group's: 8 per transaction slot, filled or not, so 128 boxes per group. A group is then as
+ * few calls as the argument and logs allow (packCalls).
  */
-const NAMES_PER_CALL = 8
 const NAMES_PER_GROUP = 128
-/** Accounts per logCredits call and group: the same resource math, one credit box each. */
-const ACCOUNTS_PER_CALL = 8
-const ACCOUNTS_PER_GROUP = 128
-/** Cache keys per logCaches call and group: the same resource math, one cache box each. */
-const KEYS_PER_CALL = 8
 const KEYS_PER_GROUP = 128
+/** Accounts per logCredits group, and so per call: an address[] argument, 2 + 32n bytes, within 4 KB. */
+const ACCOUNTS_PER_GROUP = 127
+/** Simulate's log ceiling per transaction (allowMoreLogging), over 4 KB attestations: 16 per call. */
+const NAMES_PER_CALL = 65_536 / MAX_VALUE_BYTES
+
+/**
+ * A logger call's extra fee, given its array argument's size: one min fee covers v42's
+ * surcharge on arguments past 2 KB (the 4-byte selector included), ~0.2 min fee at 4 KB.
+ * None below that, so a reader account near its minimum balance can still read small batches.
+ * Simulated, never paid.
+ */
+const loggerExtraFee = (argBytes: number) => (4 + argBytes > 2048 ? microAlgo(MIN_TXN_FEE_MICROALGOS) : undefined)
+/** A byte[][] argument's ABI size: a 2-byte count, then a 2-byte offset and 2-byte length per item. */
+const arrayBytes = (items: Uint8Array[]) => items.reduce((n, item) => n + 4 + item.length, 2)
+
+/**
+ * Split `items` into byte[][] logger calls: at most `perCall` each, each argument
+ * (arrayBytes) within 4 KB.
+ * @internal
+ */
+export function packCalls(items: Uint8Array[], perCall: number): Uint8Array[][] {
+  const calls: Uint8Array[][] = []
+  let call: Uint8Array[] = []
+  let size = 2
+  for (const item of items) {
+    if (call.length === perCall || (call.length > 0 && size + 4 + item.length > MAX_VALUE_BYTES)) {
+      calls.push(call)
+      call = []
+      size = 2
+    }
+    call.push(item)
+    size += 4 + item.length
+  }
+  if (call.length > 0) calls.push(call)
+  return calls
+}
 
 /** A name as wire bytes, or in presentation form (`example.com`). */
 export type NameLike = string | Uint8Array
@@ -116,13 +147,14 @@ export class DnssecOracleReaderSDK {
   }
 
   /** Raw attestation box values through the logger: undefined where there is none. */
+  @deduped()
   @chunked(NAMES_PER_GROUP)
   async _logAttestationsChunked(names: Uint8Array[]): Promise<(Uint8Array | undefined)[]> {
     if (names.length === 0) return []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
-    for (const call of chunk(names, NAMES_PER_CALL)) {
-      builder = builder.logAttestations({ args: { names: call } })
+    for (const call of packCalls(names, NAMES_PER_CALL)) {
+      builder = builder.logAttestations({ args: { names: call }, extraFee: loggerExtraFee(arrayBytes(call)) })
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
@@ -208,13 +240,14 @@ export class DnssecOracleReaderSDK {
   }
 
   /** Raw cache box values through the logger, by `name ‖ uint16 type`: undefined where there is none. */
+  @deduped()
   @chunked(KEYS_PER_GROUP)
   async _logCachesChunked(keys: Uint8Array[]): Promise<(Uint8Array | undefined)[]> {
     if (keys.length === 0) return []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
-    for (const call of chunk(keys, KEYS_PER_CALL)) {
-      builder = builder.logCaches({ args: { keys: call } })
+    for (const call of packCalls(keys, KEYS_PER_GROUP)) {
+      builder = builder.logCaches({ args: { keys: call }, extraFee: loggerExtraFee(arrayBytes(call)) })
     }
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
@@ -265,15 +298,14 @@ export class DnssecOracleReaderSDK {
     )
   }
 
+  @deduped()
   @chunked(ACCOUNTS_PER_GROUP)
   async _logCreditsChunked(accounts: string[]): Promise<(bigint | undefined)[]> {
     if (accounts.length === 0) return []
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let builder: DnssecOracleComposer<any> = this.readClient.newGroup()
-    for (const call of chunk(accounts, ACCOUNTS_PER_CALL)) {
-      builder = builder.logCredits({ args: { accounts: call } })
-    }
-    const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
+    const { confirmations } = await this.readClient
+      .newGroup()
+      .logCredits({ args: { accounts }, extraFee: loggerExtraFee(2 + 32 * accounts.length) })
+      .simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
     return logs.map((l) => (l.length === 0 ? undefined : Buffer.from(l).readBigUInt64BE()))
   }
