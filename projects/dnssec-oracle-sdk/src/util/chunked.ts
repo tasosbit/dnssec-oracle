@@ -1,3 +1,4 @@
+import { toHex } from '../prover/wire.js'
 import { chunk } from './chunk.js'
 
 /**
@@ -45,6 +46,39 @@ export function chunked(chunkSize: number, chunkArgIndex = 0) {
         concurrency,
       )
       return results.flat()
+    }
+
+    return descriptor
+  }
+}
+
+/**
+ * Decorator that passes each distinct item of an array argument once and expands the
+ * results back to every input position. Items are keyed by value: strings as they are,
+ * byte arrays by hex. Stack it above @chunked to dedupe across chunks too.
+ * @param argIndex - The index of the argument to dedupe
+ */
+export function deduped(argIndex = 0) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+    const originalMethod = descriptor.value
+
+    descriptor.value = async function (...args: unknown[]) {
+      const arr = args[argIndex] as (string | Uint8Array)[]
+      const index = new Map<string, number>()
+      const unique: (string | Uint8Array)[] = []
+      const positions = arr.map((item) => {
+        const key = typeof item === 'string' ? item : toHex(item)
+        let i = index.get(key)
+        if (i === undefined) {
+          i = unique.push(item) - 1
+          index.set(key, i)
+        }
+        return i
+      })
+      if (unique.length === arr.length) return originalMethod.apply(this, args)
+      const applyArgs = [...args.slice(0, argIndex), unique, ...args.slice(argIndex + 1)]
+      const results: unknown[] = await originalMethod.apply(this, applyArgs)
+      return positions.map((i) => results[i])
     }
 
     return descriptor

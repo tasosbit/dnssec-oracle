@@ -34,7 +34,7 @@ import {
 import { randomBytes } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AttestationConsumerFactory } from '../smart_contracts/artifacts/consumer/AttestationConsumerClient'
 import { sendMutated } from './helpers'
 import { Alg, dnskeyRdata, dsRdata, ecKey, rawSign, rsaKey, standardWorld, TestKey, txt, withFlags } from './zone'
@@ -293,6 +293,62 @@ describe('DnssecOracle e2e', () => {
         expect(viaLogger[i]).toEqual(caches.get(toHex(sha256(concat(nameToWire(name), u16(type))))))
       }
       expect(await sdk.getState()).toEqual({ admin, anchorCount: 1n, rollInception: 0n, rootEpoch: 1n })
+    })
+
+    test('loggers read a full simulate group in as few calls as fit', async () => {
+      const { sdk, prove } = await deploy()
+      await prove('_tag.example.com')
+      // the simulate requests sent during `read`, each as its transactions' fees
+      const simulate = vi.spyOn(sdk.algorand.client.algod, 'simulateTransactions')
+      const groups = async (read: () => Promise<unknown>) => {
+        simulate.mockClear()
+        await read()
+        return simulate.mock.calls.map(([request]) => request.txnGroups[0].txns.map((stxn) => Number(stxn.txn.fee)))
+      }
+      try {
+        // 128 boxes, one group's references, all in one call while the keys fit one 4 KB argument
+        // (~3 KB here, past the free 2 KB: the extra fee)
+        const keys = Array.from({ length: 128 }, (_, i) => concat(nameToWire(`_${i}.example.com`), u16(RRType.DNSKEY)))
+        keys[100] = concat(nameToWire('com'), u16(RRType.DS))
+        let caches: unknown[] = []
+        expect(await groups(async () => (caches = await sdk._logCachesChunked(keys)))).toEqual([[2000]])
+        expect(caches.filter(Boolean)).toHaveLength(1)
+        expect(caches[100]).toBeDefined()
+        // ~250-byte keys: 16 to a 4 KB argument, each past the free 2 KB and paying for it
+        const long = (i: number) => nameToWire(`${'a'.repeat(63)}.${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(50)}.${i}`)
+        const longKeys = keys.map((key, i) => (i === 100 ? key : concat(long(i), u16(RRType.DNSKEY))))
+        let longCaches: unknown[] = []
+        expect(await groups(async () => (longCaches = await sdk._logCachesChunked(longKeys)))).toEqual([
+          Array(8).fill(2000),
+        ])
+        expect(longCaches).toEqual(caches)
+
+        // attestations log up to 4 KB each: 16 per call under simulate's 64 KB per transaction
+        const names = Array.from({ length: 128 }, (_, i) => nameToWire(`_${i}.example.com`))
+        names[127] = nameToWire('_tag.example.com')
+        let attestations: (Uint8Array | undefined)[] = []
+        expect(await groups(async () => (attestations = await sdk._logAttestationsChunked(names)))).toEqual([
+          Array(8).fill(1000),
+        ])
+        expect(attestations.slice(0, 127).every((a) => a === undefined)).toBe(true)
+        expect(attestations[127]).toBeDefined()
+
+        // credits: 127 addresses, 4066 bytes, in one call; checked against algod's box scan
+        const admin = localnet.context.testAccount.toString()
+        const accounts = Array.from({ length: 127 }, (_, i) => (i === 64 ? admin : new Address(randomBytes(32)).toString()))
+        let credits: (bigint | undefined)[] = []
+        expect(await groups(async () => (credits = await sdk._logCreditsChunked(accounts)))).toEqual([[2000]])
+        expect(credits[64]).toBe((await sdk.listCredits()).get(admin))
+        expect(credits.filter((c) => c !== undefined)).toHaveLength(1)
+
+        // repeats are simulated once, across chunks too, and expanded back in order: 300 names, 3 distinct, one call
+        const repeated = Array.from({ length: 300 }, (_, i) => names[[127, 0, 126][i % 3]])
+        let expanded: (Uint8Array | undefined)[] = []
+        expect(await groups(async () => (expanded = await sdk._logAttestationsChunked(repeated)))).toEqual([[1000]])
+        expect(expanded).toEqual(repeated.map((_, i) => [attestations[127], undefined, undefined][i % 3]))
+      } finally {
+        simulate.mockRestore()
+      }
     })
   })
 
