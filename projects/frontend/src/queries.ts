@@ -38,14 +38,19 @@ export const stateQuery = ({ sdk, network, appId }: Oracle) =>
     staleTime: ON_CHAIN,
   })
 
+// ponytail: the count and an XOR of each key's first 32 bits; swapping one box for another
+// changes it bar a 2^-32 collision. The sorted keys themselves, if that ever matters
+const boxSet = (keys: string[]) => [keys.length, keys.reduce((x, k) => x ^ parseInt(k.slice(0, 8), 16), 0)]
+
 /**
  * Names from the proof transactions: an indexer scan of every app call, the most expensive
- * read here. Names only accumulate, so the key carries the box count and a new box triggers a
- * rescan. Otherwise 10 minutes, no focus refetch, and the previous labels stay up meanwhile.
+ * read here. The key carries which boxes exist, so a new box triggers a rescan, even when a
+ * prune since the last poll keeps the count. Otherwise 10 minutes, no focus refetch, and the
+ * previous labels stay up meanwhile.
  */
-export const namesQuery = ({ sdk, network, appId }: Oracle, boxes: number) =>
+export const namesQuery = ({ sdk, network, appId }: Oracle, boxKeys: string[]) =>
   queryOptions({
-    queryKey: ['oracle', network, appId, 'names', boxes],
+    queryKey: ['oracle', network, appId, 'names', boxSet(boxKeys)],
     queryFn: () => provenNames(sdk),
     staleTime: 10 * MINUTE,
     refetchOnWindowFocus: false,

@@ -93,7 +93,7 @@ function candidates(
 export function PruneView({ oracle }: { oracle: Oracle }) {
   const { activeAddress } = useWallet()
   const core = useQuery(stateQuery(oracle))
-  const boxes = core.data ? core.data[2].size + core.data[3].size : 0
+  const boxes = core.data ? [...core.data[2].keys(), ...core.data[3].keys()] : []
   const names = useQuery({ ...namesQuery(oracle, boxes), enabled: !!core.data })
   // ponytail: the contract judges by the last block's time, a few seconds behind; a minute's margin
   // keeps a just-expired box out of a group it would sink. Read the block time if LocalNet dev mode matters

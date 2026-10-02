@@ -21,7 +21,7 @@ const zoneOrder = (label: string) => {
 
 export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (name: string) => void }) {
   const core = useQuery(stateQuery(oracle))
-  const boxes = core.data ? core.data[2].size + core.data[3].size : 0
+  const boxes = core.data ? [...core.data[2].keys(), ...core.data[3].keys()] : []
   // labels are best-effort: without them, boxes show as hashes
   const names = useQuery({ ...namesQuery(oracle, boxes), enabled: !!core.data })
   const anchorNames = useQuery(rootKeysQuery())

@@ -90,7 +90,12 @@ export function App() {
         </p>
         <nav>
           {Object.entries(TABS).map(([t, label]) => (
-            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t as Tab)}>
+            <button
+              key={t}
+              className={tab === t ? 'active' : ''}
+              aria-current={tab === t ? 'page' : undefined}
+              onClick={() => setTab(t as Tab)}
+            >
               {label}
             </button>
           ))}

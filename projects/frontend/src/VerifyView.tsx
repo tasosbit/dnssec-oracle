@@ -147,6 +147,7 @@ function ProveLink({
     <a
       href={href}
       onClick={(e) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return // a new tab or window: the browser's
         e.preventDefault()
         onProve(name)
       }}

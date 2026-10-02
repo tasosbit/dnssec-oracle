@@ -69,7 +69,7 @@ export function Clamp({ children }: { children: ReactNode }) {
         {children}
       </div>
       {(open || overflows) && (
-        <button className="more" onClick={() => setOpen(!open)}>
+        <button className="more" aria-expanded={open} onClick={() => setOpen(!open)}>
           {open ? 'Show less' : 'Show more'}
         </button>
       )}
