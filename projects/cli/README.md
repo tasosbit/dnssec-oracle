@@ -4,6 +4,29 @@ Command-line operator for the DNSSEC oracle: deploy, admin, credits, proofs and 
 
 ## Quick start
 
+Try it on TestNet with npx. `-n testnet` presets a public node and the deployed oracle (app 772959888), and read commands need no account:
+
+```sh
+npx @d13co/dnssec-oracle -n testnet --help
+npx @d13co/dnssec-oracle -n testnet state      # oracle state
+npx @d13co/dnssec-oracle -n testnet anchors    # root trust anchors
+npx @d13co/dnssec-oracle -n testnet list       # every attestation
+```
+
+Write commands such as `prove` need a signer. Put its mnemonic in a `.env` in the directory you run from:
+
+```sh
+echo 'MNEMONIC="word1 word2 ... word25"' > .env && chmod 600 .env
+npx @d13co/dnssec-oracle -n testnet prove _dmarc.nodely.io
+```
+
+> [!WARNING]
+> **Use a throwaway TestNet account, never a real mnemonic.** Create a fresh one (`algokit goal account new`, or any wallet) and fund it from the [TestNet dispenser](https://lora.algokit.io/testnet/fund) or the [other TestNet dispenser](https://testnet-dispenser.algorand.tech/). Don't reuse a mnemonic that holds MainNet funds: the same words sign on every network. See [Signing with a mnemonic](#signing-with-a-mnemonic).
+
+The examples below write `dnssec-oracle`; with npx that is `npx @d13co/dnssec-oracle`.
+
+### From a checkout
+
 ```sh
 pnpm install && algokit project run build   # from the repo root: contract → SDK → CLI
 cd projects/cli
@@ -11,7 +34,7 @@ cp env.example .env                          # LocalNet by default; set MNEMONIC
 node dist/index.js --help
 ```
 
-Or run it straight from the repo, no checkout (npm builds a bundle on first run):
+Or run it straight from the GitHub repo, no checkout (npm builds a bundle on first run):
 
 ```sh
 npx github:tasosbit/dnssec-oracle --help

@@ -24,9 +24,12 @@ Architecture, RFC compliance and the full list of limitations:
 [docs/architecture.md](./docs/architecture.md). Design history and trust model:
 [docs/plan.md](./docs/plan.md).
 
-Explorer for the TestNet deployment (app 772959888): <https://dnssec-oracle-testnet.pages.dev>.
+## TestNet explorer
+
+<https://dnssec-oracle-testnet.pages.dev>, for the TestNet deployment (app 772959888).
 Browse the oracle's cache and attestations, compare them with live DNS, and from a wallet prove,
-prune, or deposit and withdraw box-rent credits.
+prune, or deposit and withdraw box-rent credits. To run it locally, see
+[Build and test](#build-and-test).
 
 ## What an attestation says
 
@@ -347,3 +350,36 @@ marked:
   contract work around both.
 - All five captured chains prove on LocalNet the same day under the real KSK-2017 anchor,
   and replay in the emulator at their capture time.
+
+## ENS's DNSSEC oracle
+
+ENS's [`DNSSECImpl`](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/dnssec-oracle/DNSSECImpl.sol)
+proves DNS records on Ethereum. ENS uses it to import DNS names:
+[`DNSRegistrar`](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/dnsregistrar/DNSRegistrar.sol)
+gives `example.com` to the address in the `_ens.example.com` TXT record (`a=0x…`), and
+[`OffchainDNSResolver`](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/dnsregistrar/OffchainDNSResolver.sol)
+resolves names whose TXT record starts with `ENS1 `, fetching the proof over CCIP-Read and
+verifying it inside an `eth_call`.
+
+|                | ENS `DNSSECImpl`                                             | This oracle                                          |
+|----------------|--------------------------------------------------------------|------------------------------------------------------|
+| Verification   | the whole chain in one `verifyRRSet` call, which returns the RRset | one signature per app call                     |
+| State          | none: every caller passes the full chain                     | cached RRset hashes, and attestation boxes any app reads |
+| Root anchors   | set in the constructor, no setter (KSK-2010 and KSK-2017 in its deploy script) | RFC 5011 on-chain, permissionless |
+| Algorithms     | 5 and 7 (RSA/SHA-1), 8, 13; digest types 1 and 2. The owner can add or replace verifier contracts | 8 and 13; digest type 2. Fixed |
+| RSA keys       | any size (the `modexp` precompile)                           | 1024 to 2048 bits                                    |
+| Freshness      | RRSIG validity at `block.timestamp`; `DNSRegistrar` also rejects a proof older than the last claim | `maxAge`, `minKeyBits` and the chain walk, chosen by the consumer |
+| Absence (NSEC) | not proven                                                   | not proven                                           |
+
+The split follows from the cost of one RSA check. Ethereum's `modexp` precompile makes a
+whole chain affordable in one call, so ENS needs no cache. On Algorand an RSA-2048 check
+takes about 92k of the 190,400 opcodes a group can pool, so the six signatures behind
+`_algorand.example.com` are spread over several groups, and caching each step lets every
+name under a TLD share it. Algorand has no CCIP-Read equivalent either: a contract reads
+only what was proven on-chain first.
+
+- `DNSRegistrar` follows the [Prove once](#prove-once) model: ENS records the owner and
+  keeps it until someone submits a newer proof.
+- A new root KSK takes a new ENS oracle, and `DNSRegistrar` and `OffchainDNSResolver` hold
+  its address as `immutable`, so they need redeploying too. KSK-2024 signs the root
+  DNSKEY RRset alone from 2026-10-11.
