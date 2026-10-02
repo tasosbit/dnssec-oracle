@@ -63,8 +63,8 @@ export const dohResolver =
     return new Uint8Array(await res.arrayBuffer())
   }
 
-export const typeName = (type: number) =>
-  Object.entries(RRType).find(([, t]) => t === type)?.[0] ?? `TYPE${type}`
+const TYPE_NAMES = new Map<number, string>(Object.entries(RRType).map(([n, t]) => [t, n]))
+export const typeName = (type: number) => TYPE_NAMES.get(type) ?? `TYPE${type}`
 
 export function keyRole(flags: number) {
   const role = ({ 256: 'ZSK', 257: 'KSK' } as Record<number, string>)[flags & ~0x80] ?? `flags ${flags}`
@@ -154,12 +154,24 @@ export interface AnchorProof {
   live?: { flags: number; tag: number }
 }
 
-/** Finds an anchor id's key in IANA's trust anchor file and in the root key set DNS serves now. */
-export async function anchorProof(id: string, resolver: Resolver): Promise<AnchorProof> {
+export interface AnchorSources {
+  ianaKeys: IanaKey[]
+  /** The root DNSKEY RDATA DNS serves now. */
+  live: Uint8Array[]
+}
+
+/** IANA's trust anchor file and the root key set DNS serves now, fetched together: every anchor's proof checks against them. */
+export async function anchorSources(resolver: Resolver): Promise<AnchorSources> {
+  const [ianaKeys, response] = await Promise.all([ianaAnchors(), resolver(new Uint8Array([0]), RRType.DNSKEY)])
+  const live = parseResponse(response).answers.filter((rr) => rr.type === RRType.DNSKEY).map((rr) => rr.rdata)
+  return { ianaKeys, live }
+}
+
+async function ianaAnchors(): Promise<IanaKey[]> {
   const res = await fetch(IANA_ANCHORS)
   if (!res.ok) throw new Error(`${IANA_ANCHORS}: HTTP ${res.status}`)
   const doc = new DOMParser().parseFromString(await res.text(), 'application/xml')
-  const keys = [...doc.querySelectorAll('KeyDigest')].flatMap((e): IanaKey[] => {
+  return [...doc.querySelectorAll('KeyDigest')].flatMap((e): IanaKey[] => {
     const text = (tag: string) => e.querySelector(tag)?.textContent?.trim() ?? ''
     const algorithm = Number(text('Algorithm'))
     // entries before 2017 (KSK-2010) carry only the digest
@@ -176,12 +188,15 @@ export async function anchorProof(id: string, resolver: Resolver): Promise<Ancho
       },
     ]
   })
-  const { answers } = parseResponse(await resolver(new Uint8Array([0]), RRType.DNSKEY))
-  const live = answers.find((rr) => rr.type === RRType.DNSKEY && toHex(anchorHash(rr.rdata)) === id)
+}
+
+/** Finds an anchor id's key in IANA's trust anchor file and in the root key set DNS serves now. */
+export function anchorProof(id: string, { ianaKeys, live }: AnchorSources): AnchorProof {
+  const key = live.find((rdata) => toHex(anchorHash(rdata)) === id)
   return {
-    iana: keys.find((k) => toHex(anchorHash(k.rdata)) === id),
-    ianaKeys: keys.length,
-    live: live && { flags: parseDnskey(live.rdata).flags, tag: keyTag(live.rdata) },
+    iana: ianaKeys.find((k) => toHex(anchorHash(k.rdata)) === id),
+    ianaKeys: ianaKeys.length,
+    live: key && { flags: parseDnskey(key).flags, tag: keyTag(key) },
   }
 }
 

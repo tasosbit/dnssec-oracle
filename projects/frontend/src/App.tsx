@@ -68,7 +68,15 @@ export function App() {
             </label>
             <label>
               App ID
-              <input value={appId} onChange={(e) => setAppId(e.target.value.trim())} placeholder="app ID" size={12} />
+              {/* committed on blur or Enter: per keystroke, every digit prefix would be read as an app */}
+              <input
+                key={appId} // a network switch resets it
+                defaultValue={appId}
+                onBlur={(e) => setAppId(e.target.value.trim())}
+                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                placeholder="app ID"
+                size={12}
+              />
             </label>
             <WalletButton />
           </div>

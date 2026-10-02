@@ -282,14 +282,12 @@ function Submit({
         // a partial plan stops short of the TXT record: nothing to verify yet
         action: left ? undefined : { label: 'Verify', onClick: () => onVerify(name) },
       })
-      // the plan, state, credits and verification all moved
-      return queryClient.invalidateQueries({
-        queryKey: ['oracle', oracle.network, oracle.appId],
-      })
     },
+    // the plan, state, credits and verification all moved, also when a later group failed after
+    // earlier ones landed: a stale plan would resend them
     onSettled: () =>
       queryClient.invalidateQueries({
-        queryKey: ['oracle', oracle.network, oracle.appId, 'credits'],
+        queryKey: ['oracle', oracle.network, oracle.appId],
       }),
   })
   const count = plan.groups.length

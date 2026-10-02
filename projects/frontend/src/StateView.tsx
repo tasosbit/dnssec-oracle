@@ -1,7 +1,7 @@
 import { AnchorEntry, anchorHash, AnchorState, keyTag, toHex } from '@d13co/dnssec-oracle-sdk'
 import { useQuery } from '@tanstack/react-query'
 import { ALGORAND_ZERO_ADDRESS_STRING } from 'algosdk'
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { IANA_ANCHORS, isoTime, isRevoked, keyRole, keySize, rootDsDigest } from './oracle'
 import { anchorProofQuery, namesQuery, Oracle, rootKeysQuery, stateQuery } from './queries'
 import { Badge, Clamp, Hash, Load, Section, Time } from './ui'
@@ -25,13 +25,6 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
   // labels are best-effort: without them, boxes show as hashes
   const names = useQuery({ ...namesQuery(oracle, boxes), enabled: !!core.data })
   const anchorNames = useQuery(rootKeysQuery())
-  const [openAnchors, setOpenAnchors] = useState<Set<string>>(new Set())
-  const toggleAnchor = (id: string) =>
-    setOpenAnchors((open) => {
-      const next = new Set(open)
-      if (!next.delete(id)) next.add(id)
-      return next
-    })
   const label = (hash: string) => names.data?.get(hash)
   const now = Date.now() / 1000
 
@@ -98,35 +91,7 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
               </thead>
               <tbody>
                 {[...anchors].map(([id, a]) => (
-                  <Fragment key={id}>
-                    <tr>
-                      <td>
-                        {anchorNames.data?.get(id) ?? 'not in the root key set now'}
-                        <br />
-                        <Hash hex={id} />
-                        <br />
-                        <button className="more" aria-expanded={openAnchors.has(id)} onClick={() => toggleAnchor(id)}>
-                          {openAnchors.has(id) ? '▾ Hide the proof' : '▸ Prove it is a real root key'}
-                        </button>
-                      </td>
-                      <td>
-                        <Badge ok={a.state === AnchorState.Valid || a.state === AnchorState.Missing}>
-                          {AnchorState[a.state]}
-                        </Badge>
-                        <p className="muted">{ANCHOR_STATES[a.state as AnchorState]}</p>
-                      </td>
-                      <td>
-                        <Time t={a.since} />
-                      </td>
-                    </tr>
-                    {openAnchors.has(id) && (
-                      <tr>
-                        <td colSpan={3}>
-                          <AnchorProof id={id} anchor={a} />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
+                  <AnchorRow key={id} id={id} anchor={a} label={anchorNames.data?.get(id)} />
                 ))}
               </tbody>
             </table>
@@ -262,6 +227,42 @@ export function StateView({ oracle, onVerify }: { oracle: Oracle; onVerify: (nam
         </>
       )}
     </Load>
+  )
+}
+
+/** An anchor and its proof toggle: the open state lives here, so a toggle re-renders this row, not the whole view. */
+function AnchorRow({ id, anchor, label }: { id: string; anchor: AnchorEntry; label?: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <tr>
+        <td>
+          {label ?? 'not in the root key set now'}
+          <br />
+          <Hash hex={id} />
+          <br />
+          <button className="more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {open ? '▾ Hide the proof' : '▸ Prove it is a real root key'}
+          </button>
+        </td>
+        <td>
+          <Badge ok={anchor.state === AnchorState.Valid || anchor.state === AnchorState.Missing}>
+            {AnchorState[anchor.state]}
+          </Badge>
+          <p className="muted">{ANCHOR_STATES[anchor.state as AnchorState]}</p>
+        </td>
+        <td>
+          <Time t={anchor.since} />
+        </td>
+      </tr>
+      {open && (
+        <tr>
+          <td colSpan={3}>
+            <AnchorProof id={id} anchor={anchor} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
