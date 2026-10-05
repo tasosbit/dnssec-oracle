@@ -242,7 +242,8 @@ old keys has to become unusable, at every level below.
   `maintainAnchors` daily (see [RFC compliance](#rfc-compliance-and-divergence)).
 - To check the anchors against IANA's trust anchor file, or any zone's keys and DS against
   what the oracle has cached, see the README's
-  [Verifying anchors and zone keys](../README.md#verifying-anchors-and-zone-keys).
+  [Verifying anchors and zone keys](../README.md#verifying-anchors-and-zone-keys);
+  `dnssec-oracle verify` checks the program, the anchor set and the admin in one go.
 
 ## Box rent
 

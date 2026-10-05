@@ -11,6 +11,7 @@ npx @d13co/dnssec-oracle -n testnet --help
 npx @d13co/dnssec-oracle -n testnet state      # oracle state
 npx @d13co/dnssec-oracle -n testnet anchors    # root trust anchors
 npx @d13co/dnssec-oracle -n testnet list       # every attestation
+npx @d13co/dnssec-oracle -n testnet verify     # is the pinned app this contract, anchored to IANA, admin renounced?
 ```
 
 Write commands such as `prove` need a signer. Put its mnemonic in a `.env` in the directory you run from:
@@ -106,6 +107,37 @@ dnssec-oracle credits [address]
 ```sh
 dnssec-oracle set-admin <address>   # the zero address renounces; needs --yes
 ```
+
+### Verify a deployment
+
+```sh
+dnssec-oracle verify                                   # algod only
+dnssec-oracle verify --iana --rebuild                  # plus IANA's live file and a fresh compile
+```
+
+```
+✔ program   approval and clear programs match APP_SPEC (puya 5.10.1), approval sha256 8df1cea61bd6a82a…
+✔ rebuild   rebuilt programs (puya 5.10.1) match the chain
+✔ actions   no UpdateApplication or DeleteApplication action in the ARC-56 spec (16 methods, bare create NoOp)
+✔ anchors   tag 38696 Valid (IANA), tag 20326 Valid (IANA); IANA file agrees
+✔ admin     renounced (zero address)
+✔ rootKeys  rootEpoch 1, rollInception none, anchors 2 Valid
+verified
+```
+
+One line per check, `✔` pass, `!` warn, `✖` fail, `-` skip, then a verdict; the exit code is 1 when
+any check fails. What each check settles:
+
+| Check | Passes when |
+|---|---|
+| `program` | The on-chain approval and clear programs are byte-for-byte the bytecode bundled in the SDK (`APP_SPEC.byteCode`), which CI ties to the contract source. |
+| `rebuild` | With `--rebuild`: a fresh `puya-ts` compile of the sources shipped in the SDK package (`contract/`) matches the chain too. Skips when no `puya-ts` is found (the repo's contract project has one); warns rather than fails when the local compiler version differs from the one that built the bundle. |
+| `actions` | The ARC-56 spec declares no `UpdateApplication` or `DeleteApplication` action, bare or on a method: the program cannot be replaced or removed. |
+| `anchors` | `addAnchors` ran, every anchor box is `sha256(alg ‖ pubkey)` of a known root KSK (the SDK's pinned KSK-2017/2024, `--known-anchor`, or with `--iana` a key listed in IANA's file), and at least one anchor is Valid or Missing. The admin chose the initial set, so this is the check that it chose IANA's. With `--iana`, also that every pinned digest is still in `root-anchors.xml`; a key IANA lists that the SDK does not pin, or that the oracle does not anchor, is a warning. |
+| `admin` | The `admin` global is the zero address: renounced. A live admin warns: it can only hand the role on, since `addAnchors` runs once. |
+| `rootKeys` | Informational: `rootEpoch`, `rollInception` and the RFC 5011 state of each anchor. Warns about an AddPend whose 30-day hold-down has passed without a Promote or Reset: nobody is running `maintain-anchors`. |
+
+On LocalNet the root is synthetic: `--known-anchor <base64>` names its KSK's DNSKEY RDATA so `anchors` can pass.
 
 ### Credits and rent
 

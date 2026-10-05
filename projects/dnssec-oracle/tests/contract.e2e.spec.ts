@@ -14,7 +14,9 @@ import {
   ChainPlan,
   CREDIT_BOX_MBR_MICROALGOS,
   capturedResolver,
+  CheckName,
   concat,
+  DnssecOracleReaderSDK,
   DnssecOracleSDK,
   increaseBudgetBaseCost,
   increaseBudgetIncrementCost,
@@ -32,6 +34,7 @@ import {
   toHex,
   u16,
   u32,
+  VerificationResult,
 } from '@d13co/dnssec-oracle-sdk'
 import { randomBytes } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -142,11 +145,18 @@ describe('DnssecOracle e2e', () => {
   }
 
   /** The oracle's hasRecord, called directly: `name` signed by its parent zone, under `com`. */
-  const hasRecord = async (sdk: DnssecOracleSDK, owner: string, rdata: Uint8Array, zones = ['example.com', 'com']) => {
+  const hasRecord = async (
+    sdk: DnssecOracleSDK,
+    owner: string,
+    rdata: Uint8Array,
+    zones = ['example.com', 'com'],
+    minKeyBits = 0,
+    maxAge = 86_400 * 3,
+  ) => {
     const name = nameToWire(owner)
     const wireZones = zones.map((z) => nameToWire(z))
     const { return: ok } = await sdk.writeClient!.send.hasRecord({
-      args: { name, rdata, maxAge: 86_400 * 3, minKeyBits: 0, zones: wireZones },
+      args: { name, rdata, maxAge, minKeyBits, zones: wireZones },
       boxReferences: [boxNames.attestation(name), ...boxNames.chain(wireZones)],
       note: `${Math.random()}`,
     })
@@ -1089,6 +1099,111 @@ describe('DnssecOracle e2e', () => {
       await other.setAdmin({ admin: Address.zeroAddress().toString() })
       await expect(other.setAdmin({ admin: account.toString() })).rejects.toThrow(code('admin'))
       expect((await sdk.getState()).admin).toBe(Address.zeroAddress().toString())
+    })
+  })
+
+  // ── forgery paths that stay open, and deployment verification ──
+
+  describe('open paths and verification', () => {
+    const check = (result: VerificationResult, name: CheckName) => {
+      const found = result.checks.find((c) => c.name === name)
+      if (!found) throw new Error(`no ${name} check`)
+      return found
+    }
+
+    test('weak-path overwrite: a newer RRset signed through an RSA-1024 ZSK replaces a strong attestation, and weakestKeyBits drops', async () => {
+      const { sdk, world, exampleCom, chain } = await deploy({ rootAlg: 'rsa' })
+      const name = '_tag.example.com'
+      const policy = { maxAge: 86_400 * 3, minKeyBits: 2048 }
+      await sdk.proveChain(await chain(name))
+      expect((await sdk.getRawAttestation(name))?.weakestKeyBits).toBe(2048)
+      expect(await sdk.getVerifiedAttestation(name, policy)).toBeDefined()
+      expect(await hasRecord(sdk, name, txt('hello com'), undefined, 2048)).toBe(true)
+
+      // the zone adds an RSA-1024 ZSK (a size change mid-roll) and later signs the same name with it
+      const weak = rsaKey({ bits: 1024, flags: 256 })
+      world.publish(exampleCom.name, RRType.DNSKEY, [exampleCom.ksk.rdata, exampleCom.zsk.rdata, weak.rdata], exampleCom.ksk, exampleCom.name, {
+        inception: world.inception + 10,
+      })
+      world.publish(nameToWire(name), RRType.TXT, [txt('hello com')], weak, exampleCom.name, { inception: world.inception + 20 })
+      // newest inception wins: the oracle takes it, and the strong attestation is gone
+      await sdk.proveChain(await chain(name))
+      const after = await sdk.getRawAttestation(name)
+      expect(after?.inception).toBe(world.inception + 20)
+      expect(after?.weakestKeyBits).toBe(1024)
+      // a consumer that refuses weak proofs now sees nothing: denial of service, not forgery
+      expect(await sdk.getVerifiedAttestation(name, policy)).toBeUndefined()
+      expect(await hasRecord(sdk, name, txt('hello com'), undefined, 2048)).toBe(false)
+      expect(await hasRecord(sdk, name, txt('hello com'), undefined, 1024)).toBe(true)
+    })
+
+    test('stale replay: an older still-valid RRset is accepted into an empty box; maxAge is the consumer-side bound', async () => {
+      const { sdk, world, exampleCom, chain } = await deploy()
+      const name = '_tag.example.com'
+      // the owner signed `old` three days ago and replaced it since; nobody proved either
+      world.txt(exampleCom, name, [txt('old')], { inception: world.inception - 3 * 86_400 })
+      const old = find(await chain(name), 'txt')
+      world.txt(exampleCom, name, [txt('current')])
+      const steps = await chain(name)
+      await sdk.proveChain(steps.filter((s) => s.kind !== 'txt'))
+      // anyone replays the old RRset: with nothing stored, the oracle takes it
+      await sdk.proveStep({ step: old })
+      const replayed = await sdk.getRawAttestation(name)
+      expect(replayed?.texts).toEqual(['old'])
+      expect(replayed?.inception).toBe(world.inception - 3 * 86_400)
+      // a consumer bounds it with maxAge, on inception
+      expect(await sdk.getVerifiedAttestation(name, { maxAge: 86_400, minKeyBits: 2048 })).toBeUndefined()
+      expect(await sdk.getVerifiedAttestation(name, { maxAge: 4 * 86_400, minKeyBits: 2048 })).toBeDefined()
+      expect(await hasRecord(sdk, name, txt('old'), undefined, 0, 86_400)).toBe(false)
+      expect(await hasRecord(sdk, name, txt('old'), undefined, 0, 4 * 86_400)).toBe(true)
+      // the current RRset outranks it, and then the old one cannot come back
+      await sdk.proveStep({ step: find(steps, 'txt') })
+      expect((await sdk.getRawAttestation(name))?.texts).toEqual(['current'])
+      await expect(sdk.proveStep({ step: old })).rejects.toThrow(code('old'))
+    })
+
+    test('verifyDeployment passes the published build once the admin renounced; a synthetic anchor and another app fail', async () => {
+      const { sdk, root, anchors: knownAnchors } = await deploy()
+
+      // the test root is not IANA's: without naming its key, anchors fail with its hash
+      const unknown = await sdk.verifyDeployment()
+      expect(unknown.ok).toBe(false)
+      expect(check(unknown, 'anchors').status).toBe('fail')
+      expect(check(unknown, 'anchors').message).toContain(`anchor ${toHex(anchorHash(root.ksk.rdata))} is not derivable from any known root KSK`)
+      expect(check(unknown, 'program').status).toBe('pass')
+
+      // named, everything passes but the admin, which still holds its role
+      const named = await sdk.verifyDeployment({ knownAnchors })
+      expect(named.ok).toBe(true)
+      expect(check(named, 'anchors').message).toMatch(/^tag \d+ Valid \(caller\)$/)
+      expect(check(named, 'admin').status).toBe('warn')
+      expect(check(named, 'admin').message).toContain(localnet.context.testAccount.toString())
+
+      // renounced, every check passes
+      await sdk.setAdmin({ admin: Address.zeroAddress().toString() })
+      const renounced = await sdk.verifyDeployment({ knownAnchors })
+      expect(renounced.checks.map((c) => [c.name, c.status])).toEqual([
+        ['program', 'pass'],
+        ['actions', 'pass'],
+        ['anchors', 'pass'],
+        ['admin', 'pass'],
+        ['rootKeys', 'pass'],
+      ])
+
+      // before addAnchors ran, the anchors check says so
+      const fresh = await DnssecOracleSDK.create({ algorand: localnet.algorand, admin: accountSigner(localnet.context.testAccount) })
+      const uninitialised = await fresh.verifyDeployment()
+      expect(check(uninitialised, 'anchors')).toMatchObject({ status: 'fail', message: expect.stringMatching(/addAnchors has not run/) })
+
+      // another app at the pinned id is not this contract: program and anchors fail
+      const { testAccount } = localnet.context
+      const factory = localnet.algorand.client.getTypedAppFactory(AttestationConsumerFactory, { defaultSender: testAccount })
+      const { appClient: consumer } = await factory.send.create.createApplication({ args: { oracle: sdk.appId } })
+      const impostor = new DnssecOracleReaderSDK({ algorand: localnet.algorand, appId: consumer.appId })
+      const other = await impostor.verifyDeployment({ knownAnchors })
+      expect(other.ok).toBe(false)
+      expect(check(other, 'program').status).toBe('fail')
+      expect(check(other, 'anchors').status).toBe('fail')
     })
   })
 

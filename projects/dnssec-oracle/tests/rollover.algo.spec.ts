@@ -161,6 +161,49 @@ describe('root rollover (RFC 5011)', () => {
     expect(anchor(contract, k2)).toEqual({ state: AnchorState.Valid, since: T0 + 2 * DAY })
   })
 
+  test('an AddPend nobody resets within the hold-down is promoted and proves the root; a Reset at day 29 prevents it', () => {
+    // k1 is the only anchor and its private key has leaked: the attacker lists their own kx
+    // beside it in a root RRset k1 signs, proves that RRset and Adds kx. Everything so far is
+    // permissionless and indistinguishable from a legitimate roll.
+    const [k1, kx] = [ecKey(), ecKey()]
+    const addAt = T0 + DAY
+    const promoteAt = addAt + HOLD_DOWN_SECONDS
+
+    // no watcher: at day 30 the attacker promotes kx themselves, and it proves the root from then on
+    const unattended = deploy([k1])
+    at(addAt)
+    const withKx = rootSet(k1, [k1, kx], T0)
+    proveRoot(unattended, withKx)
+    update(unattended, withKx, kx)
+    expect(anchor(unattended, kx)).toEqual({ state: AnchorState.AddPend, since: addAt })
+    at(promoteAt)
+    const still = rootSet(k1, [k1, kx], promoteAt - DAY)
+    proveRoot(unattended, still)
+    update(unattended, still, kx)
+    expect(anchor(unattended, kx)).toEqual({ state: AnchorState.Valid, since: promoteAt })
+    proveRoot(unattended, rootSet(kx, [kx], promoteAt))
+    expect(unattended.rootEpoch.value).toEqual(1)
+
+    // a watcher: the real root RRset (without kx) at day 29 Resets the box; a second Add starts
+    // the 30 days over, so the attacker cannot promote at day 30
+    const watched = deploy([k1])
+    at(addAt)
+    proveRoot(watched, withKx)
+    update(watched, withKx, kx)
+    at(promoteAt - DAY)
+    const genuine = rootSet(k1, [k1], promoteAt - DAY)
+    proveRoot(watched, genuine)
+    update(watched, genuine, kx)
+    expect(anchor(watched, kx).state).toBe(0)
+    at(promoteAt)
+    const again = rootSet(k1, [k1, kx], promoteAt)
+    proveRoot(watched, again)
+    update(watched, again, kx)
+    expect(anchor(watched, kx)).toEqual({ state: AnchorState.AddPend, since: promoteAt })
+    expect(() => update(watched, again, kx)).toThrow(code('holdDown'))
+    expect(() => proveRoot(watched, rootSet(kx, [k1, kx], promoteAt))).toThrow(code('anchor'))
+  })
+
   test('Revoke, then Retire 30 days later', () => {
     const [k1, k2] = [ecKey(), ecKey()]
     const k1r = withFlags(k1, 385)

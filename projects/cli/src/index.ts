@@ -19,6 +19,7 @@ import {
   handleSetAdmin,
   handleSetup,
   handleState,
+  handleVerify,
   handleWithdrawCredits,
 } from './commands'
 
@@ -86,6 +87,20 @@ yargs(hideBin(process.argv))
   // reads
   .command('state', 'Show admin, initial anchor count and rollover inception', {}, run(handleState))
   .command('anchors', 'List root anchors and their RFC 5011 states', {}, run(handleAnchors))
+  .command(
+    'verify',
+    'Check the deployment: program bytes, no update/delete, anchors vs IANA, admin renounced, root key states; exit 1 on any failure',
+    (y) =>
+      y
+        .option('rebuild', { type: 'boolean', default: false, description: 'Also compile the shipped contract sources with puya-ts and compare' })
+        .option('iana', { type: 'boolean', default: false, description: 'Also fetch root-anchors.xml and check the pinned digests against it' })
+        .option('known-anchor', {
+          type: 'string',
+          array: true,
+          description: 'Accept an anchor from this root KSK too (base64 DNSKEY RDATA), for a synthetic root on LocalNet',
+        }),
+    run(handleVerify),
+  )
   .command(
     'get <names..>',
     'Show the TXT attestations for one or more names',

@@ -121,6 +121,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@22.20.4)(tsx@4.23.15)
 
   projects/frontend:
     dependencies:

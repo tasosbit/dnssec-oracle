@@ -20,6 +20,14 @@ import { chunked } from './util/chunked.js'
 import { SIMULATE_PARAMS } from './util/increaseBudget.js'
 import { scanBoxes } from './util/scanBoxes.js'
 import { errorTransformer, wrapErrors } from './util/wrapErrors.js'
+import {
+  DeploymentFacts,
+  evaluateDeployment,
+  IANA_ROOT_ANCHORS_URL,
+  parseRootAnchorsXml,
+  VerificationResult,
+  VerifyOptions,
+} from './verify.js'
 
 /**
  * Names per logAttestations call and per simulate group. Simulate supplies the box
@@ -295,6 +303,55 @@ export class DnssecOracleReaderSDK {
     const { confirmations } = await builder.simulate(SIMULATE_PARAMS)
     const logs = confirmations.flatMap((c: { logs?: Uint8Array[] }) => c.logs ?? [])
     return logs.map((l) => (l.length === 0 ? undefined : Buffer.from(l).readBigUInt64BE()))
+  }
+
+  /**
+   * Check that this app id is the published contract, that its anchors derive from IANA's root
+   * KSKs, that the admin renounced and that nothing can update it. Algod is the only dependency
+   * by default; `iana` fetches IANA's trust anchor file and `rebuild` compiles the shipped
+   * contract sources. See verify.ts for each check. Consumers (the QuRPC Registry) check their
+   * own pin and parameters on their side and call this for the oracle they pin.
+   */
+  @wrapErrors()
+  async verifyDeployment(opts: VerifyOptions = {}): Promise<VerificationResult> {
+    return evaluateDeployment(await this.deploymentFacts(opts), opts)
+  }
+
+  /** What verifyDeployment judges, gathered but not evaluated. */
+  @wrapErrors()
+  async deploymentFacts(opts: VerifyOptions = {}): Promise<DeploymentFacts> {
+    const [app, globals, anchors] = await Promise.all([
+      this.algorand.client.algod.getApplicationByID(this.appId).do(),
+      this.getState(),
+      this.listAnchors(),
+    ])
+    if (!app.params) throw new Error(`app ${this.appId} has no params: does it exist?`)
+    const facts: DeploymentFacts = {
+      appId: this.appId,
+      approval: new Uint8Array(app.params.approvalProgram),
+      clear: new Uint8Array(app.params.clearStateProgram),
+      globals,
+      anchors,
+      spec: opts.spec ?? APP_SPEC,
+    }
+    if (opts.rebuild) {
+      // a variable specifier keeps browser bundlers from pulling node:child_process into the SDK
+      const rebuildModule = './verify/rebuild.js'
+      const { rebuildContract } = (await import(/* @vite-ignore */ rebuildModule)) as typeof import('./verify/rebuild.js')
+      facts.rebuilt = await rebuildContract(opts.rebuild === true ? {} : opts.rebuild)
+    }
+    if (opts.iana) {
+      const fetchImpl = opts.fetch ?? globalThis.fetch
+      try {
+        if (!fetchImpl) throw new Error('no fetch available')
+        const response = await fetchImpl(IANA_ROOT_ANCHORS_URL)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        facts.iana = { anchors: parseRootAnchorsXml(await response.text()) }
+      } catch (e) {
+        facts.iana = { skipped: `${IANA_ROOT_ANCHORS_URL}: ${e instanceof Error ? e.message : String(e)}` }
+      }
+    }
+    return facts
   }
 
   /** One box by name, straight from algod, or undefined. */
