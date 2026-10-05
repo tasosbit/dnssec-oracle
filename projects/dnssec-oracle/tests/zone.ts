@@ -170,7 +170,9 @@ export class World {
 /**
  * root (RSA-2048 by default) → com (P-256) → example.com (P-256), and root → io (RSA-2048
  * KSK, RSA-1024 ZSK) → example.io (P-256), with `_tag.example.<tld>` TXT under each.
- * A P-256 root keeps tests that do not need RSA-2048 cheap.
+ * Below example.com: a delegated `sub.example.com` (P-256) with `_tag.sub.example.com`, and
+ * `_tag.eu.example.com` signed by example.com itself. A P-256 root keeps tests that do not
+ * need RSA-2048 cheap.
  */
 export function standardWorld({ rootAlg = 'rsa' as Alg } = {}) {
   const root = makeZone('.', rootAlg)
@@ -179,13 +181,19 @@ export function standardWorld({ rootAlg = 'rsa' as Alg } = {}) {
   const io = makeZone('io', 'rsa', 'rsa1024')
   const exampleCom = makeZone('example.com', 'ecdsa')
   const exampleIo = makeZone('example.io', 'ecdsa')
+  // a delegated child zone with its own DS and DNSKEY, under example.com
+  const subExampleCom = makeZone('sub.example.com', 'ecdsa')
   world.delegate(root, com)
   world.delegate(root, io)
   world.delegate(com, exampleCom)
   world.delegate(io, exampleIo)
+  world.delegate(exampleCom, subExampleCom)
   world.txt(exampleCom, '_tag.example.com', [txt('hello com')])
   world.txt(exampleIo, '_tag.example.io', [txt('hello io')])
-  return { world, root, com, io, exampleCom, exampleIo }
+  world.txt(subExampleCom, '_tag.sub.example.com', [txt('hello sub')])
+  // a sub-name that is not delegated: example.com's own keys sign it
+  world.txt(exampleCom, '_tag.eu.example.com', [txt('hello eu')])
+  return { world, root, com, io, exampleCom, exampleIo, subExampleCom }
 }
 
 /** TXT RDATA with one character-string. */

@@ -18,6 +18,7 @@ import {
   anchorHash,
   ancestors,
   attestationBoxMbrMicroAlgos,
+  boxNames,
   buildTxtChain,
   bytesEqual,
   canonicalRRset,
@@ -51,6 +52,21 @@ function printAttestation(a: Attestation, indent = '  ') {
 }
 
 const printTxIds = (txIds: string[]) => txIds.forEach((id) => console.log(`Transaction ID: ${id}`))
+
+/**
+ * The `get --refs` lines for `name`: the `zones` argument a consumer passes to
+ * attestationUsable / hasRecord (presentation names, signer first) and the oracle box names
+ * its transaction group must reference (base64, the attestation then each zone's DNSKEY
+ * and DS up to the root DNSKEY: `2 × zones + 2`). A transaction holds 8 references in all,
+ * the oracle app included, so 8 boxes spread over the group.
+ */
+export function consumerReferencesReport(name: string, zones: Uint8Array[], indent = '  '): string[] {
+  const boxes = [boxNames.attestation(nameToWire(name)), ...boxNames.chain(zones)]
+  const lines = [`${indent}zones: ${zones.map((z) => nameFromWire(z)).join(' ')}`, `${indent}boxes (${boxes.length}):`]
+  for (const box of boxes) lines.push(`${indent}  ${Buffer.from(box).toString('base64')}`)
+  if (boxes.length > 7) lines.push(`${indent}  (a transaction holds 8 references, the oracle app included: spread the boxes over the group)`)
+  return lines
+}
 
 /** Live DNS over TCP, or a captures/<date>/chains.json replay. */
 const resolverOf = (argv: Argv): Resolver =>
@@ -87,6 +103,7 @@ export async function handleGet(argv: Argv) {
     const zones = await sdk.attestationZones(name, a)
     const path = zones && [...zones.map((z) => nameFromWire(z)), '.'].join(' → ')
     console.log(path ? `  chain: live, ${path}` : '  chain: STALE, a key set above changed: prove it again')
+    if (argv.refs && zones) for (const line of consumerReferencesReport(name, zones)) console.log(line)
   }
 }
 

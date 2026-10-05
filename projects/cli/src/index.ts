@@ -89,7 +89,14 @@ yargs(hideBin(process.argv))
   .command(
     'get <names..>',
     'Show the TXT attestations for one or more names',
-    (y) => y.positional('names', { type: 'string', array: true, demandOption: true }),
+    (y) =>
+      y
+        .positional('names', { type: 'string', array: true, demandOption: true })
+        .option('refs', {
+          type: 'boolean',
+          default: false,
+          description: 'Also print the zones and oracle box references a consumer contract passes for each live name',
+        }),
     run(handleGet),
   )
   .command('list', 'List every attestation box', {}, run(handleList))
