@@ -138,6 +138,11 @@ Summary only. The reasons behind each one are in
     dedicated subdomain such as `_algorand.example.com`, never at the apex. The RRset
     then holds only your records: about 4,000 bytes of RDATA, or some 44 records of one
     Algorand address each. See [research/sha256-limit](./research/sha256-limit/README.md).
+  - **Sub-names need no delegation.** Any name under your zone is provable with the
+    zone's own keys (6 steps, `zones = [example.com, com]`); a delegated child zone with
+    its own DS/DNSKEY works too (8 steps, one more `zones` entry and 2 more box
+    references). `dnssec-oracle get <name> --refs` prints both. See
+    [Names, subdomains and delegation](./docs/architecture.md#names-subdomains-and-delegation).
 - **TXT, positive answers only.** No NSEC/NSEC3, so the oracle cannot prove that a record
   or a name does not exist. No CNAME or DNAME following, and no wildcards.
 - **The record existed, not that it still exists.** Freshness is the consumer's `maxAge`.
@@ -199,6 +204,8 @@ await sdk.depositCredits({ amount: 1_000_000 }) // box rent
 await sdk.proveTxt('_algorand.example.com')     // skips fresh cached steps, op-up is automatic
 // undefined unless current, unexpired, signed within maxAge and no key weaker than minKeyBits
 const verified = await sdk.getVerifiedAttestation('_algorand.example.com', { maxAge: 86_400, minKeyBits: 2048 })
+// the same, plus the `zones` argument and the box names a consumer contract's group must reference
+const refs = await sdk.getConsumerReferences('_algorand.example.com', { maxAge: 86_400, minKeyBits: 2048 })
 ```
 
 Attestation getters say whether they validate. `getVerifiedAttestation` applies the same

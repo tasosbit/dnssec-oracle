@@ -1,7 +1,14 @@
 import { generateAccount, secretKeyToMnemonic } from 'algosdk'
 import { describe, expect, it } from 'vitest'
-import { CACHE_BOX_MBR_MICROALGOS, CREDIT_BOX_MBR_MICROALGOS, ProofStep, attestationBoxMbrMicroAlgos } from '@d13co/dnssec-oracle-sdk'
-import { proveDeposit, proveMbrEstimate } from '../src/commands'
+import {
+  CACHE_BOX_MBR_MICROALGOS,
+  CREDIT_BOX_MBR_MICROALGOS,
+  ProofStep,
+  attestationBoxMbrMicroAlgos,
+  boxNames,
+  nameToWire,
+} from '@d13co/dnssec-oracle-sdk'
+import { consumerReferencesReport, proveDeposit, proveMbrEstimate } from '../src/commands'
 import { createWriterAccount, formatAlgo, parseAlgo } from '../src/utils'
 
 describe('parseAlgo', () => {
@@ -67,5 +74,26 @@ describe('prove auto-credits', () => {
     expect(proveDeposit(1001n, 0n)).toBe(1102n) // rounds up
     expect(proveDeposit(1000n, 600n)).toBe(500n)
     expect(proveDeposit(1000n, 5000n)).toBe(0n)
+  })
+})
+
+describe('get --refs', () => {
+  const b64 = (box: Uint8Array) => Buffer.from(box).toString('base64')
+
+  it('prints the zones and 2 × zones + 2 box names, the attestation first', () => {
+    const zones = ['example.com', 'com'].map((z) => nameToWire(z))
+    const lines = consumerReferencesReport('_tag.example.com', zones)
+    expect(lines[0]).toBe('  zones: example.com. com.')
+    expect(lines[1]).toBe('  boxes (6):')
+    expect(lines.slice(2)).toEqual([boxNames.attestation(nameToWire('_tag.example.com')), ...boxNames.chain(zones)].map((b) => `    ${b64(b)}`))
+  })
+
+  it('warns when a delegated chain needs more references than one transaction holds', () => {
+    const zones = ['sub.example.com', 'example.com', 'com'].map((z) => nameToWire(z))
+    const lines = consumerReferencesReport('_tag.sub.example.com', zones)
+    expect(lines[0]).toBe('  zones: sub.example.com. example.com. com.')
+    expect(lines[1]).toBe('  boxes (8):')
+    expect(lines).toHaveLength(2 + 8 + 1)
+    expect(lines.at(-1)).toMatch(/spread the boxes over the group/)
   })
 })

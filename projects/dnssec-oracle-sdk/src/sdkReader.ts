@@ -115,6 +115,25 @@ export class DnssecOracleReaderSDK {
     return zones && { attestation, zones }
   }
 
+  /**
+   * What a consumer passes to attestationUsable / hasRecord for `name`, if its attestation is
+   * usable under the policy (see getVerifiedAttestation): the `zones` argument, signer first,
+   * and the oracle box names a transaction group must reference, the attestation then the
+   * chain walk's DNSKEY and DS boxes up to the root: `2 × zones + 2` of them. A transaction
+   * holds 8 references in total, the oracle app included, so a delegated sub-zone's 8 boxes
+   * spread over the group. Undefined if the attestation is missing or not usable.
+   */
+  @wrapErrors()
+  async getConsumerReferences(
+    name: NameLike,
+    policy: { maxAge: number; minKeyBits: number; now?: number },
+  ): Promise<{ attestation: Attestation; zones: Uint8Array[]; boxes: Uint8Array[] } | undefined> {
+    const verified = await this.getVerifiedAttestation(name, policy)
+    if (!verified) return undefined
+    const boxes = [boxNames.attestation(toWire(name)), ...boxNames.chain(verified.zones)]
+    return { ...verified, boxes }
+  }
+
   /** Raw attestation box values through the logger: undefined where there is none. */
   @chunked(NAMES_PER_GROUP)
   async _logAttestationsChunked(names: Uint8Array[]): Promise<(Uint8Array | undefined)[]> {

@@ -67,6 +67,51 @@ is one app call group:
 Rows 1–5 are cached and shared. A second name under `example.com` needs only row 6 while
 the cache is fresh. `proveChain` in the SDK reads the cache and skips fresh steps.
 
+### Names, subdomains and delegation
+
+The oracle anchors at the root only (see [State](#state)): there is no per-zone anchor,
+whitelist or namespace table, so **any name is provable** as long as a chain of DS and
+DNSKEY steps leads from the root to a key that signed it. Two things follow for names
+below a domain.
+
+**Who may sign.** `proveTxt` accepts an RRSIG whose signer is the owner **or any ancestor**
+whose DNSKEY RRset is cached (the [Signer name](#diverges) divergence). A name under a
+domain therefore needs no delegation of its own: `_tag.eu.example.com` signed by
+`example.com`'s ZSK is as provable as `_tag.example.com`. A real delegation, a child zone
+with its own DS and DNSKEY, is proven too, with two more rows in the chain and one more
+entry in `zones`. The chain builder recurses over the signer's zone, so the depth is not
+limited by the SDK.
+
+| Name | Signed by | Rows | `zones` (signer first, up to the TLD) | Box references |
+|------|-----------|------|---------------------------------------|----------------|
+| `_tag.example.com` | `example.com` | 6 | `[example.com, com]` | 6 |
+| `_tag.eu.example.com`, not delegated | `example.com` | 6 (rows 1–5 shared) | `[example.com, com]` | 6 |
+| `_tag.sub.example.com`, `sub.example.com` delegated | `sub.example.com` | 8 (`sub.example.com DS`, `sub.example.com DNSKEY`, then the TXT) | `[sub.example.com, example.com, com]` | 8 |
+
+A consumer passes `zones` to `attestationUsable` / `hasRecord` and references one box per
+attestation, one per zone's DNSKEY and DS, and the root DNSKEY: `2 × zones + 2`. A
+transaction carries at most 8 references in total, boxes **and** the oracle app reference
+included, so the 6 of a direct child fit in one call while a delegated sub-zone (8 boxes
+plus the app) does not: put the overflow on another app call in the same group, since
+box reads may use any reference in the group (the e2e consumer carries them on a no-op
+`increaseBudget(0)` call to the oracle). `attestationZones` in the SDK recovers the list
+from the cached chain, and `getConsumerReferences` returns the attestation, the zones and
+the box names together.
+
+**Who is trusted.** The signer's zone keys sign every name below them that is not
+delegated away. A hosting provider that signs `customer1.provider.com` and
+`customer2.provider.com` with `provider.com`'s keys can sign either tenant's TXT (plan.md
+trust point 4; Cloudflare uses one key pair for all customer zones). A tenant that wants
+its own keys needs a delegated zone, and even then the parent can replace its DS (trust
+point 2). The trust boundary of a name is its whole ancestry, which is why a proof of a
+sub-name counts as the parent's consent in systems built on the oracle (the QuRPC Registry
+treats `_qurpc.eu.infura.io` as `infura.io`'s consent to a sub-org).
+
+**Keep sub-names small.** The 4,096-byte limit on signed data and attestations (see
+[RRsets over 4,096 bytes](#rrsets-over-4096-bytes)) applies per name, so one dedicated
+sub-name per purpose (`_tag.eu.example.com`, not the apex) keeps each RRset to its own
+records.
+
 ### Input format
 
 Every proving method takes `signedData`: exactly the bytes the zone signed, that is the
@@ -219,7 +264,8 @@ If a payer withdrew their credit box, their refund stays with the app.
   the oracle's app ID, parse the box by its layout (never substring-match), and call
   `attestationUsable(oracle, value, maxAge, minKeyBits, zones)`. For `_tag.example.com`
   the transaction needs 6 box references: the attestation, each zone's DNSKEY and DS, and
-  the root DNSKEY.
+  the root DNSKEY (8 for a delegated sub-zone, see
+  [Names, subdomains and delegation](#names-subdomains-and-delegation)).
 - **By call.** Contracts that would rather not carry the reader call `hasRecord(name,
   rdata, maxAge, minKeyBits, zones)`: the same box references, plus the oracle app
   reference and one inner call's fee. It returns a boolean, not the box: an app call logs

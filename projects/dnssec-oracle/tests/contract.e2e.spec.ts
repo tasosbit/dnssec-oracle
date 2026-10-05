@@ -1,5 +1,6 @@
 import { Config, microAlgo } from '@algorandfoundation/algokit-utils'
 import { algorandFixture } from '@algorandfoundation/algokit-utils/testing'
+import type { AppCallMethodCall } from '@algorandfoundation/algokit-utils/types/composer'
 import { Address, TransactionSigner, waitForConfirmation } from 'algosdk'
 import {
   ANCHOR_BOX_MBR_MICROALGOS,
@@ -97,7 +98,10 @@ describe('DnssecOracle e2e', () => {
   /**
    * An example consumer pinned to `sdk`'s app, asking whether `_tag.example.com` holds `text`,
    * both by reading the boxes itself and by calling the oracle's hasRecord: the two must
-   * agree. Box references: the attestation and its chain walk, 6 boxes.
+   * agree. Box references: the attestation and its chain walk, 6 boxes for a name under
+   * `example.com`. A transaction holds 8 references in total, boxes and the oracle app
+   * included, so a longer chain (8 boxes for a delegated sub-zone) spreads the overflow over
+   * a no-op call in the same group, as the chain walk reads any box the group references.
    */
   const consumerAsk = async (sdk: DnssecOracleSDK) => {
     const { testAccount } = localnet.context
@@ -107,15 +111,31 @@ describe('DnssecOracle e2e', () => {
     return async (text: string, { maxAge = 86_400 * 3, minKeyBits = 2048, zones = ['example.com', 'com'], owner = '_tag.example.com' } = {}) => {
       const name = nameToWire(owner)
       const wireZones = zones.map((z) => nameToWire(z))
-      const boxes = [boxNames.attestation(name), ...boxNames.chain(wireZones)]
-      const params = {
+      const boxes = [boxNames.attestation(name), ...boxNames.chain(wireZones)].map((box) => ({ appId: sdk.appId, name: box }))
+      const params = (extraFee = microAlgo(0)) => ({
         args: { name, text: new TextEncoder().encode(text), maxAge, minKeyBits, zones: wireZones },
         appReferences: [sdk.appId],
-        boxReferences: boxes.map((box) => ({ appId: sdk.appId, name: box })),
+        boxReferences: boxes.slice(0, 7),
+        extraFee,
         note: `${Math.random()}`,
+      })
+      const send = async (call: Promise<AppCallMethodCall>) => {
+        const group = localnet.algorand.newGroup().addAppCallMethodCall(await call)
+        if (boxes.length > 7) {
+          group.addAppCallMethodCall(
+            await sdk.writeClient!.params.increaseBudget({
+              args: { itxns: 0 },
+              boxReferences: boxes.slice(7),
+              sender: testAccount,
+              note: `${Math.random()}`,
+            }),
+          )
+        }
+        const { returns } = await group.send()
+        return returns![0].returnValue as boolean
       }
-      const { return: direct } = await consumer.send.hasTxt(params)
-      const { return: byCall } = await consumer.send.hasTxtByCall({ ...params, extraFee: microAlgo(1000) })
+      const direct = await send(consumer.params.hasTxt(params()))
+      const byCall = await send(consumer.params.hasTxtByCall(params(microAlgo(1000))))
       expect(byCall).toBe(direct)
       return direct
     }
@@ -255,6 +275,48 @@ describe('DnssecOracle e2e', () => {
       expect(await sdk.getVerifiedAttestation('_tag.example.com', { ...policy, maxAge: 60 })).toBeUndefined()
       expect(await sdk.getVerifiedAttestation('_tag.example.com', { ...policy, minKeyBits: 4096 })).toBeUndefined()
       expect(await ask('hello com')).toBe(true)
+    })
+
+    test('sub-names: delegated and non-delegated', async () => {
+      const { sdk, chain } = await deploy()
+      const kinds = (steps: ProofStep[]) => steps.map((s) => `${s.kind} ${nameFromWire(s.owner)}`)
+      const first = await sdk.proveChain(await chain('_tag.example.com'))
+      expect(first.proven).toHaveLength(6)
+
+      // a delegated child zone: two more rows (its DS and DNSKEY), the rest comes from the cache
+      const sub = await sdk.proveChain(await chain('_tag.sub.example.com'))
+      expect(kinds(sub.cached)).toEqual(kinds(first.proven.slice(0, 5)))
+      expect(kinds(sub.proven)).toEqual(['ds sub.example.com.', 'dnskey sub.example.com.', 'txt _tag.sub.example.com.'])
+      const [subAtt] = await sdk.getRawAttestations(['_tag.sub.example.com'])
+      const subZones = await sdk.attestationZones('_tag.sub.example.com', subAtt!)
+      expect(subZones?.map((z) => nameFromWire(z))).toEqual(['sub.example.com.', 'example.com.', 'com.'])
+      expect(await hasRecord(sdk, '_tag.sub.example.com', txt('hello sub'), ['sub.example.com', 'example.com', 'com'])).toBe(true)
+      // the chain walk needs the real signer first: the parent's zones alone do not reach the key
+      expect(await hasRecord(sdk, '_tag.sub.example.com', txt('hello sub'))).toBe(false)
+
+      // a name signed by its parent zone: no delegation, the same six rows as a direct child
+      const eu = await sdk.proveChain(await chain('_tag.eu.example.com'))
+      expect(kinds(eu.proven)).toEqual(['txt _tag.eu.example.com.'])
+      const [euAtt] = await sdk.getRawAttestations(['_tag.eu.example.com'])
+      expect((await sdk.attestationZones('_tag.eu.example.com', euAtt!))?.map((z) => nameFromWire(z))).toEqual(['example.com.', 'com.'])
+      expect(await hasRecord(sdk, '_tag.eu.example.com', txt('hello eu'))).toBe(true)
+
+      // what a consumer passes: zones and 2 × zones + 2 box names, the attestation first
+      const policy = { maxAge: 86_400 * 3, minKeyBits: 2048 }
+      const refs = await sdk.getConsumerReferences('_tag.sub.example.com', policy)
+      expect(refs?.zones).toEqual(subZones)
+      expect(refs?.boxes).toHaveLength(2 * 3 + 2)
+      expect(refs?.boxes[0]).toEqual(boxNames.attestation(nameToWire('_tag.sub.example.com')))
+      expect(refs?.boxes.slice(1)).toEqual(boxNames.chain(subZones!))
+      expect((await sdk.getConsumerReferences('_tag.eu.example.com', policy))?.boxes).toHaveLength(6)
+      expect(await sdk.getConsumerReferences('_tag.sub.example.com', { ...policy, maxAge: 60 })).toBeUndefined()
+
+      // a consumer contract with the 8 box references of the delegated chain, read directly and by inner call
+      const ask = await consumerAsk(sdk)
+      const subPolicy = { zones: ['sub.example.com', 'example.com', 'com'], owner: '_tag.sub.example.com' }
+      expect(await ask('hello sub', subPolicy)).toBe(true)
+      expect(await ask('hello eu', { owner: '_tag.eu.example.com' })).toBe(true)
+      expect(await ask('hello sub', { owner: '_tag.sub.example.com' })).toBe(false) // zones stop short of the signer
     })
 
     test('setup charges exactly the MBR constants the SDK mirrors', async () => {
