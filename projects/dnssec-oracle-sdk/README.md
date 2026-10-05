@@ -49,6 +49,19 @@ const groups = plan.groups.map((g) => signed.slice(at, (at += g.transactions.len
 `getRawAttestation` skips the checks; `listRawAttestations`, `listAnchors` and `getCredits`
 read the rest of the oracle's state.
 
+Before pinning an app ID, check that it is this contract, anchored to IANA's root KSKs, with
+the admin renounced and no way to update it:
+
+```ts
+const { ok, checks } = await sdk.verifyDeployment()
+for (const c of checks) console.log(c.status, c.name, c.message) // program, actions, anchors, admin, rootKeys
+```
+
+`ok` is false when any check fails. `iana: true` also fetches IANA's `root-anchors.xml`,
+`rebuild: true` also compiles the shipped `contract/` sources with `puya-ts` and compares; both
+degrade to a `skip`/`warn` when unavailable. `evaluateDeployment(facts, opts)` is the pure
+evaluator behind it, for tests and other front ends.
+
 ## On-chain consumers
 
 The package also ships the oracle's Algorand TypeScript sources, for consumer contracts

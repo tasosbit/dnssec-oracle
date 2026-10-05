@@ -233,6 +233,22 @@ await sdk.maintainAnchors() // revocations, then the root proof, then every even
 
 or `dnssec-oracle maintain-anchors`.
 
+## Verifying a deployment
+
+A consumer that pins an app ID trusts that the program at that ID is this contract, that its
+anchors are IANA's, and that nobody can change either. `dnssec-oracle verify` checks all of
+that against algod in one run: the on-chain approval and clear programs against the
+bytecode bundled with the SDK (`program`), no update or delete actions in the ARC-56 spec
+(`actions`), every anchor box derived from a known root KSK whose DS digest is in IANA's
+trust anchor file (`anchors`: the admin uploaded the initial set once, so the boxes are what
+shows which keys they were), the admin role renounced to the zero address (`admin`), the
+RFC 5011 state of each root key (`rootKeys`). A consumer checks its own side (which oracle
+it pins, which proofs it accepts) with its own tooling. `--rebuild` also
+compiles the contract source with `puya-ts` and compares that too (`rebuild`); `--iana`
+fetches `root-anchors.xml` live. The same checks are `DnssecOracleReaderSDK.verifyDeployment()`;
+the CLI README lists what each one settles. The commands below are the independent,
+by-hand version of the `anchors` check.
+
 ## Verifying anchors and zone keys
 
 The oracle is only as trustworthy as its root anchors, and a consumer that pins an app ID

@@ -13,6 +13,7 @@ import {
   ProofStep,
   ROOT_KSK_2017,
   ROOT_KSK_2024,
+  VerificationResult,
   Resolver,
   RRType,
   anchorHash,
@@ -86,6 +87,36 @@ export async function handleAnchors(argv: Argv) {
   for (const [hash, a] of await makeSdk(argv).listAnchors()) {
     console.log(`${hash} ${AnchorState[a.state]} since ${isoTime(a.since)}`)
   }
+}
+
+const STATUS_MARK = { pass: '✔', warn: '!', fail: '✖', skip: '-' } as const
+
+/**
+ * One line per check, `✔ program  approval and clear programs match APP_SPEC (puya 5.10.1)`, then a
+ * verdict line. Pure, so the exit code decision is testable: the caller exits 1 when `ok` is false.
+ */
+export function formatVerification(result: VerificationResult): string[] {
+  const width = Math.max(...result.checks.map((c) => c.name.length))
+  const lines = result.checks.map((c) => `${STATUS_MARK[c.status]} ${c.name.padEnd(width)}  ${c.message}`)
+  const failed = result.checks.filter((c) => c.status === 'fail').map((c) => c.name)
+  const warned = result.checks.filter((c) => c.status === 'warn').map((c) => c.name)
+  lines.push(
+    result.ok
+      ? `verified${warned.length ? `, with warnings: ${warned.join(', ')}` : ''}`
+      : `NOT VERIFIED: ${failed.join(', ')} failed${warned.length ? `; warnings: ${warned.join(', ')}` : ''}`,
+  )
+  return lines
+}
+
+export async function handleVerify(argv: Argv) {
+  const knownAnchors = ([argv.knownAnchor ?? []].flat() as string[]).map((b64) => new Uint8Array(Buffer.from(b64, 'base64')))
+  const result = await makeSdk(argv).verifyDeployment({
+    rebuild: argv.rebuild,
+    iana: argv.iana,
+    knownAnchors,
+  })
+  for (const line of formatVerification(result)) console.log(line)
+  if (!result.ok) process.exitCode = 1
 }
 
 export async function handleGet(argv: Argv) {

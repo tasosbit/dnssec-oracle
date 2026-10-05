@@ -15,13 +15,21 @@ export const ROOT_KSK_2024 = dnskey(
   'AwEAAa96jeuknZlaeSrvyAJj6ZHv28hhOKkx3rLGXVaC6rXTsDc449/cidltpkyGwCJNnOAlFNKF2jBosZBU5eeHspaQWOmOElZsjICMQMC3aeHbGiShvZsx4wMYSjH8e7Vrhbu6irwCzVBApESjbUdpWWmEnhathWu1jo+siFUiRAAxm9qyJNg/wOZqqzL/dL/q8PkcRU5oUKEpUge71M3ej2/7CPqpdVwuMoTvoB+ZOT4YeGyxMvHmbrxlFzGOHOijtzN+u1TQNatX2XBuzZNQ1K+s2CXkPIZo7s6JgZyvaBevYtxPvYLw4z9mR7K2vaF18UYH9Z9GNUUeayffKC73PYc=',
 )
 
-/** DS digests from https://data.iana.org/root-anchors/root-anchors.xml, checked at import. */
-const IANA_DIGESTS: [Uint8Array, string][] = [
-  [ROOT_KSK_2017, 'e06d44b80b8f1d39a95c0b0d7c65d08458e880409bbc683457104237c7f8ec8d'],
-  [ROOT_KSK_2024, '683d2d0acb8c9b712a1948b27f741219298d0a450d612c483af444a4c0fb2b16'],
+/**
+ * SHA-256 DS digests (hex, lowercase) of the current root KSKs, from
+ * https://data.iana.org/root-anchors/root-anchors.xml, checked against the keys above at
+ * import. The verifier compares anchor boxes to this list; `verify --iana` compares the list
+ * to the live file.
+ */
+export const IANA_DIGESTS: readonly string[] = [
+  'e06d44b80b8f1d39a95c0b0d7c65d08458e880409bbc683457104237c7f8ec8d', // KSK-2017, tag 20326
+  '683d2d0acb8c9b712a1948b27f741219298d0a450d612c483af444a4c0fb2b16', // KSK-2024, tag 38696
 ]
-for (const [key, digest] of IANA_DIGESTS) {
-  if (toHex(dsDigest(fromHex('00'), key)) !== digest) throw new Error(`root anchor does not match IANA digest ${digest}`)
-}
 
 export const ROOT_ANCHORS = [ROOT_KSK_2017, ROOT_KSK_2024]
+
+for (const [i, key] of ROOT_ANCHORS.entries()) {
+  if (toHex(dsDigest(fromHex('00'), key)) !== IANA_DIGESTS[i]) {
+    throw new Error(`root anchor does not match IANA digest ${IANA_DIGESTS[i]}`)
+  }
+}
